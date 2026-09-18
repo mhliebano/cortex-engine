@@ -503,12 +503,28 @@ class BuildCommand extends Command<void> {
     print('⚠️ Error al compilar binario cortex:\n${compileRes.stderr}');
   }
 
+  // 8. Empaquetar paquete comprimido release/cortex-sdk.tar.gz
+  print('📦 Generando paquete comprimido release/cortex-sdk.tar.gz...');
+  final tarRes = Process.runSync('tar', [
+    '-czf',
+    '${rootDir.path}/release/cortex-sdk.tar.gz',
+    '-C',
+    '${rootDir.path}/release',
+    'sdk',
+  ]);
+  if (tarRes.exitCode == 0) {
+    print('✅ Archivo comprimido generado con éxito: release/cortex-sdk.tar.gz');
+  } else {
+    print('⚠️ Error al generar tar.gz:\n${tarRes.stderr}');
+  }
+
   print('✅ SDK empaquetado exitosamente en release/sdk');
   print(
     '👉 Para usar el comando "cortex" desde cualquier terminal, agrega la ruta bin a tu PATH:',
   );
   print('   export PATH="\$PATH:${releaseSdkDir.path}/bin"');
 }
+
 
 void _copyDirectory(Directory source, Directory destination) {
   destination.createSync(recursive: true);
