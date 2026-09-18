@@ -3,8 +3,9 @@
 [![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev/)
 [![Raylib](https://img.shields.io/badge/Raylib-000000?style=for-the-badge&logo=raylib&logoColor=white)](https://www.raylib.com/)
+[![GitHub Release](https://img.shields.io/github/v/release/mhliebano/cortex-engine?style=for-the-badge&logo=github)](https://github.com/mhliebano/cortex-engine/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20macOS-blue?style=for-the-badge)](#-prerrequisitos-e-instalación)
+[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20macOS-blue?style=for-the-badge)](#-descargas-releases)
 
 **Cortex Engine** es un framework híbrido de alto rendimiento para el desarrollo de aplicaciones desktop 2D y 3D (software CAD, simuladores 3D, herramientas de optimización y suites MDI). 
 
@@ -52,6 +53,13 @@ cortex-engine/
 │   └── build_release_sdk.dart# Compilador y empaquetador del SDK distribuible
 └── docs/                     # Documentación técnica de arquitectura y estructura
 ```
+
+## 📦 Descargas (Releases)
+
+Si prefieres utilizar **Cortex Engine** directamente sin necesidad de compilar el backend en Rust o los paquetes desde el código fuente, puedes descargar los paquetes SDK precompilados y binarios listos para usar:
+
+- 🚀 **[Última Versión Precompilada (Latest Release)](https://github.com/mhliebano/cortex-engine/releases/latest)**
+- 📋 **[Historial de Versiones (All Releases)](https://github.com/mhliebano/cortex-engine/releases)**
 
 ---
 
