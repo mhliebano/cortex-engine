@@ -75,10 +75,9 @@ export 'graphics3d.dart';
 
     if (foundFile != null) {
       foundFile.copySync('${nativeDir.path}/$name');
-      foundFile.copySync('${releaseSdkDir.path}/lib/$name');
-      foundFile.copySync('${releaseSdkDir.path}/$name');
-      print('   -> Copiado $name a release/sdk/ (assets/native, lib, root)');
+      print('   -> Copiado $name a release/sdk/assets/native/');
     }
+
   }
 
   // 4. Copiar assets/ y docs/
