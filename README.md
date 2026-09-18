@@ -56,7 +56,7 @@ cortex-engine/
 
 ## 📦 Descargas (Releases)
 
-Si prefieres utilizar **Cortex Engine** directamente sin necesidad de compilar el backend en Rust o los paquetes desde el código fuente, puedes descargar los paquetes SDK precompilados y binarios listos para usar:
+Si prefieres utilizar **Cortex Engine** directamente sin necesidad de compilar el backend en Rust o instalar librerías globales, puedes descargar la distribución SDK autónoma precompilada (incluye el motor, los binarios nativos y el ejecutable de **Dart SDK** embebido):
 
 - 🚀 **[Última Versión Precompilada (Latest Release)](https://github.com/mhliebano/cortex-engine/releases/latest)**
 - 📋 **[Historial de Versiones (All Releases)](https://github.com/mhliebano/cortex-engine/releases)**
@@ -65,7 +65,15 @@ Si prefieres utilizar **Cortex Engine** directamente sin necesidad de compilar e
 
 ## ⚙️ Prerrequisitos e Instalación
 
-### 1. Requerimientos del Sistema
+### Desarrolladores de Aplicaciones (Modo Standalone)
+Si descargas el SDK precompilado (`release/cortex-sdk.tar.gz`), **el paquete incluye todo lo necesario** (motor nativo, CLI y Dart SDK). Únicamente descomprime el archivo y añade la carpeta `bin` a tu `PATH`:
+
+```bash
+export PATH="$PATH:/ruta/a/cortex/release/sdk/bin:/ruta/a/cortex/release/sdk/dart-sdk/bin"
+```
+
+### Desarrolladores del Motor (Compilación desde el Código Fuente)
+Si deseas modificar y compilar **Cortex Engine** desde el código fuente, requerirás:
 
 - **Rust Toolchain** (edición 2024 o superior):
   ```bash
@@ -84,18 +92,18 @@ Si prefieres utilizar **Cortex Engine** directamente sin necesidad de compilar e
 
 ## 🛠️ Compilación del SDK
 
-El proyecto incluye un script de construcción que compila el backend nativo en Rust, construye el ejecutable CLI `cortex` y empaqueta la distribución del SDK en `release/sdk/`:
+El proyecto incluye un script de construcción que compila el backend nativo en Rust, construye el ejecutable CLI `cortex`, empaqueta el entorno autónomo de Dart SDK y genera la distribución completa en `release/sdk/`:
 
 ```bash
 # 1. Clonar el repositorio
 git clone git@github.com:mhliebano/cortex-engine.git
 cd cortex-engine
 
-# 2. Compilar el backend nativo y empaquetar el SDK
+# 2. Compilar el backend nativo y empaquetar el SDK autónomo
 dart scripts/build_release_sdk.dart
 ```
 
-Una vez completado, encontrarás el SDK listo para ser distribuido en `./release/sdk/`.
+Una vez completado, encontrarás el SDK listo para ser distribuido en `./release/sdk/` y en el paquete comprimido `./release/cortex-sdk.tar.gz`.
 
 ---
 

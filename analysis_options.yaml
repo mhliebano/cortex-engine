@@ -1,0 +1,6 @@
+analyzer:
+  exclude:
+    - 'release/**'
+    - '**/dart-sdk/**'
+    - 'build/**'
+    - '.dart_tool/**'
