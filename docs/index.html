@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cortex Engine SDK — Documentación Técnica de Referencia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --bg-card: #1e293b;
+      --bg-sidebar: #0b0f19;
+      --bg-code: #090d16;
+      --border-color: #334155;
+      --accent-blue: #38bdf8;
+      --accent-blue-hover: #0284c7;
+      --accent-purple: #a855f7;
+      --accent-green: #10b981;
+      --accent-orange: #f97316;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --sidebar-width: 280px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      display: flex;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* Sidebar Navigation */
+    .sidebar {
+      width: var(--sidebar-width);
+      background-color: var(--bg-sidebar);
+      border-right: 1px solid var(--border-color);
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+    }
+
+    .sidebar-header {
+      padding: 24px 20px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #fff;
+      font-size: 18px;
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+    }
+
+    .brand-title h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-title span {
+      font-size: 11px;
+      color: var(--accent-blue);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .search-box {
+      padding: 16px 20px 8px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px 14px;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-main);
+      font-size: 13px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+    }
+
+    .nav-menu {
+      padding: 12px 12px 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .nav-group-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      padding: 6px 12px;
+    }
+
+    .nav-item {
+      display: block;
+      padding: 8px 12px;
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 13.5px;
+      border-radius: 6px;
+      transition: all 0.15s ease;
+      font-weight: 500;
+    }
+
+    .nav-item:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: var(--accent-blue);
+    }
+
+    .nav-item.active {
+      background-color: rgba(56, 189, 248, 0.12);
+      color: var(--accent-blue);
+      font-weight: 600;
+    }
+
+    /* Main Content Area */
+    .content {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      padding: 40px 60px 80px;
+      max-width: 1100px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 36px;
+      margin-bottom: 40px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 300px;
+      height: 100%;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero h2 {
+      font-size: 28px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+
+    .hero p {
+      font-size: 15px;
+      color: var(--text-muted);
+      max-width: 780px;
+      line-height: 1.7;
+    }
+
+    .hero-tags {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: var(--accent-blue);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* Sections */
+    section {
+      margin-bottom: 50px;
+      scroll-margin-top: 30px;
+    }
+
+    h3.section-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    p.description {
+      font-size: 14.5px;
+      color: #cbd5e1;
+      margin-bottom: 20px;
+    }
+
+    /* Cards Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .card:hover {
+      border-color: var(--accent-blue);
+      transform: translateY(-2px);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .badge-primary { background: rgba(56, 189, 248, 0.2); color: var(--accent-blue); }
+    .badge-success { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
+    .badge-purple { background: rgba(168, 85, 247, 0.2); color: var(--accent-purple); }
+    .badge-orange { background: rgba(249, 115, 22, 0.2); color: var(--accent-orange); }
+
+    .card-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Component Details Block */
+    .comp-block {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .comp-name {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--accent-blue);
+      margin-bottom: 6px;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .comp-sig {
+      font-family: 'Fira Code', monospace;
+      font-size: 12.5px;
+      background-color: var(--bg-code);
+      padding: 8px 12px;
+      border-radius: 6px;
+      color: #e2e8f0;
+      border-left: 3px solid var(--accent-blue);
+      margin-bottom: 12px;
+      overflow-x: auto;
+    }
+
+    /* API Tables */
+    .api-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13.5px;
+    }
+
+    .api-table th {
+      background-color: rgba(15, 23, 42, 0.6);
+      color: var(--accent-blue);
+      text-align: left;
+      padding: 10px 14px;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .api-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+      color: #cbd5e1;
+    }
+
+    .api-table tr:hover td {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Code Snippets */
+    .code-container {
+      background-color: var(--bg-code);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 16px 0;
+    }
+
+    .code-header {
+      background-color: rgba(15, 23, 42, 0.8);
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      font-family: 'Fira Code', monospace;
+    }
+
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: none;
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: var(--accent-blue);
+      color: #000;
+    }
+
+    pre {
+      padding: 16px;
+      overflow-x: auto;
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #e2e8f0;
+    }
+
+    code {
+      font-family: 'Fira Code', monospace;
+    }
+
+    code.inline {
+      background-color: rgba(255, 255, 255, 0.08);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12.5px;
+      color: var(--accent-blue);
+    }
+
+    /* Syntax Highlighting */
+    .kwd { color: #f43f5e; font-weight: 600; }
+    .typ { color: #38bdf8; font-weight: 600; }
+    .fn  { color: #a855f7; }
+    .str { color: #10b981; }
+    .num { color: #f97316; }
+    .cmt { color: #64748b; font-style: italic; }
+
+    /* Alerts */
+    .alert {
+      padding: 14px 18px;
+      border-radius: 8px;
+      margin: 16px 0;
+      font-size: 13.5px;
+      border-left: 4px solid;
+    }
+
+    .alert-info {
+      background-color: rgba(56, 189, 248, 0.1);
+      border-color: var(--accent-blue);
+      color: #cbd5e1;
+    }
+
+    .alert-warning {
+      background-color: rgba(249, 115, 22, 0.1);
+      border-color: var(--accent-orange);
+      color: #cbd5e1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar Menu -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="brand-logo">C</div>
+      <div class="brand-title">
+        <h1>Cortex Engine</h1>
+        <span>Developer SDK v1.0</span>
+      </div>
+    </div>
+
+    <div class="search-box">
+      <input type="text" id="docSearch" class="search-input" placeholder="Buscar API, clase o componente...">
+    </div>
+
+    <nav class="nav-menu">
+      <div>
+        <div class="nav-group-title">1. Arquitectura & CLI</div>
+        <a href="#overview" class="nav-item active">Visión General</a>
+        <a href="#quickstart" class="nav-item">Instalación y Entorno</a>
+        <a href="#cli" class="nav-item">Herramienta CLI (cortex)</a>
+      </div>
+
+      <div>
+        <div class="nav-group-title">2. Core Engine</div>
+        <a href="#styles" class="nav-item">Estilos CSS (Style)</a>
+        <a href="#views" class="nav-item">Vistas (View) & rebuild()</a>
+        <a href="#navigator" class="nav-item">Navegación (Navigator)</a>
+      </div>
+
+      <div>
+        <div class="nav-group-title">3. Layouts & Maquetación</div>
+        <a href="#layouts-column" class="nav-item">Column & Row</a>
+        <a href="#layouts-panel" class="nav-item">Panel & Expand</a>
+        <a href="#layouts-desktop" class="nav-item">DesktopLayout Studio</a>
+      </div>
+
+      <div>
+        <div class="nav-group-title">4. Listas & Colecciones</div>
+        <a href="#lists-view" class="nav-item">ListView</a>
+        <a href="#lists-tile" class="nav-item">ListTile & ListItem</a>
+        <a href="#lists-helpers" class="nav-item">LoadingIndicator & Divider</a>
+      </div>
+
+      <div>
+        <div class="nav-group-title">5. Componentes UI</div>
+        <a href="#comp-buttons" class="nav-item">Botones (Button, FAB, Split)</a>
+        <a href="#comp-inputs" class="nav-item">Formularios (TextField, Checkbox...)</a>
+        <a href="#comp-dialogs" class="nav-item">Diálogos (Dialog, Toast, SnackBar)</a>
+        <a href="#comp-icons" class="nav-item">Catálogo de Íconos (Icons)</a>
+        <a href="#viewport-3d" class="nav-item">Motor 3D (Viewport3D)</a>
+      </div>
+
+      <div>
+        <div class="nav-group-title">6. Aplicación</div>
+        <a href="#full-example" class="nav-item">Ejemplo Completo Estandarizado</a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="content">
+
+    <!-- Hero Header -->
+    <header class="hero">
+      <h2>Cortex Engine SDK — Manual de Referencia Técnica</h2>
+      <p>SDK Híbrido de Alto Rendimiento para aplicaciones de escritorio 2D/3D. Capa de UI declarativa orientada a objetos en Pure Dart respaldada por un motor gráfico nativo GPU en Rust (Raylib C-ABI).</p>
+      <div class="hero-tags">
+        <span class="tag">Pure Dart Frontend</span>
+        <span class="tag">Rust GPU FFI</span>
+        <span class="tag">Zero-GC Allocation</span>
+        <span class="tag">CSS Style System</span>
+        <span class="tag">Desktop MDI Shell</span>
+        <span class="tag">2,234 Material Icons</span>
+      </div>
+    </header>
+
+    <!-- 1. Visión General -->
+    <section id="overview">
+      <h3 class="section-title">1. Visión General y Arquitectura</h3>
+      <p class="description">
+        <strong>Cortex Engine</strong> es un framework desacoplado diseñado para construir software de escritorio (CAD, herramientas de ingeniería, aplicaciones administrativas y simuladores) combinando la velocidad de ejecución nativa en GPU de Rust con la expresividad declarativa de Dart.
+      </p>
+
+      <div class="grid">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Gestión de Memoria FFI</div>
+            <span class="badge badge-primary">Rendimiento</span>
+          </div>
+          <div class="card-desc">
+            Optimización Zero-Allocation a nivel FFI reutilizando punteros nativos <code class="inline">Pointer&lt;Utf8&gt;</code> para mantener 60+ FPS estables sin pausas de Recolección de Basura (GC).
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Estilos Declarativos</div>
+            <span class="badge badge-success">CSS System</span>
+          </div>
+          <div class="card-desc">
+            Registro centralizado de hojas de estilo globales mediante <code class="inline">Style.register('nombre', Style(...))</code> y aplicación desacoplada por propiedad <code class="inline">className</code>.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Disposición Automática</div>
+            <span class="badge badge-purple">Layout Engine</span>
+          </div>
+          <div class="card-desc">
+            Disposición responsiva con contenedores <code class="inline">Column</code>, <code class="inline">Row</code> y <code class="inline">Panel</code> sin cálculo manual de coordenadas absolutas (X, Y).
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Instalación y Entorno -->
+    <section id="quickstart">
+      <h3 class="section-title">2. Configuración del Entorno</h3>
+      <p class="description">Para utilizar la herramienta CLI y compilar proyectos con el SDK:</p>
+
+      <h4>1. Variables de Entorno (<code class="inline">~/.bashrc</code>)</h4>
+      <div class="code-container">
+        <div class="code-header">
+          <span>bash</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code><span class="cmt"># Configuración del SDK Cortex</span>
+<span class="kwd">export</span> CORTEX_HOME=<span class="str">"$HOME/Desarrollo/cortex/sdk"</span>
+<span class="kwd">export</span> PATH=<span class="str">"$PATH:$CORTEX_HOME/bin"</span></code></pre>
+      </div>
+
+      <h4>2. Manifest del Proyecto (<code class="inline">pubspec.yaml</code>)</h4>
+      <div class="code-container">
+        <div class="code-header">
+          <span>pubspec.yaml</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code>name: mi_aplicacion
+description: Aplicación creada con Cortex Engine SDK.
+version: 1.0.0
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  cortex:
+    path: /home/miguel/Desarrollo/cortex/sdk
+  ffi: ^2.2.0
+  path: ^1.9.0
+
+dev_dependencies:
+  lints: ^6.0.0</code></pre>
+      </div>
+    </section>
+
+    <!-- 3. CLI -->
+    <section id="cli">
+      <h3 class="section-title">3. Herramienta CLI (`cortex`)</h3>
+      <p class="description">Comandos del binario ejecutable <code class="inline">cortex</code> disponible en el PATH del sistema:</p>
+
+      <table class="api-table">
+        <thead>
+          <tr>
+            <th>Comando</th>
+            <th>Sintaxis</th>
+            <th>Descripción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code class="inline">create</code></td>
+            <td><code class="inline">cortex create &lt;nombre_proyecto&gt;</code></td>
+            <td>Crea la estructura de carpetas con plantillas de código, estilos y <code class="inline">pubspec.yaml</code> configurado.</td>
+          </tr>
+          <tr>
+            <td><code class="inline">run</code></td>
+            <td><code class="inline">cortex run</code></td>
+            <td>Ejecuta la aplicación en modo desarrollo compilando JIT el archivo <code class="inline">bin/main.dart</code>.</td>
+          </tr>
+          <tr>
+            <td><code class="inline">build</code></td>
+            <td><code class="inline">cortex build</code></td>
+            <td>Compila la aplicación en un binario ejecutable nativo optimizado en el directorio <code class="inline">build/</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 4. Sistema de Estilos -->
+    <section id="styles">
+      <h3 class="section-title">4. Sistema de Estilos Globales (`Style`)</h3>
+      <p class="description">
+        La clase <code class="inline">Style</code> administra las propiedades visuales. Permite registrar clases CSS en <code class="inline">bin/app_styles.dart</code> y aplicarlas en los componentes con <code class="inline">className: "nombre-clase"</code>.
+      </p>
+
+      <table class="api-table">
+        <thead>
+          <tr>
+            <th>Propiedad</th>
+            <th>Tipo</th>
+            <th>Descripción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code class="inline">bgColor</code></td><td><code class="inline">ColorRGBA?</code></td><td>Color de fondo principal.</td></tr>
+          <tr><td><code class="inline">hoverColor</code></td><td><code class="inline">ColorRGBA?</code></td><td>Color de fondo en estado Hover (puntero encima).</td></tr>
+          <tr><td><code class="inline">textColor</code></td><td><code class="inline">ColorRGBA?</code></td><td>Color del texto.</td></tr>
+          <tr><td><code class="inline">borderColor</code></td><td><code class="inline">ColorRGBA?</code></td><td>Color del borde exterior.</td></tr>
+          <tr><td><code class="inline">accentColor</code></td><td><code class="inline">ColorRGBA?</code></td><td>Color de acento primario (utilizado en selecciones y elementos activos).</td></tr>
+          <tr><td><code class="inline">activeColor</code></td><td><code class="inline">ColorRGBA?</code></td><td>Color en estado presionado.</td></tr>
+          <tr><td><code class="inline">dividerColor</code></td><td><code class="inline">ColorRGBA?</code></td><td>Color de líneas de división.</td></tr>
+          <tr><td><code class="inline">fontSize</code></td><td><code class="inline">int?</code></td><td>Tamaño de tipografía vectorial en píxeles.</td></tr>
+          <tr><td><code class="inline">padding</code></td><td><code class="inline">int?</code></td><td>Margen interno de relleno en píxeles.</td></tr>
+          <tr><td><code class="inline">spacing</code></td><td><code class="inline">int?</code></td><td>Espaciado entre elementos hijos.</td></tr>
+          <tr><td><code class="inline">width</code> / <code class="inline">height</code></td><td><code class="inline">int?</code></td><td>Dimensiones explícitas del elemento.</td></tr>
+          <tr><td><code class="inline">borderRadius</code></td><td><code class="inline">double?</code></td><td>Radio de redondeo de esquinas.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>bin/app_styles.dart</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code><span class="kwd">import</span> <span class="str">'package:cortex/cortex.dart'</span>;
+
+<span class="kwd">void</span> <span class="fn">initAppStyles</span>() {
+  <span class="cmt">// Estilo del Panel Principal</span>
+  <span class="typ">Style</span>.<span class="fn">register</span>(<span class="str">'main-panel'</span>, <span class="kwd">const</span> <span class="typ">Style</span>(
+    bgColor: <span class="typ">ColorRGBA</span>(<span class="num">24</span>, <span class="num">28</span>, <span class="num">36</span>),
+    padding: <span class="num">24</span>,
+  ));
+
+  <span class="cmt">// Estilo de Ítems de Lista</span>
+  <span class="typ">Style</span>.<span class="fn">register</span>(<span class="str">'list-item'</span>, <span class="kwd">const</span> <span class="typ">Style</span>(
+    padding: <span class="num">12</span>,
+    borderRadius: <span class="num">8</span>,
+    bgColor: <span class="typ">ColorRGBA</span>(<span class="num">32</span>, <span class="num">40</span>, <span class="num">52</span>),
+    hoverColor: <span class="typ">ColorRGBA</span>(<span class="num">48</span>, <span class="num">60</span>, <span class="num">78</span>),
+  ));
+}</code></pre>
+      </div>
+    </section>
+
+    <!-- 5. Vistas y Reactividad -->
+    <section id="views">
+      <h3 class="section-title">5. Vistas, Reactividad & El Método `rebuild()`</h3>
+      <p class="description">
+        Las pantallas heredan de la clase base <code class="inline">View</code>. 
+        Cuando el estado interno de tu aplicación cambia (por ejemplo, al recibir una respuesta de red, modificar un listado o filtrar datos), debes invocar <code class="inline">rebuild()</code> para forzar la reconstrucción declarativa de la interfaz.
+      </p>
+
+      <div class="alert alert-info">
+        <strong>💡 Reactividad en View:</strong> El método <code class="inline">rebuild()</code> invalida los elementos visuales actuales y ejecuta la función <code class="inline">build()</code> nuevamente aplicando el nuevo estado de los datos.
+      </div>
+
+      <table class="api-table">
+        <thead>
+          <tr>
+            <th>Método Lifecycle</th>
+            <th>Descripción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code class="inline">onInit()</code></td><td>Se invoca al instanciar la vista. Ideal para peticiones asíncronas o carga de estado inicial.</td></tr>
+          <tr><td><code class="inline">build()</code></td><td>Construye y retorna la jerarquía declarativa de widgets (<code class="inline">List&lt;Element&gt;</code>).</td></tr>
+          <tr><td><code class="inline">rebuild()</code></td><td>Fuerza la reconstrucción reactiva de la vista llamando a <code class="inline">build()</code>.</td></tr>
+          <tr><td><code class="inline">onUpdate(dt, input)</code></td><td>Hook invocado en cada cuadro (frame) para actualizar lógica de estado o eventos de ratón/teclado.</td></tr>
+          <tr><td><code class="inline">onResize(width, height)</code></td><td>Se ejecuta automáticamente al redimensionar la ventana de la aplicación.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 6. Sistema de Navegación -->
+    <section id="navigator">
+      <h3 class="section-title">6. Sistema de Navegación (`Navigator`)</h3>
+      <p class="description">
+        El motor de navegación desacoplado de Cortex administra la tabla de rutas de la aplicación con soporte para carga diferida (Lazy Loading) e integración automática con entornos de escritorio MDI.
+      </p>
+
+      <div class="comp-block">
+        <div class="comp-name">Navigator API</div>
+        <div class="comp-sig">Navigator.registerRoutes(Map&lt;String, ViewBuilder&gt; routes) | Navigator.to(String route, {bool fullscreen = false})</div>
+        <p class="card-desc">
+          Permite cambiar de pantalla en la zona central <code class="inline">body</code> de un <code class="inline">DesktopLayout</code> sin recargar menús ni barras laterales, o navegar a pantallas completas cuando <code class="inline">fullscreen: true</code>.
+        </p>
+
+        <table class="api-table">
+          <thead>
+            <tr>
+              <th>Método / Propiedad</th>
+              <th>Sintaxis</th>
+              <th>Descripción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="inline">registerRoutes</code></td>
+              <td><code class="inline">Navigator.registerRoutes({'home': () => HomeView()})</code></td>
+              <td>Registra el mapa central de rutas de la aplicación con constructores de vistas diferidos.</td>
+            </tr>
+            <tr>
+              <td><code class="inline">initialRoute</code></td>
+              <td><code class="inline">Navigator.initialRoute = 'home'</code></td>
+              <td>Establece la ruta inicial por defecto cargada al arrancar la app.</td>
+            </tr>
+            <tr>
+              <td><code class="inline">to</code></td>
+              <td><code class="inline">Navigator.to('detalles', fullscreen: false)</code></td>
+              <td>Navega a la ruta especificada. Si <code class="inline">fullscreen</code> es <code class="inline">false</code>, sustituye únicamente el cuerpo central (<code class="inline">body</code>).</td>
+            </tr>
+            <tr>
+              <td><code class="inline">pushNamed</code> / <code class="inline">push</code></td>
+              <td><code class="inline">Navigator.pushNamed('editor')</code></td>
+              <td>Alias intuitivos equivalentes a <code class="inline">Navigator.to(...)</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Ejemplo de Configuración de Rutas y Navegación</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code><span class="cmt">// Registrar la tabla de rutas</span>
+<span class="typ">Navigator</span>.<span class="fn">registerRoutes</span>({
+  <span class="str">'dashboard'</span>: () =&gt; <span class="typ">DashboardView</span>(),
+  <span class="str">'config'</span>: () =&gt; <span class="typ">SettingsView</span>(),
+  <span class="str">'editor3d'</span>: () =&gt; <span class="typ">Editor3DView</span>(),
+});
+
+<span class="cmt">// Cambiar de pantalla reactivamente desde un botón o ítem</span>
+<span class="typ">Button</span>(
+  label: <span class="str">"Abrir Ajustes"</span>,
+  icon: <span class="typ">Icons</span>.settings,
+  onPressed: () =&gt; <span class="typ">Navigator</span>.<span class="fn">to</span>(<span class="str">'config'</span>),
+);</code></pre>
+      </div>
+    </section>
+
+    <!-- 7. Layouts Column & Row -->
+    <section id="layouts-column">
+      <h3 class="section-title">7. Layouts & Maquetación: `Column` y `Row`</h3>
+      <p class="description">
+        Contenedores flexibles de disposición vertical (<code class="inline">Column</code>) y horizontal (<code class="inline">Row</code>). Calculan automáticamente las coordenadas sin necesidad de posicionamiento manual (X, Y).
+      </p>
+
+      <div class="comp-block">
+        <div class="comp-name">Column & Row</div>
+        <div class="comp-sig">Column({List&lt;Element&gt; children, int? spacing, int? padding, bool isScrollable = false, MainAxisAlignment mainAxisAlignment, CrossAxisAlignment crossAxisAlignment, MainAxisSize mainAxisSize, Expand? expand})</div>
+        <p class="card-desc">
+          Disponen los elementos en una secuencia lineal. Si <code class="inline">isScrollable: true</code>, habilitan desplazamiento fluido por rueda de ratón y barra de scroll arrastrable.
+        </p>
+
+        <table class="api-table">
+          <thead>
+            <tr>
+              <th>Parámetro</th>
+              <th>Tipo</th>
+              <th>Predeterminado</th>
+              <th>Descripción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code class="inline">children</code></td><td><code class="inline">List&lt;Element&gt;</code></td><td><em>Requerido</em></td><td>Lista de elementos visuales contenidos.</td></tr>
+            <tr><td><code class="inline">spacing</code></td><td><code class="inline">int?</code></td><td><code class="inline">10</code></td><td>Espacio en píxeles entre cada hijo contiguo.</td></tr>
+            <tr><td><code class="inline">padding</code></td><td><code class="inline">int?</code></td><td><code class="inline">0</code></td><td>Margen interno de relleno.</td></tr>
+            <tr><td><code class="inline">isScrollable</code></td><td><code class="inline">bool</code></td><td><code class="inline">false</code></td><td>Habilita barra de desplazamiento interactiva si el contenido desborda.</td></tr>
+            <tr><td><code class="inline">mainAxisAlignment</code></td><td><code class="inline">MainAxisAlignment</code></td><td><code class="inline">start</code></td><td>Alineación en el eje principal (<code class="inline">start</code>, <code class="inline">center</code>, <code class="inline">end</code>, <code class="inline">spaceBetween</code>, <code class="inline">spaceAround</code>, <code class="inline">spaceEvenly</code>).</td></tr>
+            <tr><td><code class="inline">crossAxisAlignment</code></td><td><code class="inline">CrossAxisAlignment</code></td><td><code class="inline">stretch</code></td><td>Alineación en el eje secundario (<code class="inline">start</code>, <code class="inline">center</code>, <code class="inline">end</code>, <code class="inline">stretch</code>).</td></tr>
+            <tr><td><code class="inline">mainAxisSize</code></td><td><code class="inline">MainAxisSize</code></td><td><code class="inline">max</code></td><td>Dimensión del eje principal (<code class="inline">max</code> o <code class="inline">min</code>).</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Ejemplo de Layout Flexible con Column y Row</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code><span class="typ">Column</span>(
+  expand: <span class="typ">Expand</span>.all,
+  spacing: <span class="num">16</span>,
+  padding: <span class="num">20</span>,
+  children: [
+    <span class="typ">Row</span>(
+      spacing: <span class="num">12</span>,
+      mainAxisAlignment: <span class="typ">MainAxisAlignment</span>.spaceBetween,
+      children: [
+        <span class="typ">Label</span>(<span class="str">"Filtros de Búsqueda"</span>, fontSize: <span class="num">18</span>),
+        <span class="typ">Button</span>(label: <span class="str">"Actualizar"</span>, icon: <span class="typ">Icons</span>.refresh, onPressed: _refresh),
+      ],
+    ),
+    <span class="typ">Column</span>(
+      isScrollable: <span class="kwd">true</span>,
+      spacing: <span class="num">8</span>,
+      children: _buildContentList(),
+    ),
+  ],
+)</code></pre>
+      </div>
+    </section>
+
+    <!-- 8. Panel y Expand -->
+    <section id="layouts-panel">
+      <h3 class="section-title">8. Contenedores Visuales: `Panel` y `Expand`</h3>
+      <p class="description">
+        El componente <code class="inline">Panel</code> encapsula un contenido dentro de una caja de visualización estructurada (fondos, bordes, sombras y redondeo) y gestiona la propiedad de expansión flexible mediante el enum <code class="inline">Expand</code>.
+      </p>
+
+      <div class="comp-block">
+        <div class="comp-name">Panel</div>
+        <div class="comp-sig">Panel({String? className, int width = 0, int height = 0, int? padding, Element? child, bool clipContent = false, Expand? expand, bool fillWidth = false, bool fillHeight = false})</div>
+        <p class="card-desc">
+          Card visual que aplica colores de fondo, bordes, márgenes y recorta los hijos desbordados cuando <code class="inline">clipContent: true</code>.
+        </p>
+
+        <table class="api-table">
+          <thead>
+            <tr>
+              <th>Parámetro / Enum</th>
+              <th>Tipo</th>
+              <th>Descripción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code class="inline">child</code></td><td><code class="inline">Element?</code></td><td>Widget único contenido dentro del Panel.</td></tr>
+            <tr><td><code class="inline">padding</code></td><td><code class="inline">int?</code></td><td>Margen interno de relleno.</td></tr>
+            <tr><td><code class="inline">clipContent</code></td><td><code class="inline">bool</code></td><td>Recorta el renderizado visual al límite del panel.</td></tr>
+            <tr><td><code class="inline">Expand.all</code></td><td><code class="inline">Expand</code></td><td>Expande el elemento en ancho y alto (100% W x 100% H del contenedor padre).</td></tr>
+            <tr><td><code class="inline">Expand.height</code></td><td><code class="inline">Expand</code></td><td>Expande el elemento para tomar la máxima altura disponible.</td></tr>
+            <tr><td><code class="inline">Expand.width</code></td><td><code class="inline">Expand</code></td><td>Expande el elemento para tomar el máximo ancho disponible.</td></tr>
+            <tr><td><code class="inline">Expand.none</code></td><td><code class="inline">Expand</code></td><td>Mantiene el tamaño explícito dado en píxeles.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Ejemplo de Panel con Estilos CSS y Expansión</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code><span class="typ">Panel</span>(
+  className: <span class="str">"main-panel"</span>,
+  expand: <span class="typ">Expand</span>.all,
+  clipContent: <span class="kwd">true</span>,
+  child: <span class="typ">Column</span>(
+    spacing: <span class="num">12</span>,
+    children: [
+      <span class="typ">Label</span>(<span class="str">"Panel de Propiedades"</span>),
+      <span class="typ">TextField</span>(placeholder: <span class="str">"Buscar parámetro..."</span>),
+    ],
+  ),
+);</code></pre>
+      </div>
+    </section>
+
+    <!-- 9. DesktopLayout Studio -->
+    <section id="layouts-desktop">
+      <h3 class="section-title">9. Entorno de Escritorio MDI (`DesktopLayout`)</h3>
+      <p class="description">
+        Estructura base MDI para aplicaciones de ingeniería y administración. Organiza automáticamente barras de menú superiores, barras de herramientas, barras laterales de navegación y zonas centrales de trabajo.
+      </p>
+
+      <div class="comp-block">
+        <div class="comp-name">DesktopLayout</div>
+        <div class="comp-sig">DesktopLayout({MenuBar? menuBar, ToolBar? toolBar, SideBar? sideBar, StatusBar? statusBar, Element? body, Expand expand = Expand.all})</div>
+        <p class="card-desc">
+          Contenedor raíz que calcula dinámicamente las regiones y permite intercambiar el <code class="inline">body</code> central mediante <code class="inline">DesktopLayout.activeLayout?.body = miNuevaVista</code>.
+        </p>
+
+        <table class="api-table">
+          <thead>
+            <tr>
+              <th>Región / Propiedad</th>
+              <th>Tipo</th>
+              <th>Descripción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code class="inline">menuBar</code></td><td><code class="inline">MenuBar?</code></td><td>Barra superior de menús desplegables (<code class="inline">MenuItem</code>, <code class="inline">SubMenu</code>).</td></tr>
+            <tr><td><code class="inline">toolBar</code></td><td><code class="inline">ToolBar?</code></td><td>Barra horizontal con botones rápidos de acción o herramientas.</td></tr>
+            <tr><td><code class="inline">sideBar</code></td><td><code class="inline">SideBar?</code></td><td>Panel lateral de navegación con categorías o árbol de archivos.</td></tr>
+            <tr><td><code class="inline">statusBar</code></td><td><code class="inline">StatusBar?</code></td><td>Barra inferior de estado (muestra mensajes, progreso o estado de la red).</td></tr>
+            <tr><td><code class="inline">body</code></td><td><code class="inline">Element?</code></td><td>Área de contenido central asignada a las vistas del <code class="inline">Navigator</code>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 10. Listas & Colecciones -->
+    <section id="lists-view">
+      <h3 class="section-title">10. Listas & Colecciones (`ListView`)</h3>
+      <p class="description">
+        Contenedor desplazable optimizado para renderizar grandes colecciones de datos con desplazamiento fluido por rueda del ratón.
+      </p>
+
+      <div class="comp-block">
+        <div class="comp-name">ListView</div>
+        <div class="comp-sig">ListView({String? className, required List&lt;Element&gt; children, int width = 0, int height = 0, int? spacing, int? padding, bool isScrollable = true, bool showDividers = false, bool fillWidth = true, Expand? expand})</div>
+
+        <table class="api-table">
+          <thead>
+            <tr>
+              <th>Parámetro</th>
+              <th>Tipo</th>
+              <th>Predeterminado</th>
+              <th>Descripción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code class="inline">children</code></td><td><code class="inline">List&lt;Element&gt;</code></td><td><em>Requerido</em></td><td>Lista de elementos visuales a renderizar.</td></tr>
+            <tr><td><code class="inline">className</code></td><td><code class="inline">String?</code></td><td><code class="inline">null</code></td><td>Clase CSS de estilos registrada.</td></tr>
+            <tr><td><code class="inline">spacing</code></td><td><code class="inline">int?</code></td><td><code class="inline">4</code></td><td>Espaciado vertical en píxeles entre ítems.</td></tr>
+            <tr><td><code class="inline">isScrollable</code></td><td><code class="inline">bool</code></td><td><code class="inline">true</code></td><td>Activa la captura de rueda del ratón y scrollbar.</td></tr>
+            <tr><td><code class="inline">showDividers</code></td><td><code class="inline">bool</code></td><td><code class="inline">false</code></td><td>Muestra líneas divisoras entre ítems contiguos.</td></tr>
+            <tr><td><code class="inline">expand</code></td><td><code class="inline">Expand?</code></td><td><code class="inline">null</code></td><td>Ajuste de expansión flexible.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 11. ListTile & ListItem -->
+    <section id="lists-tile">
+      <h3 class="section-title">11. Filas de Lista (`ListTile` & `ListItem`)</h3>
+      <p class="description">
+        Elemento estructurado para renderizar listas interactivas. Puede instanciarse mediante la clase <code class="inline">ListTile</code> o su alias equivalente <code class="inline">ListItem</code>.
+      </p>
+
+      <div class="comp-block">
+        <div class="comp-name">ListTile / ListItem</div>
+        <div class="comp-sig">ListTile({String? className, required String title, String? subtitle, dynamic leadingIcon, Element? leading, dynamic trailingIcon, Element? trailing, bool selected = false, bool enabled = true, VoidCallback? onTap})</div>
+
+        <table class="api-table">
+          <thead>
+            <tr>
+              <th>Parámetro</th>
+              <th>Tipo</th>
+              <th>Descripción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code class="inline">title</code></td><td><code class="inline">String</code></td><td>Texto del título principal.</td></tr>
+            <tr><td><code class="inline">subtitle</code></td><td><code class="inline">String?</code></td><td>Texto descriptivo secundario.</td></tr>
+            <tr><td><code class="inline">leadingIcon</code> / <code class="inline">leading</code></td><td><code class="inline">dynamic</code> / <code class="inline">Element?</code></td><td>Ícono (<code class="inline">Icons.*</code>) o Widget posicionado a la izquierda.</td></tr>
+            <tr><td><code class="inline">trailingIcon</code> / <code class="inline">trailing</code></td><td><code class="inline">dynamic</code> / <code class="inline">Element?</code></td><td>Ícono (<code class="inline">Icons.*</code>) o Widget posicionado a la derecha.</td></tr>
+            <tr><td><code class="inline">selected</code></td><td><code class="inline">bool</code></td><td>Aplica el estilo visual de ítem activo/seleccionado.</td></tr>
+            <tr><td><code class="inline">onTap</code></td><td><code class="inline">VoidCallback?</code></td><td>Callback ejecutado al hacer clic sobre el ítem.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 12. Helpers de Lista -->
+    <section id="lists-helpers">
+      <h3 class="section-title">12. Componentes Auxiliares: `LoadingIndicator` & `Divider`</h3>
+      <div class="comp-block">
+        <div class="comp-name">LoadingIndicator & Divider</div>
+        <div class="comp-sig">LoadingIndicator({int size = 36, ColorRGBA? color}) | Divider({int height = 16, int thickness = 1})</div>
+        <p class="card-desc">
+          <code class="inline">LoadingIndicator</code> dibuja un spinner circular animado. <code class="inline">Divider</code> dibuja una línea divisoria horizontal.
+        </p>
+      </div>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Ejemplo de Renderizado Dinámico con LoadingIndicator y ListItem</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code><span class="cmt">// Renderizado condicional en la vista</span>
+_cargando
+    ? <span class="typ">LoadingIndicator</span>(size: <span class="num">40</span>)
+    : <span class="typ">ListView</span>(
+        expand: <span class="typ">Expand</span>.all,
+        showDividers: <span class="kwd">true</span>,
+        children: _registros.<span class="fn">map</span>((reg) {
+          <span class="kwd">return</span> <span class="typ">ListItem</span>(
+            className: <span class="str">"list-item"</span>,
+            title: reg.nombre,
+            subtitle: reg.detalles,
+            leadingIcon: <span class="typ">Icons</span>.folder,
+            trailingIcon: <span class="typ">Icons</span>.chevron_right,
+            onTap: () =&gt; _abrir(reg),
+          );
+        }).<span class="fn">toList</span>(),
+      );</code></pre>
+      </div>
+    </section>
+
+    <!-- 13. Botones -->
+    <section id="comp-buttons">
+      <h3 class="section-title">13. Botones e Interacciones</h3>
+      <div class="comp-block">
+        <div class="comp-name">Button, IconButton & FAB</div>
+        <div class="comp-sig">Button({required String label, ButtonVariant variant, IconData? icon, VoidCallback? onPressed})</div>
+        <p class="card-desc">
+          Botones con soporte para variantes (<code class="inline">ButtonVariant.filled</code>, <code class="inline">outlined</code>, <code class="inline">text</code>), íconos vectoriales y eventos de clic.
+        </p>
+      </div>
+    </section>
+
+    <!-- 14. Formularios -->
+    <section id="comp-inputs">
+      <h3 class="section-title">14. Formularios y Entradas de Datos</h3>
+      <div class="comp-block">
+        <div class="comp-name">TextField, Checkbox, Switch & Slider</div>
+        <div class="comp-sig">TextField({TextEditingController? controller, String? placeholder, bool obscureText, ValueChanged&lt;String&gt;? onChanged})</div>
+        <p class="card-desc">
+          Controles de entrada con soporte para cursor parpadeante, selección de texto, modo contraseña y controladores <code class="inline">TextEditingController</code>.
+        </p>
+      </div>
+    </section>
+
+    <!-- 15. Diálogos y Toast -->
+    <section id="comp-dialogs">
+      <h3 class="section-title">15. Diálogos Modales y Notificaciones (`Dialog` & `Toast`)</h3>
+      <div class="comp-block">
+        <div class="comp-name">Dialog, Toast & SnackBar</div>
+        <div class="comp-sig">Dialog.show(String title, {String message, VoidCallback? onConfirm}) | Toast.show(String msg, {ToastType type})</div>
+        <p class="card-desc">
+          Notificaciones emergentes no invasivas y modales de confirmación con callbacks de acción.
+        </p>
+      </div>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Uso de Diálogos Modales y Notificaciones Toast</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code><span class="cmt">// Diálogo Modal de Confirmación</span>
+<span class="typ">Dialog</span>.<span class="fn">show</span>(
+  <span class="str">"Confirmación"</span>,
+  message: <span class="str">"¿Desea procesar los cambios realizados?"</span>,
+  icon: <span class="typ">Icons</span>.check_circle,
+  confirmLabel: <span class="str">"Aceptar"</span>,
+  onConfirm: () {
+    <span class="typ">Toast</span>.<span class="fn">show</span>(<span class="str">"Operación exitosa"</span>, type: <span class="typ">ToastType</span>.success);
+  },
+);</code></pre>
+      </div>
+    </section>
+
+    <!-- 16. Íconos Material -->
+    <section id="comp-icons">
+      <h3 class="section-title">16. Catálogo de Íconos Vectoriales (`Icons.*`)</h3>
+      <p class="description">
+        El motor incluye la colección completa de <strong>2,234 íconos vectoriales de Google Material Icons</strong>:
+      </p>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>Sintaxis de Íconos</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code><span class="typ">Button</span>(label: <span class="str">"Guardar"</span>, icon: <span class="typ">Icons</span>.save, onPressed: _save);
+<span class="typ">IconButton</span>(icon: <span class="typ">Icons</span>.delete, tooltip: <span class="str">"Eliminar"</span>, onPressed: _delete);
+<span class="typ">Icon</span>(<span class="typ">Icons</span>.settings, color: <span class="typ">ColorRGBA</span>.accentBlue);</code></pre>
+      </div>
+    </section>
+
+    <!-- 17. Motor 3D Viewport3D -->
+    <section id="viewport-3d">
+      <h3 class="section-title">17. Renderizado Tridimensional (`Viewport3D`)</h3>
+      <p class="description">
+        Componente de integración GPU para visualizar espacios tridimensionales (geometrías, cámaras en órbita, mallas 3D y simulaciones) acelerado nativamente en Rust mediante Raylib C-ABI.
+      </p>
+
+      <div class="comp-block">
+        <div class="comp-name">Viewport3D</div>
+        <div class="comp-sig">Viewport3D({int width = 0, int height = 0, ColorRGBA objectColor = ColorRGBA.accentBlue, Expand? expand})</div>
+        <p class="card-desc">
+          Renderiza una cuadrícula 3D y mallas volumétricas dentro del lienzo 2D de la interfaz con control interactivo de cámara.
+        </p>
+      </div>
+    </section>
+
+    <!-- 18. Ejemplo Completo Estandarizado -->
+    <section id="full-example">
+      <h3 class="section-title">18. Estructura de Proyecto Estandarizada</h3>
+      <p class="description">Punto de entrada oficial utilizando el paquete de la distribución <code class="inline">package:cortex/cortex.dart</code>:</p>
+
+      <div class="code-container">
+        <div class="code-header">
+          <span>bin/main.dart</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code><span class="kwd">import</span> <span class="str">'package:cortex/cortex.dart'</span>;
+<span class="kwd">import</span> <span class="str">'app_styles.dart'</span>;
+
+<span class="kwd">void</span> <span class="fn">main</span>() <span class="kwd">async</span> {
+  <span class="cmt">// 1. Inicializar registro de estilos globales</span>
+  <span class="fn">initAppStyles</span>();
+
+  <span class="cmt">// 2. Configurar la aplicación de escritorio</span>
+  <span class="kwd">final</span> app = <span class="typ">Application</span>(
+    title: <span class="str">'Cortex Engine Application'</span>,
+    width: <span class="num">1024</span>,
+    height: <span class="num">720</span>,
+  );
+
+  <span class="cmt">// 3. Registrar tabla de rutas</span>
+  <span class="typ">Navigator</span>.<span class="fn">registerRoutes</span>({
+    <span class="str">'home'</span>: () =&gt; <span class="typ">HomeView</span>(),
+  });
+
+  <span class="typ">Navigator</span>.initialRoute = <span class="str">'home'</span>;
+
+  <span class="cmt">// 4. Ejecutar el ciclo de renderizado GPU</span>
+  <span class="kwd">await</span> app.<span class="fn">run</span>();
+}</code></pre>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // Copy Code snippet functionality
+    function copyCode(button) {
+      const codeBlock = button.parentElement.nextElementSibling.querySelector('code');
+      const text = codeBlock.innerText;
+      
+      navigator.clipboard.writeText(text).then(() => {
+        const originalText = button.innerText;
+        button.innerText = '¡Copiado!';
+        button.style.background = '#10b981';
+        button.style.color = '#fff';
+        
+        setTimeout(() => {
+          button.innerText = originalText;
+          button.style.background = '';
+          button.style.color = '';
+        }, 2000);
+      });
+    }
+
+    // Dynamic Filter Search
+    document.getElementById('docSearch').addEventListener('input', function(e) {
+      const query = e.target.value.toLowerCase().trim();
+      const sections = document.querySelectorAll('section');
+      
+      sections.forEach(section => {
+        const text = section.innerText.toLowerCase();
+        if (query === '' || text.includes(query)) {
+          section.style.display = 'block';
+        } else {
+          section.style.display = 'none';
+        }
+      });
+    });
+
+    // Active Sidebar Nav Highlights on Scroll
+    const navItems = document.querySelectorAll('.nav-item');
+    const sections = document.querySelectorAll('section');
+
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop - 60;
+        if (pageYOffset >= sectionTop) {
+          current = section.getAttribute('id');
+        }
+      });
+
+      navItems.forEach(item => {
+        item.classList.remove('active');
+        if (item.getAttribute('href') === '#' + current) {
+          item.classList.add('active');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

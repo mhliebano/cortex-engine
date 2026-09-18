@@ -1,0 +1,18 @@
+# Rust / Backend nativo
+backend/target/
+backend/**/Cargo.lock
+
+# Dart / Frontend
+.dart_tool/
+frontend/.dart_tool/
+frontend/pubspec.lock
+frontend/build/
+
+# Binarios nativos y ejecutables compilados
+*.so
+*.dll
+*.dylib
+*.a
+
+# Paquete compilado de distribución SDK
+release/

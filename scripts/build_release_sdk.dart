@@ -1,0 +1,525 @@
+import 'dart:io';
+
+void main() async {
+  final rootDir = Directory.current;
+  final frontendDir = Directory('${rootDir.path}/frontend');
+  final releaseSdkDir = Directory('${rootDir.path}/release/sdk');
+
+  if (!frontendDir.existsSync()) {
+    print('Error: No se encontró la carpeta frontend en ${rootDir.path}');
+    exit(1);
+  }
+
+  print('🧹 Limpiando y creando carpeta aislada release/sdk...');
+  if (releaseSdkDir.existsSync()) {
+    releaseSdkDir.deleteSync(recursive: true);
+  }
+  releaseSdkDir.createSync(recursive: true);
+
+  // 1. Copiar lib/
+  print('📦 Copiando código del motor de frontend/lib -> release/sdk/lib...');
+  _copyDirectory(
+    Directory('${frontendDir.path}/lib'),
+    Directory('${releaseSdkDir.path}/lib'),
+  );
+
+  // 2. Crear barrel exports release/sdk/lib/cortex.dart y release/sdk/lib/cortex_engine.dart
+  print(
+    '📄 Creando puntos de entrada release/sdk/lib/cortex.dart y cortex_engine.dart...',
+  );
+  final barrelContent = '''
+/// Cortex Engine SDK Barrel File
+library;
+
+export 'dart:math';
+
+export 'engine/application.dart';
+export 'engine/app_window.dart';
+export 'engine/audio.dart';
+export 'engine/navigator.dart';
+export 'engine/context2d.dart';
+export 'engine/context3d.dart';
+export 'engine/input.dart';
+export 'engine/ui/ui.dart';
+
+export 'audio.dart';
+export 'window.dart';
+export 'renderer.dart';
+export 'graphics2d.dart';
+export 'graphics3d.dart';
+
+''';
+  File(
+    '${releaseSdkDir.path}/lib/cortex.dart',
+  ).writeAsStringSync(barrelContent);
+  File(
+    '${releaseSdkDir.path}/lib/cortex_engine.dart',
+  ).writeAsStringSync(barrelContent);
+
+  // 3. Copiar librería nativa (.so / .dll) a assets/native/
+  print(
+    '⚙️ Copiando binarios nativos del motor (libbackend.so / backend.dll) -> release/sdk/assets/native/...',
+  );
+  final nativeDir = Directory('${releaseSdkDir.path}/assets/native')..createSync(recursive: true);
+  final backendDir = Directory('${rootDir.path}/backend/target');
+  final libNames = ['libbackend.so', 'backend.dll'];
+  for (final name in libNames) {
+    File? foundFile;
+    final candidateRelease = File('${backendDir.path}/release/$name');
+    final candidateDebug = File('${backendDir.path}/debug/$name');
+    if (candidateRelease.existsSync()) {
+      foundFile = candidateRelease;
+    } else if (candidateDebug.existsSync()) {
+      foundFile = candidateDebug;
+    }
+
+    if (foundFile != null) {
+      foundFile.copySync('${nativeDir.path}/$name');
+      foundFile.copySync('${releaseSdkDir.path}/lib/$name');
+      foundFile.copySync('${releaseSdkDir.path}/$name');
+      print('   -> Copiado $name a release/sdk/ (assets/native, lib, root)');
+    }
+  }
+
+  // 4. Copiar assets/ y docs/
+  print('🎨 Copiando recursos de frontend/assets y docs -> release/sdk/...');
+  _copyDirectory(
+    Directory('${frontendDir.path}/assets'),
+    Directory('${releaseSdkDir.path}/assets'),
+  );
+  if (Directory('${rootDir.path}/docs').existsSync()) {
+    _copyDirectory(
+      Directory('${rootDir.path}/docs'),
+      Directory('${releaseSdkDir.path}/docs'),
+    );
+  }
+
+  // 5. Crear pubspec.yaml del SDK
+  print('⚙️ Generando release/sdk/pubspec.yaml...');
+  File('${releaseSdkDir.path}/pubspec.yaml').writeAsStringSync('''
+name: cortex
+description: Cortex Engine SDK Standalone Release
+version: 1.0.0
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  ffi: ^2.2.0
+  path: ^1.9.0
+  args: ^2.4.2
+
+executables:
+  cortex: cortex
+''');
+
+  // 5. Crear CLI bin/cortex.dart
+  print('🛠️ Creando herramienta CLI release/sdk/bin/cortex.dart...');
+  Directory('${releaseSdkDir.path}/bin').createSync(recursive: true);
+
+  final cliCode = '''#!/usr/bin/env dart
+import 'dart:io';
+import 'package:args/command_runner.dart';
+import 'package:path/path.dart' as p;
+
+void main(List<String> args) async {
+  final runner = CommandRunner<void>(
+    'cortex',
+    'Cortex Engine SDK CLI - Herramienta para crear y compilar proyectos.',
+  )
+    ..addCommand(CreateCommand())
+    ..addCommand(RunCommand())
+    ..addCommand(BuildCommand())
+    ..addCommand(PubCommand());
+
+  runner.argParser.addFlag(
+    'version',
+    abbr: 'v',
+    negatable: false,
+    help: 'Muestra la versión del SDK.',
+  );
+
+  try {
+    final results = runner.argParser.parse(args);
+    if (results['version'] == true) {
+      print('Cortex Engine SDK Release v1.0.0');
+      return;
+    }
+    await runner.run(args);
+  } on UsageException catch (e) {
+    print(e.message);
+    print('\\n\${e.usage}');
+    exit(64);
+  } catch (e) {
+    print('Error: \$e');
+    exit(1);
+  }
+}
+
+class CreateCommand extends Command<void> {
+  @override
+  final String name = 'create';
+
+  @override
+  final String description = 'Crea un nuevo proyecto basado en Cortex Engine SDK.';
+
+  CreateCommand() {
+    argParser.addOption(
+      'output',
+      abbr: 'o',
+      help: 'Directorio de salida para el nuevo proyecto.',
+    );
+  }
+
+  @override
+  Future<void> run() async {
+    if (argResults!.rest.isEmpty) {
+      print('Error: Proporciona el nombre del proyecto.');
+      print('Uso: cortex create <nombre_de_la_app>');
+      exit(1);
+    }
+
+    final projectName = argResults!.rest.first;
+    final sanitizedName = projectName.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_').toLowerCase();
+    
+    final outputDir = argResults!['output'] != null
+        ? Directory(argResults!['output'] as String)
+        : Directory(p.join(Directory.current.path, projectName));
+
+    if (outputDir.existsSync() && outputDir.listSync().isNotEmpty) {
+      print('Error: El directorio "\${outputDir.path}" ya existe y no está vacío.');
+      exit(1);
+    }
+
+    print('🚀 Creando nuevo proyecto: "\$projectName"...');
+    outputDir.createSync(recursive: true);
+
+    final sdkPath = _getSdkPath();
+
+    // 1. Generar cortex.json del SDK (¡0 archivos YAML de Dart!)
+    final configContent = """{
+  "name": "\${sanitizedName}",
+  "version": "1.0.0",
+  "engine": "Cortex Engine SDK v1.0.0"
+}
+""";
+    File(p.join(outputDir.path, 'cortex.json')).writeAsStringSync(configContent);
+
+    // 2. Generar bin/app_styles.dart, bin/views/home_view.dart y bin/main.dart
+    final binDir = Directory(p.join(outputDir.path, 'bin'))..createSync();
+    final viewsDir = Directory(p.join(binDir.path, 'views'))..createSync();
+
+    final appStylesContent = """import 'package:cortex/cortex.dart';
+
+void initAppStyles() {
+  Style.register(
+    'header-title',
+    const Style(textColor: ColorRGBA.accentBlue, fontSize: 24),
+  );
+
+  Style.register(
+    'label-muted',
+    const Style(textColor: ColorRGBA(130, 145, 165), fontSize: 14),
+  );
+
+  Style.register(
+    'btn-primary',
+    const Style(
+      bgColor: ColorRGBA.accentBlue,
+      hoverColor: ColorRGBA.hoverBlue,
+      textColor: ColorRGBA.white,
+      fontSize: 15,
+      height: 40,
+    ),
+  );
+
+  Style.register(
+    'panel-container',
+    const Style(
+      bgColor: ColorRGBA(24, 28, 36),
+      padding: 20,
+    ),
+  );
+}
+""";
+    File(p.join(binDir.path, 'app_styles.dart')).writeAsStringSync(appStylesContent);
+
+    final homeViewContent = """import 'package:cortex/cortex.dart';
+
+class HomeView extends View {
+  HomeView() : super(id: 'home');
+
+  @override
+  void onInit() {
+    super.onInit();
+  }
+
+  @override
+  List<Element> build() {
+    return [
+      Panel(
+        className: 'panel-container',
+        expand: Expand.all,
+        child: Column(
+          spacing: 20,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          isScrollable: true,
+          children: [
+            Label(
+              className: 'header-title',
+              text: '¡Bienvenido a Cortex Engine!',
+            ),
+            Label(
+              className: 'label-muted',
+              text: 'Tu proyecto se ha generado correctamente con el SDK.',
+            ),
+            Divider(height: 16),
+            Button(
+              className: 'btn-primary',
+              label: 'Comenzar',
+              onPressed: () {
+                print('¡Hola desde Cortex Engine!');
+              },
+            ),
+          ],
+        ),
+      ),
+    ];
+  }
+}
+""";
+    File(p.join(viewsDir.path, 'home_view.dart')).writeAsStringSync(homeViewContent);
+
+    final mainContent = """import 'package:cortex/cortex.dart';
+import 'app_styles.dart';
+import 'views/home_view.dart';
+
+void main() async {
+  initAppStyles();
+
+  final app = Application(
+    title: '\${_capitalize(projectName)}',
+    width: 800,
+    height: 600,
+  );
+
+  Navigator.registerRoutes({
+    'home': () => HomeView(),
+  });
+
+  Navigator.initialRoute = 'home';
+
+  await app.run();
+}
+""";
+    File(p.join(binDir.path, 'main.dart')).writeAsStringSync(mainContent);
+
+    _ensurePackageConfig(outputDir.path, sdkPath);
+
+    print('\\n✨ ¡Proyecto "\$projectName" creado con éxito!');
+    print('\\nPara ejecutar tu nueva app:');
+    print('  cd \${p.relative(outputDir.path)}');
+    print('  cortex run');
+  }
+
+  String _getSdkPath() {
+    // 1. Revisar la variable de entorno CORTEX_HOME
+    final envHome = Platform.environment['CORTEX_HOME'];
+    if (envHome != null && envHome.trim().isNotEmpty) {
+      final envDir = Directory(envHome.trim());
+      if (File(p.join(envDir.path, 'pubspec.yaml')).existsSync()) {
+        return envDir.path;
+      }
+      final parentDir = Directory(p.dirname(envDir.path));
+      if (File(p.join(parentDir.path, 'pubspec.yaml')).existsSync()) {
+        return parentDir.path;
+      }
+    }
+
+    // 2. Revisar la ubicación del ejecutable nativo
+    try {
+      final exePath = File(Platform.resolvedExecutable).resolveSymbolicLinksSync();
+      final sdkDir = Directory(p.dirname(p.dirname(exePath)));
+      if (File(p.join(sdkDir.path, 'pubspec.yaml')).existsSync()) {
+        return sdkDir.path;
+      }
+    } catch (_) {}
+
+    // 3. Revisar Platform.script
+    try {
+      final scriptPath = File(Platform.script.toFilePath()).resolveSymbolicLinksSync();
+      final sdkDir = Directory(p.dirname(p.dirname(scriptPath)));
+      if (File(p.join(sdkDir.path, 'pubspec.yaml')).existsSync()) {
+        return sdkDir.path;
+      }
+    } catch (_) {}
+
+    // 4. Ubicación por defecto en ~/Desarrollo/cortex/sdk
+    final userHome = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '';
+    if (userHome.isNotEmpty) {
+      final defaultSdk = p.join(userHome, 'Desarrollo', 'cortex', 'sdk');
+      if (File(p.join(defaultSdk, 'pubspec.yaml')).existsSync()) {
+        return defaultSdk;
+      }
+    }
+
+    return Directory.current.path;
+  }
+
+  void _ensurePackageConfig(String projectPath, String sdkPath) {
+    // 1. Eliminar completamente pubspec.yaml y pubspec_overrides.yaml si existieran
+    final pubspecFile = File(p.join(projectPath, 'pubspec.yaml'));
+    if (pubspecFile.existsSync()) {
+      try { pubspecFile.deleteSync(); } catch (_) {}
+    }
+    final overrideFile = File(p.join(projectPath, 'pubspec_overrides.yaml'));
+    if (overrideFile.existsSync()) {
+      try { overrideFile.deleteSync(); } catch (_) {}
+    }
+
+    final home = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '';
+    final pubCache = p.join(home, '.pub-cache', 'hosted', 'pub.dev');
+
+    final projectName = p.basename(projectPath);
+    final dartToolDir = Directory(p.join(projectPath, '.dart_tool'))..createSync(recursive: true);
+    final packageConfigFile = File(p.join(dartToolDir.path, 'package_config.json'));
+    final pkgConfigContent = '{\\n  "configVersion": 2,\\n  "packages": [\\n    {\\n      "name": "' + projectName + '",\\n      "rootUri": "../",\\n      "packageUri": "lib/",\\n      "languageVersion": "3.12"\\n    },\\n    {\\n      "name": "cortex",\\n      "rootUri": "file://' + sdkPath + '",\\n      "packageUri": "lib/",\\n      "languageVersion": "3.12"\\n    },\\n    {\\n      "name": "ffi",\\n      "rootUri": "file://' + pubCache + '/ffi-2.2.0",\\n      "packageUri": "lib/",\\n      "languageVersion": "3.7"\\n    },\\n    {\\n      "name": "path",\\n      "rootUri": "file://' + pubCache + '/path-1.9.1",\\n      "packageUri": "lib/",\\n      "languageVersion": "3.4"\\n    },\\n    {\\n      "name": "args",\\n      "rootUri": "file://' + pubCache + '/args-2.7.0",\\n      "packageUri": "lib/",\\n      "languageVersion": "3.3"\\n    }\\n  ],\\n  "generator": "cortex"\\n}\\n';
+    packageConfigFile.writeAsStringSync(pkgConfigContent);
+  }
+
+  static void _copyDir(Directory src, Directory dst) {
+    dst.createSync(recursive: true);
+    for (final entity in src.listSync(recursive: false)) {
+      final name = p.basename(entity.path);
+      if (entity is Directory) {
+        _copyDir(entity, Directory(p.join(dst.path, name)));
+      } else if (entity is File) {
+        entity.copySync(p.join(dst.path, name));
+      }
+    }
+  }
+
+  String _capitalize(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+}
+
+class PubCommand extends Command<void> {
+  @override
+  final String name = 'pub';
+  @override
+  final String description = 'Instala las dependencias del proyecto.';
+
+  @override
+  Future<void> run() async {
+    final createCmd = CreateCommand();
+    createCmd._ensurePackageConfig(Directory.current.path, createCmd._getSdkPath());
+    print('✅ Dependencias actualizadas correctamente.');
+  }
+}
+
+class RunCommand extends Command<void> {
+  @override
+  final String name = 'run';
+  @override
+  final String description = 'Ejecuta la app Cortex Engine.';
+
+  @override
+  Future<void> run() async {
+    final mainFile = File(p.join(Directory.current.path, 'bin', 'main.dart'));
+    if (!mainFile.existsSync()) {
+      print('Error: No se encontró "bin/main.dart".');
+      exit(1);
+    }
+    final createCmd = CreateCommand();
+    createCmd._ensurePackageConfig(Directory.current.path, createCmd._getSdkPath());
+
+    final process = await Process.start(
+      'dart',
+      ['run', 'bin/main.dart'],
+      mode: ProcessStartMode.inheritStdio,
+    );
+    exit(await process.exitCode);
+  }
+}
+
+class BuildCommand extends Command<void> {
+  @override
+  final String name = 'build';
+  @override
+  final String description = 'Compila la app en un ejecutable nativo.';
+
+  @override
+  Future<void> run() async {
+    final mainFile = File(p.join(Directory.current.path, 'bin', 'main.dart'));
+    if (!mainFile.existsSync()) {
+      print('Error: No se encontró "bin/main.dart".');
+      exit(1);
+    }
+    final createCmd = CreateCommand();
+    createCmd._ensurePackageConfig(Directory.current.path, createCmd._getSdkPath());
+
+    final buildDir = Directory(p.join(Directory.current.path, 'build'))..createSync();
+    final projectName = p.basename(Directory.current.path);
+    final outputExe = p.join(buildDir.path, projectName);
+
+    print('⚙️ Compilando ejecutable para "\$projectName"...');
+    final res = Process.runSync('dart', ['compile', 'exe', 'bin/main.dart', '-o', outputExe]);
+    if (res.exitCode == 0) {
+      print('✅ Ejecutable generado: \$outputExe');
+    } else {
+      print('❌ Error al compilar:\\n\${res.stderr}');
+    }
+  }
+}
+''';
+
+  final cliFile = File('${releaseSdkDir.path}/bin/cortex.dart');
+  cliFile.writeAsStringSync(cliCode);
+
+  // 6. Ejecutar pub get en release/sdk
+  print('📦 Ejecutando dart pub get en release/sdk...');
+  final res = Process.runSync('dart', [
+    'pub',
+    'get',
+  ], workingDirectory: releaseSdkDir.path);
+  if (res.exitCode != 0) {
+    print('⚠️ Error al instalar dependencias en release/sdk:\n${res.stderr}');
+  }
+
+  // 7. Compilar ejecutable nativo cortex
+  print('⚙️ Compilando binario ejecutable nativo release/sdk/bin/cortex...');
+  final compileRes = Process.runSync('dart', [
+    'compile',
+    'exe',
+    cliFile.path,
+    '-o',
+    '${releaseSdkDir.path}/bin/cortex',
+  ], workingDirectory: releaseSdkDir.path);
+  if (compileRes.exitCode == 0) {
+    print('✅ Binario nativo "cortex" compilado con éxito.');
+    // Eliminar el script fuente temporal cortex.dart para dejar solo el binario final
+    if (cliFile.existsSync()) {
+      cliFile.deleteSync();
+    }
+  } else {
+    print('⚠️ Error al compilar binario cortex:\n${compileRes.stderr}');
+  }
+
+  print('✅ SDK empaquetado exitosamente en release/sdk');
+  print(
+    '👉 Para usar el comando "cortex" desde cualquier terminal, agrega la ruta bin a tu PATH:',
+  );
+  print('   export PATH="\$PATH:${releaseSdkDir.path}/bin"');
+}
+
+void _copyDirectory(Directory source, Directory destination) {
+  destination.createSync(recursive: true);
+  for (var entity in source.listSync(recursive: false)) {
+    final filename = entity.path.split(Platform.pathSeparator).last;
+    final newPath = '${destination.path}/$filename';
+    if (entity is Directory) {
+      _copyDirectory(entity, Directory(newPath));
+    } else if (entity is File) {
+      entity.copySync(newPath);
+    }
+  }
+}
