@@ -152,20 +152,57 @@ class Application {
 
     onInit();
 
+    // --- FPS Adaptativo ---
+    // Arranca en modo activo (60 FPS). Tras [idleThreshold] frames consecutivos
+    // sin ningún input ni redimensión, baja a 15 FPS para ahorrar CPU/batería.
+    // Cualquier actividad lo restaura a 60 FPS de inmediato.
+    const int activeFps = 60;
+    const int idleFps = 15;
+    const int idleThreshold = 120; // ~2 s a 60 FPS
+    int idleFrames = 0;
+    bool isIdle = false;
+    _window.setTargetFps(activeFps);
+
     while (!_window.shouldClose) {
       final dt = _window.deltaTime;
+      final input = _window.input;
 
       // Actualizar streaming de música del motor de audio
       AudioEngine.updateMusic();
 
+      // Detectar actividad: cualquier movimiento de ratón, tecla, scroll o resize
+      final bool resized = _window.isResized ||
+          _window.width != _viewManager.lastWidth ||
+          _window.height != _viewManager.lastHeight;
+      final bool hasInput = input.isMouseButtonDown(0) ||
+          input.isMouseButtonDown(1) ||
+          input.isMouseButtonDown(2) ||
+          input.mouseWheelMove != 0.0 ||
+          input.getCharPressed() != 0 ||
+          resized;
+
+      if (hasInput) {
+        idleFrames = 0;
+        if (isIdle) {
+          isIdle = false;
+          _window.setTargetFps(activeFps);
+        }
+      } else {
+        idleFrames++;
+        if (!isIdle && idleFrames >= idleThreshold) {
+          isIdle = true;
+          _window.setTargetFps(idleFps);
+        }
+      }
+
       // Reacción automática al redimensionamiento/maximizado de ventana
-      if (_window.isResized || _window.width != _viewManager.lastWidth || _window.height != _viewManager.lastHeight) {
+      if (resized) {
         _viewManager.handleResize(_window.width, _window.height);
       }
 
       // Actualizar lógica del desarrollador y de la vista activa
       onUpdate(dt);
-      _viewManager.updateCurrent(dt, _window.input);
+      _viewManager.updateCurrent(dt, input);
 
       // Renderizar cuadro
       _window.beginFrame(clearColor.r, clearColor.g, clearColor.b, clearColor.a);

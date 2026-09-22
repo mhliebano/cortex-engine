@@ -41,6 +41,7 @@ class WindowManager {
   late final WindowSetMinSize _setMinSize;
   late final WindowGetPositionX _getPositionX;
   late final WindowGetPositionY _getPositionY;
+  late final WindowSetTargetFps _setTargetFps;
 
   WindowManager() {
     final dylib = loadNativeLibrary();
@@ -100,6 +101,9 @@ class WindowManager {
     _getPositionY = dylib.lookupFunction<WindowGetPositionYC, WindowGetPositionY>(
       'window_get_position_y',
     );
+    _setTargetFps = dylib.lookupFunction<WindowSetTargetFpsC, WindowSetTargetFps>(
+      'window_set_target_fps',
+    );
   }
 
   void setConfigFlags(int flags) => _setConfigFlags(flags);
@@ -131,4 +135,7 @@ class WindowManager {
   int get positionY => _getPositionY();
   void setPosition(int x, int y) => _setPosition(x, y);
   void setMinSize(int w, int h) => _setMinSize(w, h);
+  /// Establece el límite de FPS objetivo de Raylib.
+  /// Pasar 0 elimina el límite. Usar 15 en modo reposo y 60 en modo activo.
+  void setTargetFps(int fps) => _setTargetFps(fps);
 }

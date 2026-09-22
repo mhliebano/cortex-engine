@@ -33,6 +33,10 @@ class AppWindow {
     _renderer.endFrame();
   }
 
+  /// Cambia el límite de FPS objetivo de Raylib.
+  /// Llámalo con [fps]=60 cuando hay actividad y con [fps]=15 en reposo.
+  void setTargetFps(int fps) => _windowManager.setTargetFps(fps);
+
   void close() {
     _windowManager.close();
   }

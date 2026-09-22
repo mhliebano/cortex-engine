@@ -1,8 +1,8 @@
 use raylib_sys::{
     ClearWindowState, CloseWindow, GetScreenHeight, GetScreenWidth, InitWindow, IsWindowFocused,
     IsWindowMinimized, IsWindowResized, MaximizeWindow, MinimizeWindow, RestoreWindow,
-    SetConfigFlags, SetWindowMinSize, SetWindowPosition, SetWindowState, ToggleFullscreen,
-    WindowShouldClose,
+    SetConfigFlags, SetTargetFPS, SetWindowMinSize, SetWindowPosition, SetWindowState,
+    ToggleFullscreen, WindowShouldClose,
 };
 use std::os::raw::{c_char, c_int, c_uint};
 
@@ -433,4 +433,13 @@ pub extern "C" fn window_set_position(x: i32, y: i32) {
 #[unsafe(no_mangle)]
 pub extern "C" fn window_set_min_size(w: i32, h: i32) {
     set_min_size(w, h);
+}
+
+/// Establece el límite de FPS objetivo del bucle de Raylib.
+/// Pasar 0 elimina el límite (corre tan rápido como sea posible).
+/// Usado por el modo FPS adaptativo de `Application` para reducir el
+/// consumo de CPU/batería cuando la ventana está inactiva.
+#[unsafe(no_mangle)]
+pub extern "C" fn window_set_target_fps(fps: i32) {
+    unsafe { SetTargetFPS(fps) }
 }

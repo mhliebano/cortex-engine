@@ -22,6 +22,7 @@ typedef WindowSetPositionC = ffi.Void Function(ffi.Int32, ffi.Int32);
 typedef WindowSetMinSizeC = ffi.Void Function(ffi.Int32, ffi.Int32);
 typedef WindowGetPositionXC = ffi.Int32 Function();
 typedef WindowGetPositionYC = ffi.Int32 Function();
+typedef WindowSetTargetFpsC = ffi.Void Function(ffi.Int32);
 
 // Firmas Dart (19)
 typedef WindowSetConfigFlags = void Function(int);
@@ -43,3 +44,4 @@ typedef WindowSetPosition = void Function(int, int);
 typedef WindowSetMinSize = void Function(int, int);
 typedef WindowGetPositionX = int Function();
 typedef WindowGetPositionY = int Function();
+typedef WindowSetTargetFps = void Function(int);
