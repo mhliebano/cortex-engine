@@ -16,3 +16,7 @@ frontend/build/
 
 # Paquete compilado de distribución SDK
 release/
+
+# Documentos internos de desarrollo (no para distribución pública)
+PROJECT_CONTEXT.md
+docs/analsis_ia.md

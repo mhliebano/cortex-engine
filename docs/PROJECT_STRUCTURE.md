@@ -1,4 +1,4 @@
-# 📁 Estructura Exhaustiva de Archivos y Carpetas del Proyecto Cortex Engine (`fornitures`)
+# 📁 Estructura Exhaustiva de Archivos y Carpetas — Cortex Engine
 
 Este documento detalla la estructura **100% completa e integral** de todos los directorios y archivos del repositorio **Cortex Engine**, incluyendo backend nativo en Rust, motor y app en Dart, documentación, scripts de automatización y artefactos compilados de distribución SDK (`release/`).
 
@@ -7,7 +7,7 @@ Este documento detalla la estructura **100% completa e integral** de todos los d
 ## 🌳 Árbol Completo del Repositorio
 
 ```text
-fornitures/
+cortex/
 ├── PROJECT_CONTEXT.md                     # Documento de contexto general del proyecto y flujo de trabajo
 ├── docs/                                  # Documentación técnica del motor
 │   ├── TECHNICAL_DOCUMENTATION.md        # Documentación de arquitectura, FFI, UI y audio
