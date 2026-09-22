@@ -25,8 +25,14 @@ class Graphics2D {
   late final G2dDrawTriangle _drawTriangle;
   late final G2dDrawTriangleLines _drawTriangleLines;
 
-  // Caché de punteros Utf8 para eliminar asignaciones/desasignaciones nativas en el render loop (60 FPS)
-  final Map<String, Pointer<Utf8>> _stringCache = {};
+  // --- Text Arena por frame ---
+  // Buffer nativo reutilizable que vive durante un frame completo.
+  // Se resetea (offset → 0) tras EndDrawing; Raylib copia el texto síncronamente
+  // por lo que los punteros son seguros durante toda la fase de render.
+  static const int _arenaInitialSize = 64 * 1024; // 64 KB
+  Pointer<Uint8> _arenaBuffer = calloc<Uint8>(_arenaInitialSize);
+  int _arenaCapacity = _arenaInitialSize;
+  int _arenaOffset = 0;
 
   Graphics2D() {
     final dylib = loadNativeLibrary();
@@ -132,12 +138,63 @@ class Graphics2D {
     int b,
     int a,
   ) {
-    var ptr = _stringCache[text];
-    if (ptr == null) {
-      ptr = text.toNativeUtf8();
-      _stringCache[text] = ptr;
-    }
+    final ptr = _arenaWriteUtf8(text);
     _drawText(ptr, x, y, fontSize, r, g, b, a);
+  }
+
+  /// Copia [text] codificado en UTF-8 + '\0' en el arena y devuelve el puntero.
+  /// Si el texto no cabe, crece el buffer (realloc ×2) antes de escribir.
+  Pointer<Utf8> _arenaWriteUtf8(String text) {
+    // Codifica el texto a bytes UTF-8 usando el encoder propio (sin malloc intermedio)
+    final bytes = _encodeUtf8(text); // bytes sin '\0'
+    final needed = bytes.length + 1; // +1 para el terminador nulo
+
+    // Crecer si no cabe
+    if (_arenaOffset + needed > _arenaCapacity) {
+      int newCapacity = _arenaCapacity;
+      while (newCapacity < _arenaOffset + needed) {
+        newCapacity *= 2;
+      }
+      final newBuffer = calloc<Uint8>(newCapacity);
+      // Copiar contenido anterior (para robustez, aunque no se reutiliza entre frames)
+      for (int i = 0; i < _arenaOffset; i++) {
+        newBuffer[i] = _arenaBuffer[i];
+      }
+      calloc.free(_arenaBuffer);
+      _arenaBuffer = newBuffer;
+      _arenaCapacity = newCapacity;
+    }
+
+    final start = _arenaOffset;
+    for (int i = 0; i < bytes.length; i++) {
+      _arenaBuffer[_arenaOffset++] = bytes[i];
+    }
+    _arenaBuffer[_arenaOffset++] = 0; // terminador nulo
+
+    return (_arenaBuffer + start).cast<Utf8>();
+  }
+
+  /// Codifica [text] a bytes UTF-8 sin terminador nulo.
+  static List<int> _encodeUtf8(String text) {
+    final result = <int>[];
+    for (final rune in text.runes) {
+      if (rune < 0x80) {
+        result.add(rune);
+      } else if (rune < 0x800) {
+        result.add(0xC0 | (rune >> 6));
+        result.add(0x80 | (rune & 0x3F));
+      } else if (rune < 0x10000) {
+        result.add(0xE0 | (rune >> 12));
+        result.add(0x80 | ((rune >> 6) & 0x3F));
+        result.add(0x80 | (rune & 0x3F));
+      } else {
+        result.add(0xF0 | (rune >> 18));
+        result.add(0x80 | ((rune >> 12) & 0x3F));
+        result.add(0x80 | ((rune >> 6) & 0x3F));
+        result.add(0x80 | (rune & 0x3F));
+      }
+    }
+    return result;
   }
 
   void drawCircle(
@@ -346,10 +403,10 @@ class Graphics2D {
     _drawTriangleLines(x1, y1, x2, y2, x3, y3, r, g, b, a);
   }
 
-  void clearStringCache() {
-    for (final ptr in _stringCache.values) {
-      calloc.free(ptr);
-    }
-    _stringCache.clear();
+  /// Resetea el arena al inicio de cada frame (tras EndDrawing).
+  /// Pone el offset a 0 — los punteros del frame anterior se invalidan,
+  /// pero Raylib ya los copió síncronamente durante el render.
+  void resetTextArena() {
+    _arenaOffset = 0;
   }
 }

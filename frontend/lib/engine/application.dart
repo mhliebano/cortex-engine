@@ -171,6 +171,8 @@ class Application {
       _window.beginFrame(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
       _viewManager.renderCurrent(_ctx2d, _ctx3d);
       _window.endFrame();
+      // Resetear el arena de texto: offset → 0 tras EndDrawing (Raylib ya copió todos los strings)
+      _ctx2d.resetTextArena();
 
       // Ceder el control al Event Loop de Dart para procesar Futures, Timers y callbacks async
       await Future.delayed(Duration.zero);
