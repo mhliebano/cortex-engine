@@ -20,7 +20,7 @@
 ## 2. Arquitectura del Proyecto
 
 ```
-fornitures/
+cortex/
 ├── backend/                  <-- MOTOR NATIVO RUST (C-ABI Dylib)
 │   └── src/
 │       ├── lib.rs            <-- Funciones C-ABI expuestas
