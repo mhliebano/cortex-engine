@@ -151,6 +151,7 @@ analyzer:
   Directory('${releaseSdkDir.path}/bin').createSync(recursive: true);
 
   final cliCode = '''#!/usr/bin/env dart
+import 'dart:convert';
 import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as p;
@@ -233,7 +234,8 @@ class CreateCommand extends Command<void> {
     final configContent = """{
   "name": "\${sanitizedName}",
   "version": "1.0.0",
-  "engine": "Cortex Engine SDK v1.0.0"
+  "engine": "Cortex Engine SDK v1.0.0",
+  "dependencies": {}
 }
 """;
     File(p.join(outputDir.path, 'cortex.json')).writeAsStringSync(configContent);
@@ -439,13 +441,65 @@ class PubCommand extends Command<void> {
   @override
   final String name = 'pub';
   @override
-  final String description = 'Instala las dependencias del proyecto.';
+  final String description = 'Instala las dependencias del proyecto desde cortex.json.';
 
   @override
   Future<void> run() async {
     final createCmd = CreateCommand();
-    createCmd._ensurePackageConfig(Directory.current.path, createCmd._getSdkPath());
-    print('✅ Dependencias actualizadas correctamente.');
+    final sdkPath = createCmd._getSdkPath();
+    final projectPath = Directory.current.path;
+
+    // 1. Leer cortex.json
+    final cortexJsonFile = File(p.join(projectPath, 'cortex.json'));
+    if (!cortexJsonFile.existsSync()) {
+      print('Error: No se encontró cortex.json. ¿Estás en un proyecto Cortex?');
+      exit(1);
+    }
+
+    final cortexJson = jsonDecode(cortexJsonFile.readAsStringSync()) as Map<String, dynamic>;
+    final deps = (cortexJson['dependencies'] as Map<String, dynamic>?) ?? {};
+    final projectName = (cortexJson['name'] as String?) ?? p.basename(projectPath);
+
+    // 2. Generar pubspec.yaml temporal
+    final buf = StringBuffer();
+    buf.writeln('name: \$projectName');
+    buf.writeln('environment:');
+    buf.writeln('  sdk: ^3.12.2');
+    buf.writeln('dependencies:');
+    buf.writeln('  cortex:');
+    buf.writeln('    path: \$sdkPath');
+    for (final entry in deps.entries) {
+      buf.writeln('  \${entry.key}: \${entry.value}');
+    }
+
+    final pubspecFile = File(p.join(projectPath, 'pubspec.yaml'));
+    pubspecFile.writeAsStringSync(buf.toString());
+    print('📝 pubspec.yaml temporal generado...');
+
+    // 3. Ejecutar dart pub get con el dart embebido
+    final dartBin = _getDartExecutable(sdkPath);
+    print('📦 Resolviendo dependencias desde pub.dev...');
+    final result = Process.runSync(
+      dartBin,
+      ['pub', 'get'],
+      workingDirectory: projectPath,
+    );
+
+    if (result.exitCode != 0) {
+      print('❌ Error al resolver dependencias:');
+      print(result.stderr);
+      try { pubspecFile.deleteSync(); } catch (_) {}
+      exit(1);
+    }
+
+    if ((result.stdout as String).isNotEmpty) print(result.stdout);
+
+    // 4. Limpiar archivos temporales (el usuario nunca los ve)
+    try { pubspecFile.deleteSync(); } catch (_) {}
+    final lockFile = File(p.join(projectPath, 'pubspec.lock'));
+    try { lockFile.deleteSync(); } catch (_) {}
+
+    print('✅ Dependencias instaladas. .dart_tool/package_config.json actualizado.');
   }
 }
 
