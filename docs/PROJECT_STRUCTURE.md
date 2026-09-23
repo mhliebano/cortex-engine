@@ -12,6 +12,7 @@ cortex/
 ├── docs/                                  # Documentación técnica del motor
 │   ├── TECHNICAL_DOCUMENTATION.md        # Documentación de arquitectura, FFI, UI y audio
 │   ├── PROJECT_STRUCTURE.md              # Estructura exhaustiva de archivos y carpetas
+│   ├── CORE_TESTING_PLAN.md              # Estrategia y plan de pruebas para la capa lib/core/
 │   └── index.html                         # Portal web de documentación local
 ├── scripts/                               # Scripts de automatización y compilación
 │   └── build_release_sdk.dart            # Empaquetador SDK, generación de CLI y compilación release

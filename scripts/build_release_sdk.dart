@@ -233,8 +233,8 @@ class CreateCommand extends Command<void> {
     // 1. Generar cortex.json del SDK (¡0 archivos YAML de Dart!)
     final configContent = """{
   "name": "\${sanitizedName}",
-  "version": "1.0.0",
-  "engine": "Cortex Engine SDK v1.0.0",
+  "version": "$version",
+  "engine": "Cortex Engine SDK v$version",
   "dependencies": {}
 }
 """;

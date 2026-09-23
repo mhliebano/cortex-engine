@@ -12,7 +12,7 @@
 Sin WebViews, sin Chromium, sin DOM, sin Electron y sin el embedder de Flutter Desktop.
 
 > **⚠️ Estado del proyecto & Aviso de transparencia:** 
-> Cortex Engine es un proyecto joven con versión formal v1.0.0. Alimenta funcionalmente proyectos en producción (como *Petsabits* y un *asistente con avatar*), pero se encuentra en fase **Alpha/Early Stage**. Cuenta con una base de sistemas nativa muy sólida pero con limitaciones conocidas en capa de aplicación que detallamos de forma sincerada en este documento.
+> Cortex Engine es un proyecto joven con versión formal v1.0.1. Alimenta funcionalmente proyectos en producción (como *Petsabits* y un *asistente con avatar*), pero se encuentra en fase **Alpha/Early Stage**. Cuenta con una base de sistemas nativa muy sólida pero con limitaciones conocidas en capa de aplicación que detallamos de forma sincerada en este documento.
 
 ---
 

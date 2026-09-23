@@ -1,4 +1,4 @@
-# Documentación Oficial de Cortex Engine v1.0
+# Documentación Oficial de Cortex Engine v1.0.1
 *Framework Híbrido 2D/3D de Alto Rendimiento (Pure Dart + Rust Native FFI)*
 
 ---
