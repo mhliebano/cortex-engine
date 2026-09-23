@@ -34,20 +34,23 @@ library;
 
 export 'dart:math';
 
-export 'engine/application.dart';
-export 'engine/app_window.dart';
-export 'engine/audio.dart';
-export 'engine/navigator.dart';
-export 'engine/context2d.dart';
-export 'engine/context3d.dart';
-export 'engine/input.dart';
-export 'engine/ui/ui.dart';
+// Core Framework Engine
+export 'core/application.dart';
+export 'core/app_window.dart';
+export 'core/audio.dart';
+export 'core/navigator.dart';
+export 'core/context2d.dart';
+export 'core/context3d.dart';
+export 'core/input.dart';
+export 'core/scene3d.dart';
+export 'core/ui/ui.dart';
 
-export 'audio.dart';
-export 'window.dart';
-export 'renderer.dart';
-export 'graphics2d.dart';
-export 'graphics3d.dart';
+// Native Wrappers
+export 'wrappers/audio.dart';
+export 'wrappers/window.dart';
+export 'wrappers/renderer.dart';
+export 'wrappers/graphics2d.dart';
+export 'wrappers/graphics3d.dart';
 
 ''';
   File(
@@ -134,6 +137,7 @@ dependencies:
   ffi: ^2.2.0
   path: ^1.9.0
   args: ^2.4.2
+  vector_math: ^2.4.3
 
 executables:
   cortex: cortex
@@ -412,14 +416,77 @@ void main() async {
       try { overrideFile.deleteSync(); } catch (_) {}
     }
 
-    final home = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '';
-    final pubCache = p.join(home, '.pub-cache', 'hosted', 'pub.dev');
-
     final projectName = p.basename(projectPath);
     final dartToolDir = Directory(p.join(projectPath, '.dart_tool'))..createSync(recursive: true);
     final packageConfigFile = File(p.join(dartToolDir.path, 'package_config.json'));
-    final pkgConfigContent = '{\\n  "configVersion": 2,\\n  "packages": [\\n    {\\n      "name": "' + projectName + '",\\n      "rootUri": "../",\\n      "packageUri": "lib/",\\n      "languageVersion": "3.12"\\n    },\\n    {\\n      "name": "cortex",\\n      "rootUri": "file://' + sdkPath + '",\\n      "packageUri": "lib/",\\n      "languageVersion": "3.12"\\n    },\\n    {\\n      "name": "ffi",\\n      "rootUri": "file://' + pubCache + '/ffi-2.2.0",\\n      "packageUri": "lib/",\\n      "languageVersion": "3.7"\\n    },\\n    {\\n      "name": "path",\\n      "rootUri": "file://' + pubCache + '/path-1.9.1",\\n      "packageUri": "lib/",\\n      "languageVersion": "3.4"\\n    },\\n    {\\n      "name": "args",\\n      "rootUri": "file://' + pubCache + '/args-2.7.0",\\n      "packageUri": "lib/",\\n      "languageVersion": "3.3"\\n    }\\n  ],\\n  "generator": "cortex"\\n}\\n';
-    packageConfigFile.writeAsStringSync(pkgConfigContent);
+
+    final sdkPackageConfigFile = File(p.join(sdkPath, '.dart_tool', 'package_config.json'));
+    final List<Map<String, dynamic>> packages = [
+      {
+        "name": projectName,
+        "rootUri": "../",
+        "packageUri": "lib/",
+        "languageVersion": "3.12",
+      },
+      {
+        "name": "cortex",
+        "rootUri": "file://\$sdkPath",
+        "packageUri": "lib/",
+        "languageVersion": "3.12",
+      },
+    ];
+
+    if (sdkPackageConfigFile.existsSync()) {
+      try {
+        final sdkJson = jsonDecode(sdkPackageConfigFile.readAsStringSync()) as Map<String, dynamic>;
+        final sdkPackages = (sdkJson['packages'] as List<dynamic>?) ?? [];
+        for (final pkg in sdkPackages) {
+          final name = pkg['name'] as String?;
+          if (name != null && name != 'cortex' && name != projectName) {
+            packages.add(Map<String, dynamic>.from(pkg as Map));
+          }
+        }
+      } catch (_) {}
+    }
+
+    // Fallbacks si no estaban resueltos en el SDK
+    final packageNames = packages.map((e) => e['name'] as String).toSet();
+    final home = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '';
+    final pubCache = p.join(home, '.pub-cache', 'hosted', 'pub.dev');
+
+    void addFallback(String name, String dirPattern, String langVersion) {
+      if (!packageNames.contains(name)) {
+        String packageUri = 'file://\$pubCache/\$dirPattern';
+        try {
+          final parentDir = Directory(pubCache);
+          if (parentDir.existsSync()) {
+            final match = parentDir.listSync().firstWhere(
+              (e) => p.basename(e.path).startsWith('\$name-'),
+              orElse: () => Directory(p.join(pubCache, dirPattern)),
+            );
+            packageUri = 'file://\${match.path}';
+          }
+        } catch (_) {}
+        packages.add({
+          "name": name,
+          "rootUri": packageUri,
+          "packageUri": "lib/",
+          "languageVersion": langVersion,
+        });
+      }
+    }
+
+    addFallback('ffi', 'ffi-2.2.0', '3.7');
+    addFallback('path', 'path-1.9.1', '3.4');
+    addFallback('args', 'args-2.7.0', '3.3');
+    addFallback('vector_math', 'vector_math-2.4.3', '3.0');
+
+    final configMap = {
+      "configVersion": 2,
+      "packages": packages,
+      "generator": "cortex",
+    };
+    packageConfigFile.writeAsStringSync(jsonEncode(configMap));
   }
 
   static void _copyDir(Directory src, Directory dst) {

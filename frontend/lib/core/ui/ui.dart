@@ -1,6 +1,6 @@
 /// Exportador centralizado del Motor UI (`ui.dart`).
 /// Permite importar todos los elementos, layouts, componentes de escritorio y controladores con una sola línea:
-/// `import 'package:cortex/engine/ui/ui.dart';`
+/// `import 'package:cortex/core/ui/ui.dart';`
 library;
 
 export 'package:cortex/core/context2d.dart';
