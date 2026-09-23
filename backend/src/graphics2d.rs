@@ -7,13 +7,14 @@ use raylib_sys::{
 };
 use std::collections::HashMap;
 use std::os::raw::{c_char, c_float, c_int, c_uchar};
-
+use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Mutex;
 
 static mut CUSTOM_FONT: Option<Font> = None;
 static mut ICON_FONT: Option<Font> = None;
 static TEXTURES: Mutex<Option<HashMap<i32, Texture2D>>> = Mutex::new(None);
-static mut NEXT_TEXTURE_ID: i32 = 1;
+/// Contador atómico — mismo patrón que audio (P0-02 fix).
+static NEXT_TEXTURE_ID: AtomicI32 = AtomicI32::new(1);
 
 fn with_textures<F, R>(f: F) -> R
 where
@@ -22,6 +23,13 @@ where
     let mut guard = TEXTURES.lock().unwrap();
     let map = guard.get_or_insert_with(HashMap::new);
     f(map)
+}
+
+/// Bridge para otros módulos (ej. graphics3d) que necesitan una copia de Texture2D
+/// por su ID (ej. SetShaderValueTexture, SetMaterialTexture).
+/// Devuelve None si el ID no existe.
+pub fn get_texture_by_id(id: i32) -> Option<Texture2D> {
+    with_textures(|map| map.get(&id).copied())
 }
 
 pub fn load_font(file_path: *const c_char, font_size: c_int) -> i32 {
@@ -334,19 +342,16 @@ pub extern "C" fn g2d_load_texture(file_path: *const c_char) -> c_int {
     if file_path.is_null() {
         return 0;
     }
-    unsafe {
-        let texture = LoadTexture(file_path);
-        if texture.id > 0 {
-            SetTextureFilter(texture, 1);
-            let id = NEXT_TEXTURE_ID;
-            NEXT_TEXTURE_ID += 1;
-            with_textures(|map| {
-                map.insert(id, texture);
-            });
-            id
-        } else {
-            0
-        }
+    let texture = unsafe { LoadTexture(file_path) };
+    if texture.id > 0 {
+        unsafe { SetTextureFilter(texture, 1) };
+        let id = NEXT_TEXTURE_ID.fetch_add(1, Ordering::Relaxed);
+        with_textures(|map| {
+            map.insert(id, texture);
+        });
+        id
+    } else {
+        0
     }
 }
 
