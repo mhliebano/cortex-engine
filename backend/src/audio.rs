@@ -8,6 +8,7 @@ use raylib_sys::{
 };
 use std::collections::HashMap;
 use std::os::raw::{c_char, c_float, c_int};
+use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Mutex;
 
 struct SoundWrapper(Sound);
@@ -20,8 +21,10 @@ unsafe impl Sync for MusicWrapper {}
 
 static SOUNDS: Mutex<Option<HashMap<i32, SoundWrapper>>> = Mutex::new(None);
 static MUSIC_STREAMS: Mutex<Option<HashMap<i32, MusicWrapper>>> = Mutex::new(None);
-static mut NEXT_SOUND_ID: i32 = 1;
-static mut NEXT_MUSIC_ID: i32 = 1;
+/// Contadores atómicos de ID — `Relaxed` es suficiente porque solo se necesita
+/// unicidad; el `Mutex` de cada mapa provee el ordering de acceso al recurso.
+static NEXT_SOUND_ID: AtomicI32 = AtomicI32::new(1);
+static NEXT_MUSIC_ID: AtomicI32 = AtomicI32::new(1);
 
 fn with_sounds<F, R>(f: F) -> R
 where
@@ -83,18 +86,17 @@ pub extern "C" fn sound_load(file_path: *const c_char) -> c_int {
     if file_path.is_null() {
         return 0;
     }
-    unsafe {
-        let sound = LoadSound(file_path);
-        if sound.frameCount == 0 {
-            return 0;
-        }
-        let id = NEXT_SOUND_ID;
-        NEXT_SOUND_ID += 1;
-        with_sounds(|map| {
-            map.insert(id, SoundWrapper(sound));
-        });
-        id
+    let sound = unsafe { LoadSound(file_path) };
+    if sound.frameCount == 0 {
+        return 0;
     }
+    // fetch_add atómico: garantiza IDs únicos incluso desde múltiples hilos.
+    // Se lee el valor ANTES del incremento, que es el ID asignado a este sonido.
+    let id = NEXT_SOUND_ID.fetch_add(1, Ordering::Relaxed);
+    with_sounds(|map| {
+        map.insert(id, SoundWrapper(sound));
+    });
+    id
 }
 
 #[unsafe(no_mangle)]
@@ -207,18 +209,16 @@ pub extern "C" fn music_load(file_path: *const c_char) -> c_int {
     if file_path.is_null() {
         return 0;
     }
-    unsafe {
-        let music = LoadMusicStream(file_path);
-        if music.frameCount == 0 {
-            return 0;
-        }
-        let id = NEXT_MUSIC_ID;
-        NEXT_MUSIC_ID += 1;
-        with_music(|map| {
-            map.insert(id, MusicWrapper(music));
-        });
-        id
+    let music = unsafe { LoadMusicStream(file_path) };
+    if music.frameCount == 0 {
+        return 0;
     }
+    // fetch_add atómico: garantiza IDs únicos incluso desde múltiples hilos.
+    let id = NEXT_MUSIC_ID.fetch_add(1, Ordering::Relaxed);
+    with_music(|map| {
+        map.insert(id, MusicWrapper(music));
+    });
+    id
 }
 
 #[unsafe(no_mangle)]
