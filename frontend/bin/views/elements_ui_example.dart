@@ -1,4 +1,4 @@
-import 'package:cortex/engine/ui/ui.dart';
+import 'package:cortex/core/ui/ui.dart';
 
 class ElementsUiExample extends View {
   ElementsUiExample() : super(id: "elements_ui_example") {
@@ -42,13 +42,8 @@ class ElementsUiExample extends View {
                   Row(
                     spacing: 25,
                     children: [
-                      Label(
-                        text: "Texto Normal",
-                      ),
-                      Label(
-                        className: "label-muted",
-                        text: "Texto Secundario",
-                      ),
+                      Label(text: "Texto Normal"),
+                      Label(className: "label-muted", text: "Texto Secundario"),
                       Label(
                         className: "header-title",
                         text: "Título Destacado",
@@ -77,21 +72,13 @@ class ElementsUiExample extends View {
                     children: [
                       Badge(
                         label: "NUEVO",
-                        child: Label(
-                          text: "Módulo de Diseño",
-                        ),
+                        child: Label(text: "Módulo de Diseño"),
                       ),
                       Badge(
                         label: "5",
-                        child: Label(
-                          text: "Notificaciones",
-                        ),
+                        child: Label(text: "Notificaciones"),
                       ),
-                      Badge(
-                        child: Label(
-                          text: "Estado Servidor",
-                        ),
-                      ),
+                      Badge(child: Label(text: "Estado Servidor")),
                       Badge(
                         label: "99+",
                         child: IconButton(
@@ -686,10 +673,7 @@ class ElementsUiExample extends View {
                         selected: true,
                         trailing: Badge(
                           label: "OK",
-                          child: Icon(
-                            Icons.check_circle,
-                            size: 18,
-                          ),
+                          child: Icon(Icons.check_circle, size: 18),
                         ),
                       ),
                       ListTile(
@@ -741,27 +725,19 @@ class ElementsUiExample extends View {
                     text:
                         "17. Divisores y Separadores (Divider: Horizontal y Vertical)",
                   ),
-                  Label(
-                    text: "Sección 1: Especificaciones del Mueble",
-                  ),
+                  Label(text: "Sección 1: Especificaciones del Mueble"),
                   Divider(thickness: 1, className: "divider-subtle"),
                   Row(
                     spacing: 20,
                     children: [
-                      Label(
-                        className: "label-muted",
-                        text: "Ancho: 1200mm",
-                      ),
+                      Label(className: "label-muted", text: "Ancho: 1200mm"),
                       Divider(
                         axis: DividerAxis.vertical,
                         height: 20,
                         thickness: 1,
                         className: "divider-subtle",
                       ),
-                      Label(
-                        className: "label-muted",
-                        text: "Alto: 850mm",
-                      ),
+                      Label(className: "label-muted", text: "Alto: 850mm"),
                       Divider(
                         axis: DividerAxis.vertical,
                         height: 20,
@@ -979,7 +955,8 @@ class ElementsUiExample extends View {
                 children: [
                   Label(
                     className: "subsection-title",
-                    text: "22. Barras de Mensajes Rápido e Interactivo (SnackBar)",
+                    text:
+                        "22. Barras de Mensajes Rápido e Interactivo (SnackBar)",
                   ),
                   Row(
                     spacing: 20,
@@ -993,7 +970,10 @@ class ElementsUiExample extends View {
                             "Pieza 'Lateral Izquierdo' eliminada del despiece",
                             actionLabel: "DESHACER",
                             onAction: () {
-                              Toast.show("Acción deshecha correctamente", type: ToastType.info);
+                              Toast.show(
+                                "Acción deshecha correctamente",
+                                type: ToastType.info,
+                              );
                             },
                           );
                         },
@@ -1003,7 +983,9 @@ class ElementsUiExample extends View {
                         variant: ButtonVariant.tonal,
                         icon: Icons.notifications,
                         onPressed: () {
-                          SnackBar.show("Cortes optimizados exportados a PDF en Descargas");
+                          SnackBar.show(
+                            "Cortes optimizados exportados a PDF en Descargas",
+                          );
                         },
                       ),
                     ],
@@ -1022,7 +1004,8 @@ class ElementsUiExample extends View {
                 children: [
                   Label(
                     className: "subsection-title",
-                    text: "23. Diálogos Modales y Confirmaciones (Dialog / AlertDialog)",
+                    text:
+                        "23. Diálogos Modales y Confirmaciones (Dialog / AlertDialog)",
                   ),
                   Row(
                     spacing: 20,
@@ -1034,11 +1017,15 @@ class ElementsUiExample extends View {
                         onPressed: () {
                           Dialog.show(
                             "Confirmar Guardado",
-                            message: "¿Desea guardar los cambios en el proyecto de cocina integral?",
+                            message:
+                                "¿Desea guardar los cambios en el proyecto de cocina integral?",
                             icon: Icons.save,
                             confirmLabel: "Guardar",
                             onConfirm: () {
-                              Toast.show("Proyecto guardado con éxito", type: ToastType.success);
+                              Toast.show(
+                                "Proyecto guardado con éxito",
+                                type: ToastType.success,
+                              );
                             },
                           );
                         },
@@ -1050,12 +1037,16 @@ class ElementsUiExample extends View {
                         onPressed: () {
                           Dialog.show(
                             "Eliminar Módulo",
-                            message: "Esta acción borrará permanentemente el módulo seleccionado.",
+                            message:
+                                "Esta acción borrará permanentemente el módulo seleccionado.",
                             icon: Icons.delete,
                             confirmLabel: "Eliminar",
                             confirmVariant: ButtonVariant.filled,
                             onConfirm: () {
-                              Toast.show("Módulo eliminado", type: ToastType.error);
+                              Toast.show(
+                                "Módulo eliminado",
+                                type: ToastType.error,
+                              );
                             },
                           );
                         },
@@ -1070,7 +1061,10 @@ class ElementsUiExample extends View {
                             child: Column(
                               spacing: 10,
                               children: [
-                                Label(className: "label-muted", text: "Nombre del nuevo tipo de canto:"),
+                                Label(
+                                  className: "label-muted",
+                                  text: "Nombre del nuevo tipo de canto:",
+                                ),
                                 TextField(
                                   width: 360,
                                   placeholder: "Ej: Canto Aluminio J...",
@@ -1080,7 +1074,10 @@ class ElementsUiExample extends View {
                             ),
                             confirmLabel: "Crear Parámetro",
                             onConfirm: () {
-                              Toast.show("Nuevo parámetro registrado", type: ToastType.success);
+                              Toast.show(
+                                "Nuevo parámetro registrado",
+                                type: ToastType.success,
+                              );
                             },
                           );
                         },
@@ -1096,4 +1093,3 @@ class ElementsUiExample extends View {
     ];
   }
 }
-

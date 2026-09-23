@@ -51,78 +51,79 @@ cortex/
 │   │       └── test_view.dart             # Vista de pruebas
 │   ├── test/                              # Pruebas unitarias de frontend
 │   │   └── rebuild_scroll_test.dart       # Test de scroll y reconstrucción
-    └── lib/                               # SDK CORE REUTILIZABLE (Cortex Engine Library)
-        ├── audio.dart                     # Barrel export de clases de audio (Sound, Music, AudioEngine)
-        ├── graphics2d.dart                # Envoltorio de renderizado 2D en Dart
-        ├── graphics3d.dart                # Envoltorio de renderizado 3D en Dart
-        ├── renderer.dart                  # Envoltorio de renderer en Dart
-        ├── window.dart                    # Envoltorio de ventana en Dart
-        ├── libbackend.so                  # Librería compartida nativa compilada en Linux
-        ├── ffi/                           # Bindings FFI C-ABI (Capa de bajo nivel)
-        │   ├── audio_bindings.dart        # Bindings FFI para funciones nativas de audio
-        │   ├── graphics2d_bindings.dart   # Bindings FFI para dibujo 2D y fuentes
-        │   ├── graphics3d_bindings.dart   # Bindings FFI para cámara y mallas 3D
-        │   ├── input_bindings.dart        # Bindings FFI para entradas de usuario
-        │   ├── renderer_bindings.dart     # Bindings FFI para renderizado
-        │   ├── window_bindings.dart       # Bindings FFI para gestión de ventana
-        │   └── lib_loader.dart            # Carga dinámica singleton de libbackend.so / backend.dll
-        └── engine/                        # Motor de UI y aplicación (Capa de alto nivel)
-            ├── application.dart           # Bucle principal de la app, ciclo de vida y eventos
-            ├── app_window.dart            # Abstracción de ventana y entrada
-            ├── audio.dart                 # Clases AudioEngine, Sound y Music
-            ├── context2d.dart             # Contexto de renderizado 2D
-            ├── context3d.dart             # Contexto de renderizado 3D
-            ├── input.dart                 # Motor de captura de input
-            ├── navigator.dart             # Enrutador declarativo de vistas (Navigator.to)
-            └── ui/                        # Sistema de UI declarativo (Estilo Flutter/React)
-                ├── element.dart           # Clase base Element (Flex width/height, layout)
-                ├── style.dart             # Sistema de estilos CSS declarativo (Style)
-                ├── view.dart              # Clase base View para pantallas completas
-                ├── view_manager.dart       # Gestor de vistas activas y ciclo de reconstrucción
-                ├── icons.dart             # Constantes y códigos de íconos vectoriales
-                ├── layout_alignment.dart  # Alineaciones de layout (MainAxisAlignment, CrossAxisAlignment)
-                ├── scroll_controller.dart # Controlador de desplazamientos de scroll
-                ├── text_editing_controller.dart # Controlador mutable de campos TextField
-                ├── ui.dart                # Barrel export de todo el sistema de UI
-                ├── 3d/                    # Componentes UI 3D
-                │   └── viewport_3d.dart   # Componente Viewport3D para canvas 3D interactivo
-                ├── desktop/               # Componentes de layout de escritorio (MDI)
-                │   ├── desktop_layout.dart # Layout de aplicación Desktop MDI
-                │   ├── menu_bar.dart      # Barra de menú superior
-                │   ├── side_bar.dart      # Barra lateral deslizable/fija
-                │   ├── status_bar.dart    # Barra de estado inferior
-                │   └── tool_bar.dart      # Barra de herramientas con botones rápidos
-                ├── layouts/               # Contenedores de disposición flex
-                │   ├── column.dart        # Disposición vertical flexible
-                │   ├── row.dart           # Disposición horizontal flexible
-                │   └── panel.dart         # Panel contenedor con fondo y borde
-                └── interaction/           # Catálogo de widgets interactivos
-                    ├── badge.dart         # Insignia/etiqueta flotante de estado
-                    ├── button.dart        # Botón interactivo con hover y eventos
-                    ├── card.dart          # Tarjeta contenedora elevada
-                    ├── carousel.dart      # Carrusel de diapositivas
-                    ├── checkbox.dart      # Casilla de verificación booleana
-                    ├── chip.dart          # Chip o etiqueta seleccionable
-                    ├── dialog.dart        # Ventana emergente modal
-                    ├── divider.dart       # Separador lineal horizontal/vertical
-                    ├── dropdown.dart      # Menú desplegable interactivo con auto-scroll
-                    ├── fab.dart           # Botón de acción flotante (FAB)
-                    ├── icon.dart          # Widget de ícono vectorial
-                    ├── icon_button.dart   # Botón compacto de ícono
-                    ├── image.dart         # Widget de visualización de imágenes
-                    ├── label.dart         # Etiqueta de texto de alta resolución
-                    ├── list_tile.dart     # Elemento estructurado para listas
-                    ├── list_view.dart     # Lista desplazable de elementos
-                    ├── loading_indicator.dart # Indicador de carga animado
-                    ├── progress_bar.dart  # Barra de progreso lineal
-                    ├── radio_button.dart  # Botón de selección única
-                    ├── segmented_button.dart # Botón segmentado multiselect
-                    ├── slider.dart        # Barra deslizante de rango numérico
-                    ├── snack_bar.dart     # Notificación emergente temporal
-                    ├── split_button.dart  # Botón dividido con menú flotante
-                    ├── switch.dart        # Interruptor de encendido/apagado
-                    ├── text_field.dart    # Campo de entrada de texto editable
-                    └── toast.dart         # Mensaje flotante de alerta
+│     └── lib/                               # SDK CORE REUTILIZABLE (Cortex Engine Library)
+│         ├── ffi/                           # FFI Low-Level Bindings / C-ABI Signatures (Capa 1: Bajo Nivel)
+│         │   ├── audio_bindings.dart        # Bindings FFI para funciones nativas de audio
+│         │   ├── graphics2d_bindings.dart   # Bindings FFI para dibujo 2D y fuentes
+│         │   ├── graphics3d_bindings.dart   # Bindings FFI para cámara y mallas 3D
+│         │   ├── input_bindings.dart        # Bindings FFI para entradas de usuario
+│         │   ├── renderer_bindings.dart     # Bindings FFI para renderizado
+│         │   ├── window_bindings.dart       # Bindings FFI para gestión de ventana
+│         │   └── lib_loader.dart            # Carga dinámica singleton de libbackend.so / backend.dll
+│         ├── wrappers/                      # Native Interop Wrappers / Dart Bridge Manager (Capa 2: Nivel Medio)
+│         │   ├── audio.dart                 # Envoltorio/bridge de clases de audio en Dart
+│         │   ├── graphics2d.dart            # Envoltorio de renderizado 2D en Dart
+│         │   ├── graphics3d.dart            # Envoltorio de renderizado 3D en Dart
+│         │   ├── renderer.dart              # Envoltorio de renderer en Dart
+│         │   └── window.dart                # Envoltorio de gestión de ventana en Dart
+│         └── core/                          # Framework Core Engine (Capa 3: Alto Nivel)
+│             ├── application.dart           # Bucle principal de la app, ciclo de vida y eventos
+│             ├── app_window.dart            # Abstracción de ventana y entrada
+│             ├── audio.dart                 # Motor de audio de alto nivel (AudioEngine, Sound, Music)
+│             ├── context2d.dart             # Contexto de renderizado 2D
+│             ├── context3d.dart             # Contexto de renderizado 3D
+│             ├── input.dart                 # Motor de captura de input
+│             ├── navigator.dart             # Enrutador declarativo de vistas (Navigator.to)
+│             ├── scene3d.dart               # Gestión de escenas 3D
+│             └── ui/                        # Sistema de UI declarativo (Estilo Flutter/React)
+│                 ├── element.dart           # Clase base Element (Flex width/height, layout)
+│                 ├── style.dart             # Sistema de estilos CSS declarativo (Style)
+│                 ├── view.dart              # Clase base View para pantallas completas
+│                 ├── view_manager.dart       # Gestor de vistas activas y ciclo de reconstrucción
+│                 ├── icons.dart             # Constantes y códigos de íconos vectoriales
+│                 ├── layout_alignment.dart  # Alineaciones de layout (MainAxisAlignment, CrossAxisAlignment)
+│                 ├── scroll_controller.dart # Controlador de desplazamientos de scroll
+│                 ├── text_editing_controller.dart # Controlador mutable de campos TextField
+│                 ├── ui.dart                # Barrel export de todo el sistema de UI
+│                 ├── 3d/                    # Componentes UI 3D
+│                 │   └── viewport_3d.dart   # Componente Viewport3D para canvas 3D interactivo
+│                 ├── desktop/               # Componentes de layout de escritorio (MDI)
+│                 │   ├── desktop_layout.dart # Layout de aplicación Desktop MDI
+│                 │   ├── menu_bar.dart      # Barra de menú superior
+│                 │   ├── side_bar.dart      # Barra lateral deslizable/fija
+│                 │   ├── status_bar.dart    # Barra de estado inferior
+│                 │   └── tool_bar.dart      # Barra de herramientas con botones rápidos
+│                 ├── layouts/               # Contenedores de disposición flex
+│                 │   ├── column.dart        # Disposición vertical flexible
+│                 │   ├── row.dart           # Disposición horizontal flexible
+│                 │   └── panel.dart         # Panel contenedor con fondo y borde
+│                 └── interaction/           # Catálogo de widgets interactivos
+│                     ├── badge.dart         # Insignia/etiqueta flotante de estado
+│                     ├── button.dart        # Botón interactivo con hover y eventos
+│                     ├── card.dart          # Tarjeta contenedora elevada
+│                     ├── carousel.dart      # Carrusel de diapositivas
+│                     ├── checkbox.dart      # Casilla de verificación booleana
+│                     ├── chip.dart          # Chip o etiqueta seleccionable
+│                     ├── dialog.dart        # Ventana emergente modal
+│                     ├── divider.dart       # Separador lineal horizontal/vertical
+│                     ├── dropdown.dart      # Menú desplegable interactivo con auto-scroll
+│                     ├── fab.dart           # Botón de acción flotante (FAB)
+│                     ├── icon.dart          # Widget de ícono vectorial
+│                     ├── icon_button.dart   # Botón compacto de ícono
+│                     ├── image.dart         # Widget de visualización de imágenes
+│                     ├── label.dart         # Etiqueta de texto de alta resolución
+│                     ├── list_tile.dart     # Elemento estructurado para listas
+│                     ├── list_view.dart     # Lista desplazable de elementos
+│                     ├── loading_indicator.dart # Indicador de carga animado
+│                     ├── progress_bar.dart  # Barra de progreso lineal
+│                     ├── radio_button.dart  # Botón de selección única
+│                     ├── segmented_button.dart # Botón segmentado multiselect
+│                     ├── slider.dart        # Barra deslizante de rango numérico
+│                     ├── snack_bar.dart     # Notificación emergente temporal
+│                     ├── split_button.dart  # Botón dividido con menú flotante
+│                     ├── switch.dart        # Interruptor de encendido/apagado
+│                     ├── text_field.dart    # Campo de entrada de texto editable
+│                     └── toast.dart         # Mensaje flotante de alerta
 └── release/                               # PAQUETE DISTRIBUIBLE DEL SDK (Generado por build_release_sdk.dart)
     └── sdk/                               # Cortex Engine Standalone SDK Release Package
         ├── pubspec.yaml                   # Manifest pubspec aislado para el SDK distribuible
@@ -147,13 +148,7 @@ cortex/
         └── lib/                           # Código fuente publicado del SDK
             ├── cortex.dart                # Punto de entrada público barrel export principal (`package:cortex/cortex.dart`)
             ├── cortex_engine.dart         # Punto de entrada secundario (`package:cortex/cortex_engine.dart`)
-            ├── audio.dart                 # Export de módulos de audio
-            ├── graphics2d.dart            # Export de renderizado 2D
-            ├── graphics3d.dart            # Export de renderizado 3D
-            ├── renderer.dart              # Export de renderizado de frame
-            ├── window.dart                # Export de control de ventana
-            ├── libbackend.so              # Copia local de la librería dinámica
-            ├── ffi/                       # Enlaces FFI compilados
+            ├── ffi/                       # Enlaces FFI C-ABI (Capa 1)
             │   ├── audio_bindings.dart
             │   ├── graphics2d_bindings.dart
             │   ├── graphics3d_bindings.dart
@@ -161,7 +156,13 @@ cortex/
             │   ├── lib_loader.dart
             │   ├── renderer_bindings.dart
             │   └── window_bindings.dart
-            └── engine/                    # Estructura del motor de UI y aplicación distribuida
+            ├── wrappers/                  # Native Interop Wrappers (Capa 2)
+            │   ├── audio.dart
+            │   ├── graphics2d.dart
+            │   ├── graphics3d.dart
+            │   ├── renderer.dart
+            │   └── window.dart
+            └── core/                      # Framework Core Engine (Capa 3)
                 ├── app_window.dart
                 ├── application.dart
                 ├── audio.dart
@@ -169,6 +170,7 @@ cortex/
                 ├── context3d.dart
                 ├── input.dart
                 ├── navigator.dart
+                ├── scene3d.dart
                 └── ui/                    # Widgets, layouts y componentes MDI distribuidos
                     ├── element.dart
                     ├── icons.dart

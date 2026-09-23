@@ -1,4 +1,4 @@
-import 'package:cortex/engine/ui/ui.dart';
+import 'package:cortex/core/ui/ui.dart';
 
 class TestView extends View {
   bool _isCompleted = false;

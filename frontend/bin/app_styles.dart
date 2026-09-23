@@ -1,5 +1,5 @@
-import 'package:cortex/engine/context2d.dart';
-import 'package:cortex/engine/ui/style.dart';
+import 'package:cortex/core/context2d.dart';
+import 'package:cortex/core/ui/style.dart';
 
 /// Registra todas las Clases CSS de la Aplicación en el registro global de estilos.
 void initAppStyles() {

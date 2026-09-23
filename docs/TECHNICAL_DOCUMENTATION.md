@@ -33,10 +33,10 @@ cortex/
     │   └── fonts/
     │       └── default_font.ttf <-- Fuente Vectorial TTF (Liberation Sans)
     ├── lib/                  <-- ENGINE CORE (Reutilizable para cualquier proyecto)
-    │   ├── audio.dart        <-- Exportaciones públicas del módulo de audio
-    │   ├── ffi/              <-- Cargador nativo y bindings FFI C-ABI (audio_bindings, etc.)
-    │   ├── engine/           <-- AppWindow, Application, Navigator, Input Engine, AudioEngine
-    │   └── engine/ui/        <-- View, Element, Style, Column, Row, Button, Label, Viewport3D, TextField, Panel
+    │   ├── ffi/              <-- Capa 1: FFI Low-Level Bindings (audio_bindings, window_bindings, lib_loader)
+    │   ├── wrappers/         <-- Capa 2: Native Interop Wrappers (window.dart, graphics2d.dart, graphics3d.dart)
+    │   └── core/             <-- Capa 3: Framework Core Engine (Application, AppWindow, Context2D, Context3D, Navigator)
+    │       └── ui/           <-- View, Element, Style, Column, Row, Button, Label, Viewport3D, TextField, Panel
     └── bin/                  <-- CÓDIGO DE LA APLICACIÓN ESPECÍFICA
         ├── app_styles.dart   <-- Hoja de Estilos CSS Globales
         ├── main.dart         <-- Punto de Entrada (Init, Register Views & Run)
@@ -69,7 +69,7 @@ El singleton `LibLoader` localiza dinámicamente el binario compilado en Rust bu
 ### 4.2 Cuestión de Rendimiento: Cero Asignaciones UTF-8
 Para mantener 60 FPS estables sin pausas de Recolección de Basura (GC) en Dart, `Graphics2D` mantiene un `_stringCache` que convierte cadenas de texto a `Pointer<Utf8>` una sola vez y las reutiliza durante el renderizado.
 
-### 4.3 Motor de Audio (`engine/audio.dart`)
+### 4.3 Motor de Audio (`core/audio.dart`)
 El motor de audio expone una API orientada a objetos transparente:
 - **`AudioEngine`**: Gestiona el dispositivo de audio nativo y el volumen maestro. En cada cuadro (`Application.run`), llama de forma automática a `updateMusic()` para procesar los buffers de streaming sin intervención manual.
 - **`Sound`**: Representa clips de sonido cortos (WAV, MP3, OGG) cargados en memoria. Permite controlar `play()`, `stop()`, `pause()`, `resume()`, `volume`, `pitch` y `pan`.
@@ -87,12 +87,12 @@ Cada pantalla completa o modo de la aplicación hereda de la clase base `View`.
 - **Construcción Lazy (`build()`)**: El método `build()` se ejecuta la primera vez que la vista se consulta o inicializa, garantizando la ejecución previa del constructor de la subclase.
 
 ```dart
-import 'package:frontend/engine/ui/elements/button.dart';
-import 'package:frontend/engine/ui/elements/column.dart';
-import 'package:frontend/engine/ui/elements/label.dart';
-import 'package:frontend/engine/ui/elements/row.dart';
-import 'package:frontend/engine/ui/view.dart';
-import 'package:frontend/engine/navigator.dart';
+import 'package:cortex/core/ui/interaction/button.dart';
+import 'package:cortex/core/ui/layouts/column.dart';
+import 'package:cortex/core/ui/interaction/label.dart';
+import 'package:cortex/core/ui/layouts/row.dart';
+import 'package:cortex/core/ui/view.dart';
+import 'package:cortex/core/navigator.dart';
 
 class MiPantallaView extends View {
   MiPantallaView() : super(id: 'mi_pantalla');
@@ -198,7 +198,7 @@ El motor elimina la necesidad de calcular coordenadas `x` y `y` a mano mediante 
 ## 9. Ejemplo de Entrada Principal (`bin/main.dart`)
 
 ```dart
-import 'package:frontend/engine/application.dart';
+import 'package:cortex/core/application.dart';
 import 'app_styles.dart';
 import 'views/editor_3d_view.dart';
 import 'views/cut_optimizer_view.dart';

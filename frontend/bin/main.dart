@@ -1,5 +1,5 @@
-import 'package:cortex/engine/application.dart';
-import 'package:cortex/engine/navigator.dart';
+import 'package:cortex/core/application.dart';
+import 'package:cortex/core/navigator.dart';
 import 'app_styles.dart';
 
 import 'views/elements_ui_example.dart';
