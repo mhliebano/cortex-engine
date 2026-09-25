@@ -1,20 +1,20 @@
 /// Exportador centralizado del Motor UI (`ui.dart`).
 /// Permite importar todos los elementos, layouts, componentes de escritorio y controladores con una sola línea:
-/// `import 'package:cortex/core/ui/ui.dart';`
+/// `import 'package:frontend/core/ui/ui.dart';`
 library;
 
-export 'package:cortex/core/context2d.dart';
-export 'package:cortex/core/context3d.dart';
-export 'package:cortex/core/input.dart';
+export 'package:frontend/core/context2d.dart';
+export 'package:frontend/core/context3d.dart';
+export 'package:frontend/core/input.dart';
 export 'element.dart';
 export 'icons.dart';
-export 'layout_alignment.dart';
+//export 'layout_alignment.dart';
 export 'style.dart';
-export 'text_editing_controller.dart';
-export 'scroll_controller.dart';
-export 'view.dart';
+//export 'text_editing_controller.dart';
+//export 'scroll_controller.dart';
+//export 'view.dart';
 export 'view_manager.dart';
-export 'package:cortex/core/navigator.dart';
+export 'package:frontend/core/navigator.dart';
 
 // Componentes de Maquetación
 export 'layouts/column.dart';

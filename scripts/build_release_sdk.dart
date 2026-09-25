@@ -64,7 +64,8 @@ export 'wrappers/graphics3d.dart';
   print(
     '⚙️ Copiando binarios nativos del motor (libbackend.so / backend.dll) -> release/sdk/assets/native/...',
   );
-  final nativeDir = Directory('${releaseSdkDir.path}/assets/native')..createSync(recursive: true);
+  final nativeDir = Directory('${releaseSdkDir.path}/assets/native')
+    ..createSync(recursive: true);
   final backendDir = Directory('${rootDir.path}/backend/target');
   final libNames = ['libbackend.so', 'backend.dll'];
   for (final name in libNames) {
@@ -81,11 +82,12 @@ export 'wrappers/graphics3d.dart';
       foundFile.copySync('${nativeDir.path}/$name');
       print('   -> Copiado $name a release/sdk/assets/native/');
     }
-
   }
 
   // 4. Copiar assets/, docs/, README.md, LICENSE y CHANGELOG.md
-  print('🎨 Copiando recursos de frontend/assets, docs y archivos informativos -> release/sdk/...');
+  print(
+    '🎨 Copiando recursos de frontend/assets, docs y archivos informativos -> release/sdk/...',
+  );
   _copyDirectory(
     Directory('${frontendDir.path}/assets'),
     Directory('${releaseSdkDir.path}/assets'),
@@ -104,7 +106,9 @@ export 'wrappers/graphics3d.dart';
   }
 
   // 4b. Copiar Dart SDK embebido para distribución autónoma (Zero-Setup)
-  print('🎯 Empaquetando entorno autónomo de Dart SDK -> release/sdk/dart-sdk...');
+  print(
+    '🎯 Empaquetando entorno autónomo de Dart SDK -> release/sdk/dart-sdk...',
+  );
   final systemDartSdkDir = _findSystemDartSdk();
   if (systemDartSdkDir != null && systemDartSdkDir.existsSync()) {
     final targetDartSdkDir = Directory('${releaseSdkDir.path}/dart-sdk');
@@ -120,11 +124,15 @@ export 'wrappers/graphics3d.dart';
     );
     print('   -> Dart SDK empaquetado correctamente en release/sdk/dart-sdk');
   } else {
-    print('   ⚠️ No se pudo localizar la carpeta completa de Dart SDK para empaquetar.');
+    print(
+      '   ⚠️ No se pudo localizar la carpeta completa de Dart SDK para empaquetar.',
+    );
   }
 
   // 5. Crear pubspec.yaml y analysis_options.yaml del SDK
-  print('⚙️ Generando release/sdk/pubspec.yaml y analysis_options.yaml (v$version)...');
+  print(
+    '⚙️ Generando release/sdk/pubspec.yaml y analysis_options.yaml (v$version)...',
+  );
   File('${releaseSdkDir.path}/pubspec.yaml').writeAsStringSync('''
 name: cortex
 description: Cortex Engine SDK Standalone Release
@@ -154,7 +162,8 @@ analyzer:
   print('🛠️ Creando herramienta CLI release/sdk/bin/cortex.dart...');
   Directory('${releaseSdkDir.path}/bin').createSync(recursive: true);
 
-  final cliCode = '''#!/usr/bin/env dart
+  final cliCode =
+      '''#!/usr/bin/env dart
 import 'dart:convert';
 import 'dart:io';
 import 'package:args/command_runner.dart';
@@ -248,7 +257,7 @@ class CreateCommand extends Command<void> {
     final binDir = Directory(p.join(outputDir.path, 'bin'))..createSync();
     final viewsDir = Directory(p.join(binDir.path, 'views'))..createSync();
 
-    final appStylesContent = """import 'package:cortex/cortex.dart';
+    final appStylesContent = """import 'package:frontend/cortex.dart';
 
 void initAppStyles() {
   Style.register(
@@ -283,7 +292,7 @@ void initAppStyles() {
 """;
     File(p.join(binDir.path, 'app_styles.dart')).writeAsStringSync(appStylesContent);
 
-    final homeViewContent = """import 'package:cortex/cortex.dart';
+    final homeViewContent = """import 'package:frontend/cortex.dart';
 
 class HomeView extends View {
   HomeView() : super(id: 'home');
@@ -329,7 +338,7 @@ class HomeView extends View {
 """;
     File(p.join(viewsDir.path, 'home_view.dart')).writeAsStringSync(homeViewContent);
 
-    final mainContent = """import 'package:cortex/cortex.dart';
+    final mainContent = """import 'package:frontend/cortex.dart';
 import 'app_styles.dart';
 import 'views/home_view.dart';
 
@@ -690,14 +699,21 @@ class BuildCommand extends Command<void> {
   print(
     '👉 Para usar los comandos "cortex" y "dart" desde cualquier terminal, agrega la ruta bin a tu PATH:',
   );
-  print('   export PATH="\$PATH:${releaseSdkDir.path}/bin:${releaseSdkDir.path}/dart-sdk/bin"');
+  print(
+    '   export PATH="\$PATH:${releaseSdkDir.path}/bin:${releaseSdkDir.path}/dart-sdk/bin"',
+  );
 }
 
 Directory? _findSystemDartSdk() {
   try {
-    final exePath = File(Platform.resolvedExecutable).resolveSymbolicLinksSync();
-    final flutterDartSdk = Directory('${Directory(exePath).parent.parent.path}/cache/dart-sdk');
-    if (flutterDartSdk.existsSync() && File('${flutterDartSdk.path}/bin/dart').existsSync()) {
+    final exePath = File(
+      Platform.resolvedExecutable,
+    ).resolveSymbolicLinksSync();
+    final flutterDartSdk = Directory(
+      '${Directory(exePath).parent.parent.path}/cache/dart-sdk',
+    );
+    if (flutterDartSdk.existsSync() &&
+        File('${flutterDartSdk.path}/bin/dart').existsSync()) {
       return flutterDartSdk;
     }
     final standardSdk = Directory(Directory(exePath).parent.parent.path);
@@ -710,7 +726,11 @@ Directory? _findSystemDartSdk() {
   return null;
 }
 
-void _copyDirectory(Directory source, Directory destination, {bool Function(String path)? ignoreFilter}) {
+void _copyDirectory(
+  Directory source,
+  Directory destination, {
+  bool Function(String path)? ignoreFilter,
+}) {
   destination.createSync(recursive: true);
   for (var entity in source.listSync(recursive: false)) {
     if (ignoreFilter != null && ignoreFilter(entity.path)) {

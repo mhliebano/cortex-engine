@@ -15,6 +15,10 @@
 - **Ray-Casting y Picking 3D**: Capacidad para lanzar rayos desde el ratón (Screen-to-World) y verificar colisiones contra Bounding Boxes (AABB) y malla poligonal exacta (`rayHitsModelMesh`).
 - **Scene Graph en Dart**: Nuevo sistema nativo (`scene3d.dart`) con clase `Transform3D` y jerarquías de dependencias (`Node3D`) para cálculo de matrices de mundo de forma jerárquica padre-hijo.
 - **Álgebra 3D**: Adición del paquete estándar `vector_math` al `pubspec.yaml` del SDK para manipulación de cuaterniones, matrices 4x4 y transformaciones.
+- **Nuevo Sistema de Layouts UI (Frontend)**: Refactorización completa del sistema de maquetación bajo una jerarquía estricta de 3 niveles (`View` -> `Panel` -> `Row`/`Col`):
+  - **`View`**: Marco global anclado a la ventana que orquesta la ubicación de los `Panel`s mediante el algoritmo Greedy de esquinas candidatas.
+  - **`Panel`**: Lienzo acotado / viewport independiente con reglas estrictas de dimensiones (fijas o `expandWidth`/`expandHeight`) y recorte scissor automático.
+  - **`Row` y `Col`**: Componentes de maquetación fina interna con auto-scroll integrado sin romper la estructura contenedora.
 
 ### Corregido
 

@@ -1,5 +1,5 @@
 import 'package:ffi/ffi.dart';
-import 'package:cortex/ffi/audio_bindings.dart';
+import 'package:frontend/ffi/audio_bindings.dart';
 
 /// Control global del dispositivo de audio en Cortex Engine.
 class AudioEngine {

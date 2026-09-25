@@ -7,12 +7,12 @@
 [![GitHub Release](https://img.shields.io/github/v/release/mhliebano/cortex-engine?style=for-the-badge&logo=github)](https://github.com/mhliebano/cortex-engine/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-**Cortex Engine** es un framework de escritorio nativo para aplicaciones 2D y 3D, con backend en **Rust + Raylib (OpenGL)** y frontend en **Pure Dart** comunicado mediante FFI directa. 
+**Cortex Engine** es un framework de escritorio nativo para aplicaciones 2D y 3D, con backend en **Rust + Raylib (OpenGL)** y frontend en **Pure Dart** comunicado mediante FFI directa.
 
 Sin WebViews, sin Chromium, sin DOM, sin Electron y sin el embedder de Flutter Desktop.
 
-> **⚠️ Estado del proyecto & Aviso de transparencia:** 
-> Cortex Engine es un proyecto joven con versión formal v1.0.1. Alimenta funcionalmente proyectos en producción (como *Petsabits* y un *asistente con avatar*), pero se encuentra en fase **Alpha/Early Stage**. Cuenta con una base de sistemas nativa muy sólida pero con limitaciones conocidas en capa de aplicación que detallamos de forma sincerada en este documento.
+> **⚠️ Estado del proyecto & Aviso de transparencia:**
+> Cortex Engine es un proyecto joven con versión formal v1.0.1. Alimenta funcionalmente proyectos en producción (como _Petsabits_ y un _asistente con avatar_), pero se encuentra en fase **Alpha/Early Stage**. Cuenta con una base de sistemas nativa muy sólida pero con limitaciones conocidas en capa de aplicación que detallamos de forma sincerada en este documento.
 
 ---
 
@@ -20,26 +20,26 @@ Sin WebViews, sin Chromium, sin DOM, sin Electron y sin el embedder de Flutter D
 
 Cortex Engine no nació como un intento comercial ni pretencioso de destronar a Flutter ni a Qt (de hecho, me gano el pan trabajando con Flutter). Surgió de una necesidad práctica y personal de autor:
 
-1. **La necesidad original:** Crear una aplicación CAD para diseño de muebles en carpintería y herrería (*Fornitures*). Las alternativas existentes eran obsoletas, costosas y carecían de lógica constructiva real.
+1. **La necesidad original:** Crear una aplicación CAD para diseño de muebles en carpintería y herrería (_Fornitures_). Las alternativas existentes eran obsoletas, costosas y carecían de lógica constructiva real.
 2. **La fricción técnica:** Intentar desarrollarlo con Qt o Rust puro implicó pasar más tiempo peleando con la herramienta que resolviendo el problema.
 3. **La solución:** Crear un motor nativo ultra-ligero combinando la potencia de Rust/Raylib en el backend con la agilidad de Dart puro en la UI.
-4. **Proyectos derivados:** Sobre esta base nacieron **Petsabits** (mascotas de escritorio tipo Tamagotchi corriendo en un *Core 2 Duo con 6GB RAM*) y un **asistente con avatar flotante** (transparente, sin bordes, always-on-top, integrado con LLMs).
+4. **Proyectos derivados:** Sobre esta base nacieron **Petsabits** (mascotas de escritorio tipo Tamagotchi corriendo en un _Core 2 Duo con 6GB RAM_) y un **asistente con avatar flotante** (transparente, sin bordes, always-on-top, integrado con LLMs).
 
 ---
 
 ## ⚖️ Realidad vs. Estado del Proyecto (Tabla Sincerada)
 
-| Área / Característica | Implementación en Cortex Engine | Estado Verificado y Limitaciones Conocidas |
-| :--- | :--- | :--- |
-| **Backend Gráfico** | Rust compilado a biblioteca dinámica (`libbackend.so` / `backend.dll`) sobre Raylib/OpenGL. | ✅ **Estable.** Renderizado acelerado por GPU con enlace C-ABI. |
-| **Frontend UI** | Dart puro (sin Flutter embedder) mediante FFI directa. | ✅ **Estable.** Árbol de widgets declarativo y layout Flex determinista. |
-| **Ventana Nativa** | Protocolo EWMH en Linux X11 a bajo nivel (`libX11.so` vía `dlopen`/`dlsym`, sin bordes, transparente, always-on-top). | ✅ **Sólido.** Rama Windows (`user32.dll`) codificada pero pendiente de prueba en hardware real. |
-| **Texto FFI (Zero-Allocation)** | Caché de punteros `Pointer<Utf8>` (`_stringCache`). | ⚠️ **Cierto para texto estático.** Texto dinámico de alta rotación requiere política de evicción (en backlog). |
-| **Render 3D** | Cámara orbital interactiva (ortográfica y perspectiva), cubos, wireframes y rejilla (`graphics3d.rs`). | ⚠️ **Primitivas.** Carga de mallas complejas (`.obj`/`.gltf`) en roadmap para completar la CAD *Fornitures*. |
-| **Subsistema de Audio** | `Sound` (memoria) y `Music` (streaming) en Rust con `IsAudioDeviceReady()`. | ✅ **Funcional.** Fallback silencioso si no hay tarjeta de sonido (no crashea). |
-| **Consumo de Memoria** | Huella reducida observada en hardware modesto (Core 2 Duo). | 🟡 **Bajo consumo en reposo** comprobado empíricamente en uso real (benchmark automatizado reproducible en roadmap). |
-| **Consumo de CPU en reposo** | Bucle continuo de Raylib a 60 FPS fijos. | ⚠️ **En backlog.** Pendiente regulación de FPS (throttling / modo idle cuando no hay interacción). |
-| **Pruebas y CI/CD** | Mínimo test de scroll (`rebuild_scroll_test.dart`). | ❌ **Inexistente.** En proceso de configuración de GitHub Actions y tests unitarios. |
+| Área / Característica           | Implementación en Cortex Engine                                                                                       | Estado Verificado y Limitaciones Conocidas                                                                           |
+| :------------------------------ | :-------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
+| **Backend Gráfico**             | Rust compilado a biblioteca dinámica (`libbackend.so` / `backend.dll`) sobre Raylib/OpenGL.                           | ✅ **Estable.** Renderizado acelerado por GPU con enlace C-ABI.                                                      |
+| **Frontend UI**                 | Dart puro (sin Flutter embedder) mediante FFI directa.                                                                | ✅ **Estable.** Árbol de widgets declarativo y layout Flex determinista.                                             |
+| **Ventana Nativa**              | Protocolo EWMH en Linux X11 a bajo nivel (`libX11.so` vía `dlopen`/`dlsym`, sin bordes, transparente, always-on-top). | ✅ **Sólido.** Rama Windows (`user32.dll`) codificada pero pendiente de prueba en hardware real.                     |
+| **Texto FFI (Zero-Allocation)** | Caché de punteros `Pointer<Utf8>` (`_stringCache`).                                                                   | ⚠️ **Cierto para texto estático.** Texto dinámico de alta rotación requiere política de evicción (en backlog).       |
+| **Render 3D**                   | Cámara orbital interactiva (ortográfica y perspectiva), cubos, wireframes y rejilla (`graphics3d.rs`).                | ⚠️ **Primitivas.** Carga de mallas complejas (`.obj`/`.gltf`) en roadmap para completar la CAD _Fornitures_.         |
+| **Subsistema de Audio**         | `Sound` (memoria) y `Music` (streaming) en Rust con `IsAudioDeviceReady()`.                                           | ✅ **Funcional.** Fallback silencioso si no hay tarjeta de sonido (no crashea).                                      |
+| **Consumo de Memoria**          | Huella reducida observada en hardware modesto (Core 2 Duo).                                                           | 🟡 **Bajo consumo en reposo** comprobado empíricamente en uso real (benchmark automatizado reproducible en roadmap). |
+| **Consumo de CPU en reposo**    | Bucle continuo de Raylib a 60 FPS fijos.                                                                              | ⚠️ **En backlog.** Pendiente regulación de FPS (throttling / modo idle cuando no hay interacción).                   |
+| **Pruebas y CI/CD**             | Mínimo test de scroll (`rebuild_scroll_test.dart`).                                                                   | ❌ **Inexistente.** En proceso de configuración de GitHub Actions y tests unitarios.                                 |
 
 ---
 
@@ -56,13 +56,15 @@ Cortex Engine no nació como un intento comercial ni pretencioso de destronar a 
 ## 🎯 Posicionamiento: ¿Cuándo usarlo?
 
 ### ✅ Ideal para:
+
 - Herramientas técnicas locales, software CAD ligero y tableros de control.
 - Interfaces MDI (Multiple Document Interface) con viewports 3D interactivos.
-- Asistentes de escritorio, mascotas virtuales, widgets flotantes y utilidades transparentes *always-on-top*.
+- Asistentes de escritorio, mascotas virtuales, widgets flotantes y utilidades transparentes _always-on-top_.
 - Dispositivos de escasos recursos (hardware modesto/heredado, PCs antiguas, kioscos).
 - Desarrolladores que buscan control total de cada píxel y un sistema de estilos ergonómico.
 
 ### ❌ No recomendado para:
+
 - Navegadores embebidos o renderizado de HTML/CSS de terceros.
 - Aplicaciones que requieran lectores de pantalla o compatibilidad estricta con accesibilidad (A11y).
 - Soporte tipográfico bidireccional complejo (árabe, devanagari).
@@ -72,14 +74,14 @@ Cortex Engine no nació como un intento comercial ni pretencioso de destronar a 
 
 ## 📊 Comparativa con Alternativas
 
-| Característica | Cortex Engine | Electron | Flutter Desktop | Qt / Slint |
-| :--- | :--- | :--- | :--- | :--- |
-| **Backend / Gráficos** | Rust (Raylib / OpenGL) | Chromium / Node.js | Skia / Impeller | C++ / OpenGL / RHI |
-| **Lenguaje Frontend** | Pure Dart (FFI) | JavaScript / TypeScript | Dart | C++ / QML |
-| **Consumo de Memoria** | **Bajo (observado en reposo, benchmark en proceso)** | Alto (200MB - 500MB+) | Medio (100MB+) | Bajo - Medio |
-| **Estilos UI** | Declarativo tipo CSS (`Style.register`) | CSS / HTML DOM | Widget Properties | QSS / QML / RS |
-| **Ventana Transparente / Overlay**| Directo a bajo nivel (X11 / Win32) | Requiere flags / consumo | Complejo | Requiere configuración nativa |
-| **Madurez** | Alpha / Early Stage | Muy Madura | Madura | Décadas (Qt) / Joven (Slint) |
+| Característica                     | Cortex Engine                                        | Electron                 | Flutter Desktop   | Qt / Slint                    |
+| :--------------------------------- | :--------------------------------------------------- | :----------------------- | :---------------- | :---------------------------- |
+| **Backend / Gráficos**             | Rust (Raylib / OpenGL)                               | Chromium / Node.js       | Skia / Impeller   | C++ / OpenGL / RHI            |
+| **Lenguaje Frontend**              | Pure Dart (FFI)                                      | JavaScript / TypeScript  | Dart              | C++ / QML                     |
+| **Consumo de Memoria**             | **Bajo (observado en reposo, benchmark en proceso)** | Alto (200MB - 500MB+)    | Medio (100MB+)    | Bajo - Medio                  |
+| **Estilos UI**                     | Declarativo tipo CSS (`Style.register`)              | CSS / HTML DOM           | Widget Properties | QSS / QML / RS                |
+| **Ventana Transparente / Overlay** | Directo a bajo nivel (X11 / Win32)                   | Requiere flags / consumo | Complejo          | Requiere configuración nativa |
+| **Madurez**                        | Alpha / Early Stage                                  | Muy Madura               | Madura            | Décadas (Qt) / Joven (Slint)  |
 
 ---
 
@@ -105,7 +107,7 @@ cortex-engine/
 ## 🚀 Inicio Rápido
 
 ```dart
-import 'package:cortex/cortex.dart';
+import 'package:frontend/cortex.dart';
 
 class MainView extends View {
   MainView() : super(id: 'main_view');
@@ -160,6 +162,7 @@ void main() async {
 ## ⚙️ Instalación y Compilación
 
 ### Opción A: Usar el SDK Precompilado
+
 Descarga el paquete autónomo desde [Releases](https://github.com/mhliebano/cortex-engine/releases), descomprime y agrega los binarios a tu variable de entorno `PATH`:
 
 ```bash
@@ -182,6 +185,7 @@ git clone git@github.com:mhliebano/cortex-engine.git
 cd cortex-engine
 dart scripts/build_release_sdk.dart
 ```
+
 El SDK compilado estará disponible en `./release/sdk/` y empaquetado en `./release/cortex-sdk.tar.gz`.
 
 ---

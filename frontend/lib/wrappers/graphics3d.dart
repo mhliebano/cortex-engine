@@ -1,6 +1,6 @@
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
-import 'package:cortex/ffi/lib_loader.dart';
+import 'package:frontend/ffi/lib_loader.dart';
 import '../ffi/graphics3d_bindings.dart';
 
 /// Wrapper de bajo nivel sobre las funciones FFI de graphics3d.

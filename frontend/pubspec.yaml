@@ -1,6 +1,6 @@
-name: cortex
-description: Cortex Engine Dart SDK
-version: 1.0.1
+name: frontend
+description: A sample command-line application.
+version: 1.0.0
 # repository: https://github.com/my_org/my_repo
 
 environment:
@@ -8,8 +8,9 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
-  path: ^1.9.0
   ffi: ^2.2.0
+  path: ^1.9.0
+  args: ^2.4.2
   vector_math: ^2.4.3
 
 dev_dependencies:

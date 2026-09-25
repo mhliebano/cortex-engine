@@ -1,72 +1,60 @@
-import 'package:cortex/core/context2d.dart';
-import 'package:cortex/core/context3d.dart';
-import 'package:cortex/core/input.dart';
-import 'package:cortex/core/ui/element.dart';
-import 'package:cortex/core/ui/layouts/column.dart';
-import 'package:cortex/core/ui/style.dart';
-import 'package:cortex/core/ui/scroll_controller.dart';
+import 'package:frontend/core/context2d.dart';
+import 'package:frontend/core/context3d.dart';
+import 'package:frontend/core/input.dart';
+import 'package:frontend/core/ui/element.dart';
+import 'package:frontend/core/ui/scroll_controller.dart';
 
 /// Contenedor de Disposición Horizontal (`Row`).
-/// Pura estructura de alineación (100% invisible).
-/// Soporta desplazamiento horizontal reactivo (`isScrollable`), arrastre por puntero y recorte de área.
+///
+/// Opera exclusivamente dentro del espacio provisto por un [Panel], usando
+/// coordenadas locales. Organiza widgets finales (botones, textos, entradas)
+/// en un eje horizontal.
+///
+/// El scroll horizontal se activa **automáticamente** cuando el contenido supera
+/// el ancho disponible — no requiere ningún flag explícito.
+///
+/// Regla de dimensionamiento:
+/// - Si el eje transversal (alto) no es provisto por el Panel padre, debe
+///   especificarse explícitamente mediante [height].
 class Row extends Element {
   final ScrollController? controller;
+
   int spacing;
   int padding;
-  bool isScrollable;
+
   MainAxisAlignment mainAxisAlignment;
   CrossAxisAlignment crossAxisAlignment;
-  MainAxisSize mainAxisSize;
 
+  // Estado de scroll
   double scrollOffset = 0.0;
   int _contentWidth = 0;
 
+  // Estado interno de la scrollbar
   bool _isDraggingScrollbar = false;
   bool _isHoveringScrollbar = false;
   double _dragStartX = 0.0;
   double _dragStartOffset = 0.0;
 
   final List<Element> children;
-  final bool _isWidthFixed;
-  final bool _isHeightFixed;
 
   Row({
     super.key,
     this.controller,
-    String? className,
     int width = 0,
     int height = 0,
-    int? spacing,
-    int? padding,
-    this.isScrollable = false,
+    this.spacing = 8,
+    this.padding = 0,
     this.mainAxisAlignment = MainAxisAlignment.start,
     this.crossAxisAlignment = CrossAxisAlignment.stretch,
-    this.mainAxisSize = MainAxisSize.max,
-    required this.children,
     super.expand,
     super.fillWidth,
     super.fillHeight,
     super.marginRight,
     super.marginBottom,
-  }) : spacing =
-           spacing ??
-           (className != null ? Style.merge(className).spacing ?? 10 : 10),
-       padding =
-           padding ??
-           (className != null ? Style.merge(className).padding ?? 0 : 0),
-       _isWidthFixed =
-           width != 0 ||
-           (className != null && Style.merge(className).width != null),
-       _isHeightFixed =
-           height != 0 ||
-           (className != null && Style.merge(className).height != null) {
-    final style = className != null ? Style.merge(className) : null;
-    this.width = width != 0 ? width : (style?.width ?? 0);
-    this.height = height != 0 ? height : (style?.height ?? 0);
-
-    if (isScrollable && !_isWidthFixed && expand == Expand.none && !fillWidth) {
-      fillWidth = true;
-    }
+    required this.children,
+  }) {
+    this.width = width;
+    this.height = height;
 
     if (controller != null) {
       scrollOffset = controller!.offset;
@@ -84,7 +72,7 @@ class Row extends Element {
 
   @override
   Map<String, dynamic>? exportState() {
-    if (!isScrollable && scrollOffset == 0.0) return null;
+    if (scrollOffset == 0.0) return null;
     return {'scrollOffset': scrollOffset};
   }
 
@@ -92,76 +80,58 @@ class Row extends Element {
   void importState(Map<String, dynamic> state) {
     if (state.containsKey('scrollOffset')) {
       scrollOffset = (state['scrollOffset'] as num).toDouble();
-      if (controller != null) {
-        controller!.offset = scrollOffset;
-      }
+      if (controller != null) controller!.offset = scrollOffset;
       _performLayout();
     }
   }
 
-  @override
-  bool get isFlexWidth => !_isWidthFixed || fillWidth;
-
-  @override
-  bool get isFlexHeight => fillHeight || _isHeightFixed;
+  // ─────────────────────────────────────────────
+  // Layout
+  // ─────────────────────────────────────────────
 
   void _performLayout() {
-    final availableHeight = height > (padding * 2) ? height - (padding * 2) : 0;
+    if (children.isEmpty) return;
 
-    // 1. Pase 1: Calcular ancho total consumido por los hijos NO-flex
-    int nonFillChildrenWidth = 0;
-    int fillWidthCount = 0;
+    final availableHeight = height > (padding * 2) ? height - (padding * 2) : 0;
+    final netAvailableWidth = width > (padding * 2) ? width - (padding * 2) : 0;
+
+    // Pase 1: contabilizar hijos flex y no-flex
+    int nonFlexWidth = 0;
+    int flexCount = 0;
     int maxChildHeight = 0;
 
     for (int i = 0; i < children.length; i++) {
       final child = children[i];
       if (child.isFlexWidth) {
-        fillWidthCount++;
+        flexCount++;
       } else {
-        nonFillChildrenWidth += child.width;
+        nonFlexWidth += child.width;
       }
-      if (child.height > maxChildHeight) {
-        maxChildHeight = child.height;
-      }
-      if (i > 0) nonFillChildrenWidth += spacing;
+      if (child.height > maxChildHeight) maxChildHeight = child.height;
+      if (i > 0) nonFlexWidth += spacing;
     }
 
-    // 2. Si hay hijos flexibles, asignarles el ancho sobrante proporcionalmente
-    final netAvailableWidth = width > (padding * 2) ? width - (padding * 2) : 0;
-    int totalChildrenWidth = nonFillChildrenWidth;
+    // Pase 2: distribuir espacio entre hijos flex
+    int totalChildrenWidth = nonFlexWidth;
 
-    if (fillWidthCount > 0) {
-      final remainingWidth = netAvailableWidth > nonFillChildrenWidth
-          ? netAvailableWidth - nonFillChildrenWidth
-          : 0;
-      final allocatedPerFill = remainingWidth ~/ fillWidthCount;
+    if (flexCount > 0 && netAvailableWidth > nonFlexWidth) {
+      final remaining = netAvailableWidth - nonFlexWidth;
+      final perFlex = remaining ~/ flexCount;
 
       totalChildrenWidth = 0;
       for (int i = 0; i < children.length; i++) {
         final child = children[i];
-        if (child.isFlexWidth) {
-          child.width = allocatedPerFill;
-        }
+        if (child.isFlexWidth) child.width = perFlex;
         totalChildrenWidth += child.width;
         if (i > 0) totalChildrenWidth += spacing;
       }
     }
 
     _contentWidth = totalChildrenWidth + (padding * 2);
-    final int contentHeight = maxChildHeight > 0
-        ? maxChildHeight + (padding * 2)
-        : 0;
 
-    // Ajustar el ancho del Row según mainAxisSize
-    if (mainAxisSize == MainAxisSize.min) {
+    // Auto-ajuste de ancho si el Row no tiene ancho fijo propio
+    if (width == 0 && _contentWidth > 0) {
       width = _contentWidth;
-    } else if (!_isWidthFixed && !fillWidth && !isScrollable && width == 0) {
-      width = _contentWidth;
-    }
-
-    // Ajustar el alto del Row al alto máximo de sus hijos si no tiene alto fijo
-    if (!_isHeightFixed && !fillHeight && contentHeight > 0 && height == 0) {
-      height = contentHeight;
     }
 
     final calcAvailableWidth = width > (padding * 2)
@@ -171,11 +141,12 @@ class Row extends Element {
         ? calcAvailableWidth - totalChildrenWidth
         : 0;
 
-    // 3. Determinar posición inicial X e incremento de espaciado entre hijos según mainAxisAlignment
+    // Pase 3: posición inicial X según mainAxisAlignment
+    final isScrollActive = _contentWidth > width;
     double startX = (x + padding - scrollOffset).toDouble();
-    double dynamicSpacing = spacing.toDouble();
+    double dynSpacing = spacing.toDouble();
 
-    if (extraSpace > 0 && !isScrollable) {
+    if (extraSpace > 0 && !isScrollActive) {
       switch (mainAxisAlignment) {
         case MainAxisAlignment.start:
           startX = (x + padding - scrollOffset).toDouble();
@@ -189,69 +160,60 @@ class Row extends Element {
         case MainAxisAlignment.spaceBetween:
           startX = (x + padding - scrollOffset).toDouble();
           if (children.length > 1) {
-            dynamicSpacing = spacing + (extraSpace / (children.length - 1));
+            dynSpacing = spacing + (extraSpace / (children.length - 1));
           }
           break;
         case MainAxisAlignment.spaceAround:
           if (children.isNotEmpty) {
             final gap = extraSpace / children.length;
             startX = (x + padding + (gap / 2) - scrollOffset).toDouble();
-            dynamicSpacing = spacing + gap;
+            dynSpacing = spacing + gap;
           }
           break;
         case MainAxisAlignment.spaceEvenly:
           if (children.isNotEmpty) {
             final gap = extraSpace / (children.length + 1);
             startX = (x + padding + gap - scrollOffset).toDouble();
-            dynamicSpacing = spacing + gap;
+            dynSpacing = spacing + gap;
           }
           break;
       }
     }
 
-    // 4. Posicionar y redimensionar cada hijo
+    // Pase 4: posicionar cada hijo
     double currentX = startX;
-
     for (final child in children) {
       child.x = currentX.toInt();
-
-      final shouldFillH =
-          child.fillHeight ||
-          (child is Column && child.mainAxisSize == MainAxisSize.max);
 
       switch (crossAxisAlignment) {
         case CrossAxisAlignment.stretch:
           child.y = y + padding;
-          if (availableHeight > 0) {
-            child.height = availableHeight;
-          }
+          if (availableHeight > 0) child.height = availableHeight;
           break;
         case CrossAxisAlignment.start:
           child.y = y + padding;
-          if (shouldFillH && availableHeight > 0) {
+          if (child.isFlexHeight && availableHeight > 0) {
             child.height = availableHeight;
           }
           break;
         case CrossAxisAlignment.center:
-          if (shouldFillH && availableHeight > 0) {
+          if (child.isFlexHeight && availableHeight > 0) {
             child.y = y + padding;
             child.height = availableHeight;
           } else {
-            final childH = child.height;
-            final spaceY = availableHeight > childH
-                ? availableHeight - childH
+            final spaceY = availableHeight > child.height
+                ? availableHeight - child.height
                 : 0;
             child.y = y + padding + (spaceY ~/ 2);
           }
           break;
         case CrossAxisAlignment.end:
-          if (shouldFillH && availableHeight > 0) {
+          if (child.isFlexHeight && availableHeight > 0) {
             child.y = y + padding;
             child.height = availableHeight;
           } else {
-            final childH = child.height;
-            final spaceY = availableHeight > childH
-                ? availableHeight - childH
+            final spaceY = availableHeight > child.height
+                ? availableHeight - child.height
                 : 0;
             child.y = y + padding + spaceY;
           }
@@ -259,129 +221,122 @@ class Row extends Element {
       }
 
       child.onResize(child.width, child.height);
-
-      currentX += child.width + dynamicSpacing;
+      currentX += child.width + dynSpacing;
     }
   }
+
+  // ─────────────────────────────────────────────
+  // Scroll interno
+  // ─────────────────────────────────────────────
+
+  double get _maxScroll =>
+      _contentWidth > width ? (_contentWidth - width).toDouble() : 0.0;
+
+  void _handleScroll(InputEngine input) {
+    final maxScroll = _maxScroll;
+    if (maxScroll <= 0 || width <= 0) return;
+
+    final scrollbarWidth = ((width / _contentWidth) * width).toInt().clamp(
+      20,
+      width,
+    );
+    final scrollbarX =
+        x + ((scrollOffset / maxScroll) * (width - scrollbarWidth)).toInt();
+    final scrollbarHitY = y + height - 14;
+    final trackSpace = (width - scrollbarWidth).toDouble();
+
+    _isHoveringScrollbar = input.isHovering(x, scrollbarHitY, width, 14);
+
+    // Iniciar arrastre
+    if (input.isMouseButtonPressed(MouseButtons.left)) {
+      if (input.isHovering(scrollbarX, scrollbarHitY, scrollbarWidth, 14) ||
+          _isHoveringScrollbar) {
+        _isDraggingScrollbar = true;
+        _dragStartX = input.mouseX;
+        _dragStartOffset = scrollOffset;
+      }
+    }
+
+    // Arrastre continuo
+    if (_isDraggingScrollbar) {
+      if (input.isMouseButtonDown(MouseButtons.left)) {
+        final deltaX = input.mouseX - _dragStartX;
+        if (trackSpace > 0) {
+          final delta = (deltaX / trackSpace) * maxScroll;
+          scrollOffset = (_dragStartOffset + delta).clamp(0.0, maxScroll);
+          if (controller != null) controller!.offset = scrollOffset;
+          _performLayout();
+        }
+      } else {
+        _isDraggingScrollbar = false;
+      }
+    }
+
+    // Rueda del mouse
+    if (input.isHovering(x, y, width, height)) {
+      final wheel = input.mouseWheelMove;
+      if (wheel != 0) {
+        scrollOffset -= wheel * 30.0;
+        scrollOffset = scrollOffset.clamp(0.0, maxScroll);
+        if (controller != null) controller!.offset = scrollOffset;
+        _performLayout();
+      }
+    }
+  }
+
+  void _renderScrollbar(Context2D ctx2d) {
+    final maxScroll = _maxScroll;
+    if (maxScroll <= 0) return;
+
+    final scrollbarWidth = ((width / _contentWidth) * width).toInt().clamp(
+      20,
+      width,
+    );
+    final scrollbarX =
+        x + ((scrollOffset / maxScroll) * (width - scrollbarWidth)).toInt();
+    final isHighlighted = _isDraggingScrollbar || _isHoveringScrollbar;
+    final barHeight = isHighlighted ? 6 : 4;
+    final color = isHighlighted
+        ? const ColorRGBA(255, 255, 255, 220)
+        : const ColorRGBA(255, 255, 255, 120);
+
+    ctx2d.drawRect(
+      scrollbarX,
+      y + height - (barHeight + 2),
+      scrollbarWidth,
+      barHeight,
+      color,
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // Lifecycle
+  // ─────────────────────────────────────────────
 
   @override
   void onUpdate(double dt, InputEngine input) {
     if (!isVisible) return;
-
     _performLayout();
-
-    if (isScrollable && width > 0) {
-      final maxScroll = _contentWidth > width
-          ? (_contentWidth - width).toDouble()
-          : 0.0;
-
-      if (maxScroll > 0) {
-        final scrollbarWidth = ((width / _contentWidth) * width).toInt().clamp(
-          20,
-          width,
-        );
-        final scrollbarX =
-            x + ((scrollOffset / maxScroll) * (width - scrollbarWidth)).toInt();
-        final scrollbarHitY = y + height - 14;
-        final trackSpace = (width - scrollbarWidth).toDouble();
-
-        _isHoveringScrollbar = input.isHovering(x, scrollbarHitY, width, 14);
-
-        // 1. Iniciar arrastre si se presiona clic izquierdo sobre la barra de scroll
-        if (input.isMouseButtonPressed(MouseButtons.left)) {
-          if (input.isHovering(scrollbarX, scrollbarHitY, scrollbarWidth, 14) ||
-              _isHoveringScrollbar) {
-            _isDraggingScrollbar = true;
-            _dragStartX = input.mouseX;
-            _dragStartOffset = scrollOffset;
-          }
-        }
-
-        // 2. Procesar arrastre continuo mientras el mouse permanezca presionado
-        if (_isDraggingScrollbar) {
-          if (input.isMouseButtonDown(MouseButtons.left)) {
-            final deltaX = input.mouseX - _dragStartX;
-            if (trackSpace > 0) {
-              final offsetDelta = (deltaX / trackSpace) * maxScroll;
-              scrollOffset = (_dragStartOffset + offsetDelta).clamp(
-                0.0,
-                maxScroll,
-              );
-              _performLayout();
-            }
-          } else {
-            _isDraggingScrollbar = false;
-          }
-        }
-
-        // 3. Scroll mediante la rueda del mouse
-        if (input.isHovering(x, y, width, height)) {
-          final wheel = input.mouseWheelMove;
-          if (wheel != 0) {
-            scrollOffset -= wheel * 30.0;
-            scrollOffset = scrollOffset.clamp(0.0, maxScroll);
-            _performLayout();
-          }
-        }
-      }
-    }
-
+    _handleScroll(input);
     for (final child in children) {
-      if (child.isVisible) {
-        child.onUpdate(dt, input);
-      }
+      if (child.isVisible) child.onUpdate(dt, input);
     }
   }
 
   @override
   void onRender(Context2D ctx2d, Context3D ctx3d) {
     if (!isVisible) return;
-
     _performLayout();
 
-    final useClip =
-        (isScrollable ||
-            _isWidthFixed ||
-            fillWidth ||
-            expand == Expand.all ||
-            expand == Expand.width) &&
-        width > 0 &&
-        height > 0;
-    if (useClip) {
-      ctx2d.beginScissor(x, y, width, height);
-    }
+    final useClip = width > 0 && height > 0;
+    if (useClip) ctx2d.beginScissor(x, y, width, height);
 
     for (final child in children) {
-      if (child.isVisible) {
-        child.onRender(ctx2d, ctx3d);
-      }
+      if (child.isVisible) child.onRender(ctx2d, ctx3d);
     }
 
     if (useClip) {
-      final maxScroll = _contentWidth > width
-          ? (_contentWidth - width).toDouble()
-          : 0.0;
-      if (maxScroll > 0) {
-        final scrollbarWidth = ((width / _contentWidth) * width).toInt().clamp(
-          20,
-          width,
-        );
-        final scrollbarX =
-            x + ((scrollOffset / maxScroll) * (width - scrollbarWidth)).toInt();
-        final isHighlighted = _isDraggingScrollbar || _isHoveringScrollbar;
-        final barHeight = isHighlighted ? 6 : 4;
-        final color = isHighlighted
-            ? const ColorRGBA(255, 255, 255, 220)
-            : const ColorRGBA(255, 255, 255, 120);
-
-        ctx2d.drawRect(
-          scrollbarX,
-          y + height - (barHeight + 2),
-          scrollbarWidth,
-          barHeight,
-          color,
-        );
-      }
+      _renderScrollbar(ctx2d);
       ctx2d.endScissor();
     }
   }
@@ -390,17 +345,12 @@ class Row extends Element {
   void onRenderOverlay(Context2D ctx2d, Context3D ctx3d) {
     if (!isVisible) return;
     for (final child in children) {
-      if (child.isVisible) {
-        child.onRenderOverlay(ctx2d, ctx3d);
-      }
+      if (child.isVisible) child.onRenderOverlay(ctx2d, ctx3d);
     }
   }
 
   @override
   void onResize(int allocatedWidth, int allocatedHeight) {
-    if (mainAxisSize == MainAxisSize.max && !_isWidthFixed && !isScrollable) {
-      width = allocatedWidth > marginRight ? allocatedWidth - marginRight : 0;
-    }
     super.onResize(allocatedWidth, allocatedHeight);
     _performLayout();
   }

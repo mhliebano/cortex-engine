@@ -1,6 +1,5 @@
-import 'package:cortex/core/ui/desktop/desktop_layout.dart';
-import 'package:cortex/core/ui/layouts/column.dart';
-import 'package:cortex/core/ui/view.dart';
+import 'package:frontend/core/ui/desktop/desktop_layout.dart';
+import 'package:frontend/core/ui/view.dart';
 
 typedef ViewBuilder = View Function();
 
@@ -57,19 +56,11 @@ class Navigator {
     final layout = DesktopLayout.activeLayout;
 
     if (!fullscreen && layout != null && _routes.containsKey(route)) {
-      final view = _routes[route]!();
-      view.init();
-      final children = view.children;
-      if (children.isNotEmpty) {
-        if (children.length == 1) {
-          layout.body = children.first;
-        } else {
-          layout.body = Column(
-            expand: Expand.all,
-            spacing: 0,
-            children: children,
-          );
-        }
+      // En modo MDI, delegar siempre al ViewManager mediante fullscreen
+      // para que el Greedy pueda operar con las dimensiones reales de la ventana.
+      // Si hay un layout activo, usar el primer panel como body.
+      if (_navigationHandler != null) {
+        _navigationHandler!(route);
       }
       return;
     }

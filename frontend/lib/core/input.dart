@@ -1,6 +1,6 @@
 import 'dart:ffi';
-import 'package:cortex/ffi/lib_loader.dart';
-import 'package:cortex/ffi/input_bindings.dart';
+import 'package:frontend/ffi/lib_loader.dart';
+import 'package:frontend/ffi/input_bindings.dart';
 
 class MouseButtons {
   static const int left = 0;
@@ -25,17 +25,39 @@ class InputEngine {
 
   InputEngine() {
     final dylib = loadNativeLibrary();
-    _getMouseX = dylib.lookupFunction<InputFloatC, InputFloat>('input_get_mouse_x');
-    _getMouseY = dylib.lookupFunction<InputFloatC, InputFloat>('input_get_mouse_y');
-    _isMouseButtonPressed = dylib.lookupFunction<InputIntBoolC, InputIntBool>('input_is_mouse_button_pressed');
-    _isMouseButtonDown = dylib.lookupFunction<InputIntBoolC, InputIntBool>('input_is_mouse_button_down');
-    _isMouseButtonReleased = dylib.lookupFunction<InputIntBoolC, InputIntBool>('input_is_mouse_button_released');
-    _getMouseWheelMove = dylib.lookupFunction<InputFloatC, InputFloat>('input_get_mouse_wheel_move');
-    _isKeyPressed = dylib.lookupFunction<InputIntBoolC, InputIntBool>('input_is_key_pressed');
-    _isKeyDown = dylib.lookupFunction<InputIntBoolC, InputIntBool>('input_is_key_down');
-    _getCharPressed = dylib.lookupFunction<InputIntCharC, InputIntChar>('input_get_char_pressed');
-    _getFrameTime = dylib.lookupFunction<InputFloatC, InputFloat>('input_get_frame_time');
-    _getTime = dylib.lookupFunction<InputDoubleC, InputDouble>('input_get_time');
+    _getMouseX = dylib.lookupFunction<InputFloatC, InputFloat>(
+      'input_get_mouse_x',
+    );
+    _getMouseY = dylib.lookupFunction<InputFloatC, InputFloat>(
+      'input_get_mouse_y',
+    );
+    _isMouseButtonPressed = dylib.lookupFunction<InputIntBoolC, InputIntBool>(
+      'input_is_mouse_button_pressed',
+    );
+    _isMouseButtonDown = dylib.lookupFunction<InputIntBoolC, InputIntBool>(
+      'input_is_mouse_button_down',
+    );
+    _isMouseButtonReleased = dylib.lookupFunction<InputIntBoolC, InputIntBool>(
+      'input_is_mouse_button_released',
+    );
+    _getMouseWheelMove = dylib.lookupFunction<InputFloatC, InputFloat>(
+      'input_get_mouse_wheel_move',
+    );
+    _isKeyPressed = dylib.lookupFunction<InputIntBoolC, InputIntBool>(
+      'input_is_key_pressed',
+    );
+    _isKeyDown = dylib.lookupFunction<InputIntBoolC, InputIntBool>(
+      'input_is_key_down',
+    );
+    _getCharPressed = dylib.lookupFunction<InputIntCharC, InputIntChar>(
+      'input_get_char_pressed',
+    );
+    _getFrameTime = dylib.lookupFunction<InputFloatC, InputFloat>(
+      'input_get_frame_time',
+    );
+    _getTime = dylib.lookupFunction<InputDoubleC, InputDouble>(
+      'input_get_time',
+    );
   }
 
   double get mouseX => _getMouseX();

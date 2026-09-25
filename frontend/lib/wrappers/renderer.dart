@@ -1,7 +1,7 @@
 // lib/renderer.dart
 import 'dart:ffi';
 
-import 'package:cortex/ffi/lib_loader.dart';
+import 'package:frontend/ffi/lib_loader.dart';
 import '../ffi/renderer_bindings.dart';
 
 class Renderer {

@@ -1,6 +1,6 @@
-import 'package:cortex/wrappers/window.dart';
-import 'package:cortex/wrappers/renderer.dart';
-import 'package:cortex/core/input.dart';
+import 'package:frontend/wrappers/window.dart';
+import 'package:frontend/wrappers/renderer.dart';
+import 'package:frontend/core/input.dart';
 
 class AppWindow {
   final WindowManager _windowManager = WindowManager();

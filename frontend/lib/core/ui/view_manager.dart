@@ -1,8 +1,9 @@
-import 'package:cortex/core/context2d.dart';
-import 'package:cortex/core/context3d.dart';
-import 'package:cortex/core/input.dart';
-import 'package:cortex/core/navigator.dart';
-import 'package:cortex/core/ui/view.dart';
+import 'package:frontend/core/context2d.dart';
+import 'package:frontend/core/context3d.dart';
+import 'package:frontend/core/input.dart';
+import 'package:frontend/core/navigator.dart';
+import 'package:frontend/core/ui/view.dart';
+import 'package:frontend/core/utils.dart';
 
 /// El ViewManager administra el catálogo de Vistas (Pantallas/Modos del software)
 /// y garantiza que SOLO UNA View esté activa y renderizada a la vez.
@@ -52,12 +53,14 @@ class ViewManager {
   void switchView(String id) {
     // 1. Si la vista ya fue instanciada previamente en memoria
     if (_views.containsKey(id)) {
+      debugPrint("Cambiando a vista pre-instanciada: $id");
       _setActiveView(_views[id]!);
       return;
     }
 
     // 2. Si la vista está registrada como una fábrica Lazy, crearla bajo demanda
     if (_factories.containsKey(id)) {
+      debugPrint("Creando vista bajo demanda: $id");
       final view = _factories[id]!();
       _views[id] = view;
       view.init();

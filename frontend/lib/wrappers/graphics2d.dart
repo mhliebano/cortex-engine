@@ -1,6 +1,6 @@
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
-import 'package:cortex/ffi/lib_loader.dart';
+import 'package:frontend/ffi/lib_loader.dart';
 import '../ffi/graphics2d_bindings.dart';
 
 class Graphics2D {

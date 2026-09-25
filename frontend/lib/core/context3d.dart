@@ -1,5 +1,5 @@
-import 'package:cortex/wrappers/graphics3d.dart';
-import 'package:cortex/core/context2d.dart';
+import 'package:frontend/wrappers/graphics3d.dart';
+import 'package:frontend/core/context2d.dart';
 
 // ============================================================================
 // Tipos de datos de alto nivel

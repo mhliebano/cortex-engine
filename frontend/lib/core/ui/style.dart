@@ -1,4 +1,4 @@
-import 'package:cortex/core/context2d.dart';
+import 'package:frontend/core/context2d.dart';
 
 /// Sistema de Estilos tipo CSS para componentes UI.
 /// Permite definir clases CSS globales (ej. `.fancy-button`, `.sidebar-panel`)

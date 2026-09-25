@@ -1,6 +1,6 @@
-import 'package:cortex/wrappers/graphics2d.dart';
-import 'package:cortex/wrappers/renderer.dart';
-import 'package:cortex/core/input.dart';
+import 'package:frontend/wrappers/graphics2d.dart';
+import 'package:frontend/wrappers/renderer.dart';
+import 'package:frontend/core/input.dart';
 
 class ColorRGBA {
   final int r, g, b, a;

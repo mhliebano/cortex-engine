@@ -1,13 +1,13 @@
 // ignore_for_file: prefer_initializing_formals
 
-import 'package:cortex/core/context2d.dart';
-import 'package:cortex/core/context3d.dart';
-import 'package:cortex/core/input.dart';
-import 'package:cortex/core/ui/desktop/menu_bar.dart';
-import 'package:cortex/core/ui/desktop/side_bar.dart';
-import 'package:cortex/core/ui/desktop/status_bar.dart';
-import 'package:cortex/core/ui/desktop/tool_bar.dart';
-import 'package:cortex/core/ui/element.dart';
+import 'package:frontend/core/context2d.dart';
+import 'package:frontend/core/context3d.dart';
+import 'package:frontend/core/input.dart';
+import 'package:frontend/core/ui/desktop/menu_bar.dart';
+import 'package:frontend/core/ui/desktop/side_bar.dart';
+import 'package:frontend/core/ui/desktop/status_bar.dart';
+import 'package:frontend/core/ui/desktop/tool_bar.dart';
+import 'package:frontend/core/ui/element.dart';
 
 /// Contenedor de Disposición de Escritorio (`DesktopLayout`).
 /// Organiza automáticamente los componentes principales del entorno MDI:

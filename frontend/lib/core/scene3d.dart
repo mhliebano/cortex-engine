@@ -1,5 +1,5 @@
 import 'package:vector_math/vector_math_64.dart';
-import 'package:cortex/core/context3d.dart';
+import 'package:frontend/core/context3d.dart';
 
 /// Maneja la posición, rotación y escala de un objeto en el espacio 3D.
 class Transform3D {

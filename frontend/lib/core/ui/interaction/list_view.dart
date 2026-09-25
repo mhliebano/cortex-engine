@@ -1,9 +1,9 @@
-import 'package:cortex/core/context2d.dart';
-import 'package:cortex/core/context3d.dart';
-import 'package:cortex/core/input.dart';
-import 'package:cortex/core/ui/element.dart';
-import 'package:cortex/core/ui/style.dart';
-import 'package:cortex/core/ui/scroll_controller.dart';
+import 'package:frontend/core/context2d.dart';
+import 'package:frontend/core/context3d.dart';
+import 'package:frontend/core/input.dart';
+import 'package:frontend/core/ui/element.dart';
+import 'package:frontend/core/ui/style.dart';
+import 'package:frontend/core/ui/scroll_controller.dart';
 
 /// Contenedor Desplazable de Lista (`ListView`).
 /// Organiza una secuencia vertical de ítems (`children`) con desplazamiento fluido por rueda del mouse,

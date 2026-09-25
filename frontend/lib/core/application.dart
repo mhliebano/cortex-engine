@@ -1,16 +1,17 @@
 import 'dart:io' show Directory, File, Platform;
+import 'package:frontend/core/utils.dart';
 import 'package:path/path.dart' as path;
 
-import 'package:cortex/wrappers/window.dart';
-import 'package:cortex/core/audio.dart';
-import 'package:cortex/core/app_window.dart';
+import 'package:frontend/wrappers/window.dart';
+import 'package:frontend/core/audio.dart';
+import 'package:frontend/core/app_window.dart';
 
-import 'package:cortex/core/context2d.dart';
-import 'package:cortex/core/context3d.dart';
-import 'package:cortex/core/input.dart';
-import 'package:cortex/core/navigator.dart';
-import 'package:cortex/core/ui/view.dart';
-import 'package:cortex/core/ui/view_manager.dart';
+import 'package:frontend/core/context2d.dart';
+import 'package:frontend/core/context3d.dart';
+import 'package:frontend/core/input.dart';
+import 'package:frontend/core/navigator.dart';
+import 'package:frontend/core/ui/view.dart';
+import 'package:frontend/core/ui/view_manager.dart';
 
 /// La clase `Application` encapsula la ventana, contextos 2D/3D, ruteo, fuentes TTF y ciclo de vida de la app.
 class Application {
@@ -143,19 +144,21 @@ class Application {
   Future<void> run() async {
     _window.init(width, height, title, flags: flags);
 
+    debugPrint("Ventana de dimensiones $width x $height");
+
     // Inicializar dispositivo de audio
     AudioEngine.init();
 
     // Cargar automáticamente la fuente tipográfica TTF vectorizada de alta resolución
     _loadDefaultFont();
 
-    // Notificar las dimensiones reales iniciales de ventana a todas las vistas
-    _viewManager.handleResize(_window.width, _window.height);
-
     // Si Navigator especifica una ruta inicial, cargarla
     if (Navigator.initialRoute != null) {
       _viewManager.switchView(Navigator.initialRoute!);
     }
+
+    // Notificar las dimensiones reales iniciales de ventana a todas las vistas
+    _viewManager.handleResize(_window.width, _window.height);
 
     onInit();
 

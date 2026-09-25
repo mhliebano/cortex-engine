@@ -147,8 +147,8 @@ cortex/
         │       ├── 2.png
         │       └── 3.png
         └── lib/                           # Código fuente publicado del SDK
-            ├── cortex.dart                # Punto de entrada público barrel export principal (`package:cortex/cortex.dart`)
-            ├── cortex_engine.dart         # Punto de entrada secundario (`package:cortex/cortex_engine.dart`)
+            ├── cortex.dart                # Punto de entrada público barrel export principal (`package:frontend/cortex.dart`)
+            ├── cortex_engine.dart         # Punto de entrada secundario (`package:frontend/cortex_engine.dart`)
             ├── ffi/                       # Enlaces FFI C-ABI (Capa 1)
             │   ├── audio_bindings.dart
             │   ├── graphics2d_bindings.dart
@@ -227,11 +227,11 @@ cortex/
 
 ## 📋 Resumen de Directorios Raíz
 
-| Directorio | Descripción |
-| :--- | :--- |
+| Directorio               | Descripción                                                                                        |
+| :----------------------- | :------------------------------------------------------------------------------------------------- |
 | **`PROJECT_CONTEXT.md`** | Guía de arquitectura, comandos de compilación y reglas de UI para desarrolladores y asistentes IA. |
-| **`docs/`** | Documentación técnica oficial del motor, arquitectura y estructura de carpetas. |
-| **`scripts/`** | Scripts de construcción de releases del SDK (`build_release_sdk.dart`). |
-| **`backend/`** | Motor nativo escrito en **Rust**, responsable del renderizado GPU, audio y ventana C-ABI. |
-| **`frontend/`** | Motor en **Dart** (`lib/`) y proyecto de pruebas de aplicación (`bin/`). |
-| **`release/`** | Artefactos empaquetados finales del SDK distribuible (`release/sdk/`) con el binario CLI `cortex`. |
+| **`docs/`**              | Documentación técnica oficial del motor, arquitectura y estructura de carpetas.                    |
+| **`scripts/`**           | Scripts de construcción de releases del SDK (`build_release_sdk.dart`).                            |
+| **`backend/`**           | Motor nativo escrito en **Rust**, responsable del renderizado GPU, audio y ventana C-ABI.          |
+| **`frontend/`**          | Motor en **Dart** (`lib/`) y proyecto de pruebas de aplicación (`bin/`).                           |
+| **`release/`**           | Artefactos empaquetados finales del SDK distribuible (`release/sdk/`) con el binario CLI `cortex`. |

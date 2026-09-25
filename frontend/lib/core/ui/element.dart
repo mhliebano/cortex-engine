@@ -1,8 +1,8 @@
-import 'package:cortex/core/context2d.dart';
-import 'package:cortex/core/context3d.dart';
-import 'package:cortex/core/input.dart';
-export 'package:cortex/core/ui/layout_alignment.dart';
-export 'package:cortex/core/ui/text_editing_controller.dart';
+import 'package:frontend/core/context2d.dart';
+import 'package:frontend/core/context3d.dart';
+import 'package:frontend/core/input.dart';
+export 'package:frontend/core/ui/layout_alignment.dart';
+export 'package:frontend/core/ui/text_editing_controller.dart';
 
 /// Modalidad de expansión declarativa para componentes de la UI.
 enum Expand {
