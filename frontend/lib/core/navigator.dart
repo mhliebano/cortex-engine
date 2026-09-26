@@ -1,7 +1,6 @@
 import 'package:frontend/core/ui/desktop/desktop_layout.dart';
-import 'package:frontend/core/ui/view.dart';
 
-typedef ViewBuilder = View Function();
+typedef ViewBuilder = Object Function();
 
 /// Sistema de Navegación por Rutas Genérico para el Motor UI.
 /// Permite registrar la tabla de rutas con carga diferida (Lazy Loading) y navegar con `Navigator.to('ruta')`.
@@ -31,8 +30,7 @@ class Navigator {
   /// Ejemplo:
   /// ```dart
   /// Navigator.registerRoutes({
-  ///   'test_view': () => TestView(),
-  ///   'editor3d': () => Editor3DView(),
+  ///   'test_view': () => ContainerView(id: 'test_view', panels: [...]),
   /// });
   /// ```
   static void registerRoutes(Map<String, ViewBuilder> routes) {
@@ -56,9 +54,6 @@ class Navigator {
     final layout = DesktopLayout.activeLayout;
 
     if (!fullscreen && layout != null && _routes.containsKey(route)) {
-      // En modo MDI, delegar siempre al ViewManager mediante fullscreen
-      // para que el Greedy pueda operar con las dimensiones reales de la ventana.
-      // Si hay un layout activo, usar el primer panel como body.
       if (_navigationHandler != null) {
         _navigationHandler!(route);
       }

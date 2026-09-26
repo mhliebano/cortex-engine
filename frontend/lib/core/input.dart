@@ -84,7 +84,7 @@ class InputEngine {
 }
 
 /// Encapsula una instancia de [InputEngine] aplicando una transformación
-/// de coordenadas (escala y desfasaje) para vistas de lienzo fijo (`CanvasView`).
+/// de coordenadas (escala y desfasaje) para vistas de lienzo fijo ([ContainerView]).
 class TransformedInputEngine extends InputEngine {
   final InputEngine _delegate;
   final double offsetX;

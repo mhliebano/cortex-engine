@@ -1,34 +1,31 @@
-import 'package:frontend/core/context2d.dart';
-import 'package:frontend/core/context3d.dart';
-import 'package:frontend/core/input.dart';
-import 'package:frontend/core/navigator.dart';
-import 'package:frontend/core/ui/view.dart';
-import 'package:frontend/core/utils.dart';
+part of 'ui.dart';
 
 /// El ViewManager administra el catálogo de Vistas (Pantallas/Modos del software)
 /// y garantiza que SOLO UNA View esté activa y renderizada a la vez.
 /// Soporta Instanciación Bajo Demanda (Lazy Loading) y Liberación Automática de Memoria.
 class ViewManager {
-  final Map<String, View> _views = {};
+  final Map<String, _View> _views = {};
   final Map<String, ViewBuilder> _factories = {};
   final Set<String> _autoDisposeViews = {};
 
-  View? _activeView;
+  _View? _activeView;
   int _lastWidth = 0;
   int _lastHeight = 0;
 
-  View? get activeView => _activeView;
+  Object? get activeView => _activeView;
   int get lastWidth => _lastWidth;
   int get lastHeight => _lastHeight;
 
   /// Registra una vista pre-instanciada (Instanciación inmediata).
-  void registerView(View view) {
-    _views[view.id] = view;
-    view.init();
-    if (_lastWidth > 0 && _lastHeight > 0) {
-      view.resize(_lastWidth, _lastHeight);
+  void registerView(Object view) {
+    if (view is _View) {
+      _views[view.id] = view;
+      view.init();
+      if (_lastWidth > 0 && _lastHeight > 0) {
+        view.resize(_lastWidth, _lastHeight);
+      }
+      _activeView ??= view;
     }
-    _activeView ??= view;
   }
 
   /// Registra una fábrica de vista con Carga Diferida (Lazy Loading).
@@ -61,17 +58,19 @@ class ViewManager {
     // 2. Si la vista está registrada como una fábrica Lazy, crearla bajo demanda
     if (_factories.containsKey(id)) {
       debugPrint("Creando vista bajo demanda: $id");
-      final view = _factories[id]!();
-      _views[id] = view;
-      view.init();
-      if (_lastWidth > 0 && _lastHeight > 0) {
-        view.resize(_lastWidth, _lastHeight);
+      final rawView = _factories[id]!();
+      if (rawView is _View) {
+        _views[id] = rawView;
+        rawView.init();
+        if (_lastWidth > 0 && _lastHeight > 0) {
+          rawView.resize(_lastWidth, _lastHeight);
+        }
+        _setActiveView(rawView);
       }
-      _setActiveView(view);
     }
   }
 
-  void _setActiveView(View newView) {
+  void _setActiveView(_View newView) {
     // Si la vista anterior requiere auto-liberación de memoria (autoDispose)
     if (_activeView != null && _activeView != newView) {
       final oldId = _activeView!.id;

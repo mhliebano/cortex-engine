@@ -17,11 +17,19 @@
 - **Álgebra 3D**: Adición del paquete estándar `vector_math` al `pubspec.yaml` del SDK para manipulación de cuaterniones, matrices 4x4 y transformaciones.
 - **Nuevo Sistema de Layouts UI (Frontend)**: Refactorización completa del sistema de maquetación bajo una jerarquía estricta de 3 niveles (`View` -> `Panel` -> `Row`/`Col`) y soporte polimórfico de modos de pantalla:
   - **`FluidView` (Modo Reflow - Hoja Elástica)**: Vista responsiva para dashboards, MDI y CAD. Re-ejecuta el algoritmo Greedy de esquinas candidatas al cambiar el tamaño de ventana.
-  - **`CanvasView` (Modo Fit - Lienzo Lógico)**: Vista de resolución fija para juegos 2D, herramientas retro y mascotas de escritorio. Empaqueta el maquetado una sola vez y escala de forma uniforme con *letterboxing*/*pillarboxing*, transformando automáticamente las coordenadas del ratón (`TransformedInputEngine`) para interacción perfecta sin cambiar los componentes.
-  - **Corrección de Empaquetado Greedy (No Queue Jumping)**: Ajuste en el algoritmo de ordenamiento de esquinas candidatas en `View._placePanels` (priorización estricta `y` -> `x`) para garantizar la preservación del orden secuencial de declaración en `build()` sin saltos de cola.
+  - **`ContainerView` (Modo Fit - Lienzo Lógico)**: Vista de resolución fija para juegos 2D, herramientas retro y mascotas de escritorio. Empaqueta el maquetado una sola vez y escala de forma uniforme con *letterboxing*/*pillarboxing*, transformando automáticamente las coordenadas del ratón (`TransformedInputEngine`) para interacción perfecta sin cambiar los componentes.
+  - **Corrección de Empaquetado Greedy (No Queue Jumping)**: Ajuste en el algoritmo de ordenamiento de esquinas candidatas en `_View._placePanels` (priorización estricta `y` -> `x`) para garantizar la preservación del orden secuencial de declaración en `build()` sin saltos de cola.
   - **Transformación de Contexto 2D**: Soporte integrado para matrices de escala y traslación (`translate` + `scale`) en `Context2D` durante la fase de renderizado de vistas de lienzo.
   - **`Panel`**: Lienzo acotado / viewport independiente con reglas estrictas de dimensiones (fijas o `expandWidth`/`expandHeight`) y recorte scissor automático.
   - **`Row` y `Col`**: Componentes de maquetación fina interna con auto-scroll integrado sin romper la estructura contenedora.
+
+### Cambios
+
+- **Saneamiento de la API Pública de Vistas (Minimalismo Ortogonal)**:
+  - Privatización de la clase base abstracta `View` a `_View`, eliminando detalles de herencia interna de la capa del usuario final.
+  - Renombrado de la vista de lienzo de resolución fija `CanvasView` a `ContainerView`.
+  - `FluidView` y `ContainerView` quedan expuestas como las dos únicas entidades públicas concretas del motor para composición e instanciación directa.
+  - Depuración de los exports públicos en `ui.dart` para encapsular la estructura base.
 
 ### Corregido
 

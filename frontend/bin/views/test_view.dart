@@ -1,9 +1,7 @@
 import 'package:frontend/core/ui/ui.dart';
 
-class TestView extends FluidView {
-  TestView() : super(id: 'test_view') {
-    print('Constructor Vista de prueba');
-  }
+class TestView extends ContainerView {
+  TestView() : super(id: 'test_view');
 
   @override
   void onInit() {
@@ -14,10 +12,8 @@ class TestView extends FluidView {
   @override
   List<Panel> build() {
     return [
-      Panel(width: 400, height: 200, className: "panel-1"),
-      Panel(width: 300, height: 100, className: "panel-2"),
-      Panel(width: 100, height: 100, className: "panel-3"),
-      Panel(expand: Expand.width, height: 50, className: "panel-4"),
+      Panel(expand: Expand.width, height: 300, className: "panel-1"),
+      Panel(expand: Expand.width, height: 300, className: "panel-2"),
     ];
   }
 }

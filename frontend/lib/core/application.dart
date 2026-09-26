@@ -6,12 +6,7 @@ import 'package:frontend/wrappers/window.dart';
 import 'package:frontend/core/audio.dart';
 import 'package:frontend/core/app_window.dart';
 
-import 'package:frontend/core/context2d.dart';
-import 'package:frontend/core/context3d.dart';
-import 'package:frontend/core/input.dart';
-import 'package:frontend/core/navigator.dart';
-import 'package:frontend/core/ui/view.dart';
-import 'package:frontend/core/ui/view_manager.dart';
+import 'package:frontend/core/ui/ui.dart';
 
 /// La clase `Application` encapsula la ventana, contextos 2D/3D, ruteo, fuentes TTF y ciclo de vida de la app.
 class Application {
@@ -52,7 +47,7 @@ class Application {
   InputEngine get input => _window.input;
 
   /// Registra una vista pre-instanciada en la aplicación.
-  void registerView(View view) {
+  void registerView(Object view) {
     _viewManager.registerView(view);
   }
 

@@ -1,36 +1,10 @@
-import 'dart:math' as math;
-import 'package:frontend/core/context2d.dart';
-import 'package:frontend/core/context3d.dart';
-import 'package:frontend/core/input.dart';
-import 'package:frontend/core/ui/element.dart';
-import 'package:frontend/core/ui/layouts/panel.dart';
-import 'package:frontend/core/ui/interaction/toast.dart';
-import 'package:frontend/core/ui/interaction/snack_bar.dart';
-import 'package:frontend/core/ui/interaction/dialog.dart';
-export 'package:frontend/core/ui/element.dart';
+part of 'ui.dart';
 
-/// Marco Global de la Aplicación (`View`).
+/// Contrato abstracto interno del marco global de la aplicación (`_View`).
 ///
-/// Actúa como el contenedor raíz anclado a las dimensiones de la ventana.
-/// Sus hijos directos son **exclusivamente** instancias de [Panel].
-///
-/// ## Posicionamiento: Algoritmo Greedy de Esquinas Candidatas
-///
-/// La View orquesta la posición `(x, y)` de sus Panels usando un algoritmo
-/// determinista basado en esquinas libres:
-///
-/// 1. La lista de offsets candidatos inicia en `[(0, 0)]`.
-/// 2. Por cada Panel declarado en [build], se prueban los offsets en orden.
-/// 3. Para cada candidato se resuelven las dimensiones del Panel:
-///    - Dimensión fija → se usa directamente.
-///    - `isFlexWidth`/`isFlexHeight` → se expande al espacio libre desde ese candidato.
-/// 4. Si el Panel cabe (sin colisión y sin desbordamiento), se coloca ahí y
-///    se generan dos nuevas esquinas candidatas.
-/// 5. Si ningún offset lo admite, el Panel **no se coloca** y se emite un warning.
-///
-/// El Greedy se re-ejecuta en cada llamada a [resize], garantizando que los
-/// Panels siempre reflejan las dimensiones actuales de la ventana.
-class View {
+/// Mantiene la interfaz y comportamiento interno que el motor de Cortex usa para
+/// calcular dimensiones (Greedy), iterar y disparar el renderizado y ciclo de vida.
+abstract class _View {
   final String id;
   int _width = 0;
   int _height = 0;
@@ -46,7 +20,7 @@ class View {
   /// Panels ya posicionados y dimensionados por el Greedy (los reales).
   final List<Panel> _panels = [];
 
-  View({
+  _View({
     required this.id,
     this.isVisible = true,
     this.useScissorClipping = true,
@@ -73,16 +47,12 @@ class View {
       _isBuilt = true;
       _declared.clear();
       _declared.addAll(build());
-      // Si ya tenemos dimensiones, ejecutar Greedy ahora mismo.
-      // Si no, el Greedy se ejecutará en la primera llamada a resize().
       if (_width > 0 && _height > 0) {
         _runGreedy();
       }
     }
   }
 
-  /// Ejecuta el Greedy desde cero con los panels declarados actuales.
-  /// Solo opera si las dimensiones de la ventana son conocidas.
   void _runGreedy() {
     if (_width <= 0 || _height <= 0) return;
 
@@ -91,8 +61,6 @@ class View {
     _placePanels(_declared, savedStates);
   }
 
-  /// Forzar la reconstrucción de la jerarquía de Panels.
-  /// Preserva automáticamente el estado dinámico entre reconstrucciones.
   void rebuild() {
     _isBuilt = false;
     _declared.clear();
@@ -114,11 +82,9 @@ class View {
     for (final panel in declared) {
       bool positioned = false;
 
-      // Guardar las dimensiones originales intactas por si hay que evaluar múltiples esquinas
       final int originalWidth = panel.width;
       final int originalHeight = panel.height;
 
-      // Ordenar candidatos por Y primero (arriba a abajo), luego por X (izquierda a derecha)
       candidates.sort((a, b) {
         if (a.y != b.y) return a.y.compareTo(b.y);
         return a.x.compareTo(b.x);
@@ -127,16 +93,13 @@ class View {
       for (int i = 0; i < candidates.length; i++) {
         final c = candidates[i];
 
-        // 1. Resolver en variables locales, NO en el panel
         final resolvedW = _resolveWidth(panel, c.x, originalWidth);
         final resolvedH = _resolveHeight(panel, c.y, originalHeight);
 
         if (resolvedW <= 0 || resolvedH <= 0) continue;
 
-        // 2. Crear una caja temporal (Bounding Box) para el test
         final candidateBox = (x: c.x, y: c.y, w: resolvedW, h: resolvedH);
 
-        // 3. Test de límites y colisiones usando la caja temporal
         bool outOfBounds =
             (candidateBox.x + candidateBox.w > _width) ||
             (candidateBox.y + candidateBox.h > _height);
@@ -150,7 +113,6 @@ class View {
         );
 
         if (!outOfBounds && !colisiona) {
-          // ✅ El panel cabe: aplicar mutación definitiva
           panel.x = candidateBox.x;
           panel.y = candidateBox.y;
           panel.width = candidateBox.w;
@@ -165,7 +127,6 @@ class View {
             panel.importState(savedStates[key]!);
           }
 
-          // 4. Generar nuevas esquinas (evitando duplicados)
           final rightCorner = (x: panel.x + panel.width, y: panel.y);
           final bottomCorner = (x: panel.x, y: panel.y + panel.height);
 
@@ -176,7 +137,6 @@ class View {
             candidates.add(bottomCorner);
           }
 
-          // 5. CULLING REAL: Eliminar esquinas sepultadas por el nuevo panel
           candidates.removeWhere(
             (corner) =>
                 corner.x >= panel.x &&
@@ -192,8 +152,8 @@ class View {
 
       if (!positioned) {
         print(
-          '⚠️ WARNING [View "$id"]: Panel "${panel.key ?? panel.runtimeType}" '
-          'no pudo posicionarse. Dimensiones originales: ${originalWidth}x${originalHeight}. '
+          '⚠️ WARNING [_View "$id"]: Panel "${panel.key ?? panel.runtimeType}" '
+          'no pudo posicionarse. Dimensiones originales: ${originalWidth}x$originalHeight. '
           'Verifica espacio disponible y colisiones.',
         );
       }
@@ -202,24 +162,20 @@ class View {
     _panels.addAll(placed);
   }
 
-  /// Resuelve el ancho definitivo de un Panel para un candidato X dado.
   int _resolveWidth(Panel panel, int candidateX, int originalWidth) {
     if (panel.isFlexWidth) {
-      // Ocupa todo el ancho libre desde candidateX hasta el borde derecho
       final free = _width - candidateX;
       return free > 0 ? free : 0;
     }
-    return originalWidth; // Usa el valor original intacto
+    return originalWidth;
   }
 
-  /// Resuelve el alto definitivo de un Panel para un candidato Y dado.
   int _resolveHeight(Panel panel, int candidateY, int originalHeight) {
     if (panel.isFlexHeight) {
-      // Ocupa todo el alto libre desde candidateY hasta el borde inferior
       final free = _height - candidateY;
       return free > 0 ? free : 0;
     }
-    return originalHeight; // Usa el valor original intacto
+    return originalHeight;
   }
 
   String _panelKey(Panel panel, int index) {
@@ -263,11 +219,9 @@ class View {
   }
 
   // =======================================================
-  // HOOKS SOBREESCRIBIBLES POR EL DESARROLLADOR
+  // HOOKS SOBREESCRIBIBLES
   // =======================================================
 
-  /// Construye y retorna la lista de [Panel]s que componen esta vista.
-  /// El orden importa: el Greedy los posiciona en el orden declarado.
   List<Panel> build() => [];
 
   void onInit() {}
@@ -277,7 +231,7 @@ class View {
   void onDispose() {}
 
   // =======================================================
-  // MÉTODOS DEL MOTOR (EJECUTADOS INTERNAMENTE POR VIEWMANAGER)
+  // MÉTODOS DEL MOTOR
   // =======================================================
 
   void init() {
@@ -325,25 +279,20 @@ class View {
   }
 
   void _renderInternal(Context2D ctx2d, Context3D ctx3d) {
-    // 0. Fondo opcional de la vista
     if (backgroundColor != null && _width > 0 && _height > 0) {
       ctx2d.drawRect(x, y, _width, _height, backgroundColor!);
     }
 
-    // 1. Hook de dibujado personalizado del desarrollador
     onRender(ctx2d, ctx3d);
 
-    // 2. Pase 1: Renderizar todos los Panels posicionados
     for (final panel in _panels) {
       if (panel.isVisible) panel.onRender(ctx2d, ctx3d);
     }
 
-    // 3. Pase 2: Capas flotantes (dropdowns, popups, tooltips) por encima de todo
     for (final panel in _panels) {
       if (panel.isVisible) panel.onRenderOverlay(ctx2d, ctx3d);
     }
 
-    // 4. Pase 3: Notificaciones y diálogos modales flotantes globales
     final vw = _width > 0 ? _width : 1280;
     final vh = _height > 0 ? _height : 720;
     Toast.renderActiveToasts(ctx2d, ctx3d, vw, vh);
@@ -351,16 +300,11 @@ class View {
     Dialog.renderActiveDialog(ctx2d, ctx3d, vw, vh);
   }
 
-  /// Llamado por el ViewManager cada vez que la ventana cambia de tamaño.
-  /// Re-ejecuta el Greedy para reposicionar y redimensionar todos los Panels.
   void resize(int parentWidth, int parentHeight) {
     _width = parentWidth;
     _height = parentHeight;
 
     _ensureBuilt();
-
-    // Siempre re-ejecutar el Greedy con las nuevas dimensiones.
-    // Esto garantiza que los Panels expand:true llenen el nuevo espacio.
     _runGreedy();
 
     onResize(_width, _height);
@@ -375,13 +319,63 @@ class View {
 }
 
 /// Vista responsiva por defecto (Modo Reflow - Hoja Elástica).
-abstract class FluidView extends View {
+///
+/// Entidad pública para instanciación directa o composición.
+class FluidView extends _View {
+  final List<Panel>? _panelsList;
+  final List<Panel> Function()? _builder;
+  final void Function()? _onInitCallback;
+  final void Function(double dt, InputEngine input)? _onUpdateCallback;
+  final void Function(Context2D ctx2d, Context3D ctx3d)? _onRenderCallback;
+  final void Function(int width, int height)? _onResizeCallback;
+  final void Function()? _onDisposeCallback;
+
   FluidView({
     required super.id,
     super.isVisible,
     super.useScissorClipping,
     super.backgroundColor,
-  });
+    List<Panel>? panels,
+    List<Panel> Function()? builder,
+    void Function()? onInit,
+    void Function(double dt, InputEngine input)? onUpdate,
+    void Function(Context2D ctx2d, Context3D ctx3d)? onRender,
+    void Function(int width, int height)? onResize,
+    void Function()? onDispose,
+  })  : _panelsList = panels,
+        _builder = builder,
+        _onInitCallback = onInit,
+        _onUpdateCallback = onUpdate,
+        _onRenderCallback = onRender,
+        _onResizeCallback = onResize,
+        _onDisposeCallback = onDispose;
+
+  @override
+  List<Panel> build() {
+    final builderFunc = _builder;
+    if (builderFunc != null) return builderFunc();
+    final list = _panelsList;
+    if (list != null) return list;
+    return super.build();
+  }
+
+  @override
+  void onInit() {
+    super.onInit();
+    _onInitCallback?.call();
+  }
+
+  @override
+  void onUpdate(double dt, InputEngine input) {
+    super.onUpdate(dt, input);
+    _onUpdateCallback?.call(dt, input);
+  }
+
+  @override
+  void onRender(Context2D ctx2d, Context3D ctx3d) {
+    super.onRender(ctx2d, ctx3d);
+    _onRenderCallback?.call(ctx2d, ctx3d);
+  }
 
   @override
   void resize(int parentWidth, int parentHeight) {
@@ -389,12 +383,21 @@ abstract class FluidView extends View {
     _height = parentHeight;
     _ensureBuilt();
     _runGreedy();
-    onResize(_width, _height);
+    super.resize(_width, _height);
+    _onResizeCallback?.call(_width, _height);
+  }
+
+  @override
+  void onDispose() {
+    super.onDispose();
+    _onDisposeCallback?.call();
   }
 }
 
-/// Vista de lienzo de resolución fija (Modo Fit - Escalado Fijo).
-abstract class CanvasView extends View {
+/// Vista de contenedor/lienzo de resolución fija o lógica (Modo Fit - Escalado Fijo).
+///
+/// Entidad pública para instanciación directa o composición.
+class ContainerView extends _View {
   int _logicalWidth;
   int _logicalHeight;
   ColorRGBA letterboxColor;
@@ -409,7 +412,15 @@ abstract class CanvasView extends View {
   double _offsetY = 0.0;
   bool _initializedLogicalSize = false;
 
-  CanvasView({
+  final List<Panel>? _panelsList;
+  final List<Panel> Function()? _builder;
+  final void Function()? _onInitCallback;
+  final void Function(double dt, InputEngine input)? _onUpdateCallback;
+  final void Function(Context2D ctx2d, Context3D ctx3d)? _onRenderCallback;
+  final void Function(int width, int height)? _onResizeCallback;
+  final void Function()? _onDisposeCallback;
+
+  ContainerView({
     required super.id,
     int? logicalWidth,
     int? logicalHeight,
@@ -417,8 +428,22 @@ abstract class CanvasView extends View {
     super.isVisible,
     super.useScissorClipping,
     super.backgroundColor,
+    List<Panel>? panels,
+    List<Panel> Function()? builder,
+    void Function()? onInit,
+    void Function(double dt, InputEngine input)? onUpdate,
+    void Function(Context2D ctx2d, Context3D ctx3d)? onRender,
+    void Function(int width, int height)? onResize,
+    void Function()? onDispose,
   })  : _logicalWidth = logicalWidth ?? 0,
-        _logicalHeight = logicalHeight ?? 0 {
+        _logicalHeight = logicalHeight ?? 0,
+        _panelsList = panels,
+        _builder = builder,
+        _onInitCallback = onInit,
+        _onUpdateCallback = onUpdate,
+        _onRenderCallback = onRender,
+        _onResizeCallback = onResize,
+        _onDisposeCallback = onDispose {
     if (_logicalWidth > 0 && _logicalHeight > 0) {
       _initializedLogicalSize = true;
       _width = _logicalWidth;
@@ -429,6 +454,21 @@ abstract class CanvasView extends View {
   double get scale => _scale;
   double get offsetX => _offsetX;
   double get offsetY => _offsetY;
+
+  @override
+  List<Panel> build() {
+    final builderFunc = _builder;
+    if (builderFunc != null) return builderFunc();
+    final list = _panelsList;
+    if (list != null) return list;
+    return super.build();
+  }
+
+  @override
+  void onInit() {
+    super.onInit();
+    _onInitCallback?.call();
+  }
 
   @override
   void resize(int parentWidth, int parentHeight) {
@@ -461,7 +501,8 @@ abstract class CanvasView extends View {
       _runGreedy();
     }
 
-    onResize(targetW, targetH);
+    super.resize(targetW, targetH);
+    _onResizeCallback?.call(targetW, targetH);
   }
 
   @override
@@ -476,7 +517,8 @@ abstract class CanvasView extends View {
       scale: _scale,
     );
 
-    onUpdate(dt, transformedInput);
+    super.onUpdate(dt, transformedInput);
+    _onUpdateCallback?.call(dt, transformedInput);
 
     for (final panel in panels) {
       if (panel.isVisible) panel.onUpdate(dt, transformedInput);
@@ -525,6 +567,7 @@ abstract class CanvasView extends View {
       }
 
       _renderInternal(ctx2d, ctx3d);
+      _onRenderCallback?.call(ctx2d, ctx3d);
 
       if (useClip) {
         ctx2d.endScissor();
@@ -534,5 +577,11 @@ abstract class CanvasView extends View {
     } finally {
       Element.isRenderingPhase = false;
     }
+  }
+
+  @override
+  void onDispose() {
+    super.onDispose();
+    _onDisposeCallback?.call();
   }
 }

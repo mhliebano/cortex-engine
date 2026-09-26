@@ -3,17 +3,25 @@
 /// `import 'package:frontend/core/ui/ui.dart';`
 library;
 
+import 'dart:math' as math;
+import 'package:frontend/core/context2d.dart';
+import 'package:frontend/core/context3d.dart';
+import 'package:frontend/core/input.dart';
+import 'package:frontend/core/navigator.dart';
+import 'package:frontend/core/utils.dart';
+
+import 'element.dart';
+import 'layouts/panel.dart';
+import 'interaction/toast.dart';
+import 'interaction/snack_bar.dart';
+import 'interaction/dialog.dart';
+
 export 'package:frontend/core/context2d.dart';
 export 'package:frontend/core/context3d.dart';
 export 'package:frontend/core/input.dart';
 export 'element.dart';
 export 'icons.dart';
-//export 'layout_alignment.dart';
 export 'style.dart';
-//export 'text_editing_controller.dart';
-//export 'scroll_controller.dart';
-export 'view.dart';
-export 'view_manager.dart';
 export 'package:frontend/core/navigator.dart';
 
 // Componentes de Maquetación
@@ -58,3 +66,6 @@ export 'interaction/dialog.dart';
 
 // Componentes 3D / Viewport
 export '3d/viewport_3d.dart';
+
+part 'view.dart';
+part 'view_manager.dart';
