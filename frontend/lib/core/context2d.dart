@@ -26,6 +26,51 @@ class Context2D {
   final InputEngine _input = InputEngine();
   final List<_ScissorRect> _scissorStack = [];
 
+  double _scaleX = 1.0;
+  double _scaleY = 1.0;
+  double _offsetX = 0.0;
+  double _offsetY = 0.0;
+  bool _hasTransform = false;
+
+  void translate(double dx, double dy) {
+    _offsetX = dx;
+    _offsetY = dy;
+    _hasTransform = true;
+  }
+
+  void scale(double sx, [double? sy]) {
+    _scaleX = sx;
+    _scaleY = sy ?? sx;
+    _hasTransform = true;
+  }
+
+  void setTransform({
+    required double scale,
+    required double offsetX,
+    required double offsetY,
+  }) {
+    _scaleX = scale;
+    _scaleY = scale;
+    _offsetX = offsetX;
+    _offsetY = offsetY;
+    _hasTransform = true;
+  }
+
+  void resetTransform() {
+    _scaleX = 1.0;
+    _scaleY = 1.0;
+    _offsetX = 0.0;
+    _offsetY = 0.0;
+    _hasTransform = false;
+  }
+
+  int _tx(int x) => _hasTransform ? (x * _scaleX + _offsetX).round() : x;
+  int _ty(int y) => _hasTransform ? (y * _scaleY + _offsetY).round() : y;
+  int _tw(int w) => _hasTransform ? (w * _scaleX).round() : w;
+  int _th(int h) => _hasTransform ? (h * _scaleY).round() : h;
+  int _tsz(int sz) => _hasTransform ? (sz * _scaleY).round() : sz;
+  double _tr(double r) => _hasTransform ? r * _scaleX : r;
+
   bool loadFont(String filePath, [int fontSize = 32]) {
     return _g2d.loadFont(filePath, fontSize);
   }
@@ -42,13 +87,18 @@ class Context2D {
     ColorRGBA bgColor = ColorRGBA.darkGray,
     ColorRGBA borderColor = ColorRGBA.lightGray,
   }) {
-    _g2d.drawRect(x, y, w, h, bgColor.r, bgColor.g, bgColor.b, bgColor.a);
-    if (borderColor.a > 0 && w > 1 && h > 1) {
+    final px = _tx(x);
+    final py = _ty(y);
+    final pw = _tw(w);
+    final ph = _th(h);
+
+    _g2d.drawRect(px, py, pw, ph, bgColor.r, bgColor.g, bgColor.b, bgColor.a);
+    if (borderColor.a > 0 && pw > 1 && ph > 1) {
       _g2d.drawRectLines(
-        x,
-        y,
-        w - 1,
-        h - 1,
+        px,
+        py,
+        pw - 1,
+        ph - 1,
         borderColor.r,
         borderColor.g,
         borderColor.b,
@@ -58,15 +108,20 @@ class Context2D {
   }
 
   void beginScissor(int x, int y, int width, int height) {
+    final px = _tx(x);
+    final py = _ty(y);
+    final pw = _tw(width);
+    final ph = _th(height);
+
     if (_scissorStack.isNotEmpty) {
       final parent = _scissorStack.last;
       final parentRight = parent.x + parent.width;
       final parentBottom = parent.y + parent.height;
-      final childRight = x + width;
-      final childBottom = y + height;
+      final childRight = px + pw;
+      final childBottom = py + ph;
 
-      final ix = x > parent.x ? x : parent.x;
-      final iy = y > parent.y ? y : parent.y;
+      final ix = px > parent.x ? px : parent.x;
+      final iy = py > parent.y ? py : parent.y;
       final iright = childRight < parentRight ? childRight : parentRight;
       final ibottom = childBottom < parentBottom ? childBottom : parentBottom;
 
@@ -77,9 +132,9 @@ class Context2D {
       _scissorStack.add(intersected);
       _renderer.beginScissor(ix, iy, iw, ih);
     } else {
-      final rect = _ScissorRect(x, y, width, height);
+      final rect = _ScissorRect(px, py, pw, ph);
       _scissorStack.add(rect);
-      _renderer.beginScissor(x, y, width, height);
+      _renderer.beginScissor(px, py, pw, ph);
     }
   }
 
@@ -102,7 +157,7 @@ class Context2D {
     int fontSize, [
     ColorRGBA color = ColorRGBA.white,
   ]) {
-    _g2d.drawText(text, x, y, fontSize, color.r, color.g, color.b, color.a);
+    _g2d.drawText(text, _tx(x), _ty(y), _tsz(fontSize), color.r, color.g, color.b, color.a);
   }
 
   /// Resetea el arena de texto al final de cada frame (llámalo tras endFrame()).
@@ -113,7 +168,7 @@ class Context2D {
   }
 
   void drawRect(int x, int y, int w, int h, ColorRGBA color) {
-    _g2d.drawRect(x, y, w, h, color.r, color.g, color.b, color.a);
+    _g2d.drawRect(_tx(x), _ty(y), _tw(w), _th(h), color.r, color.g, color.b, color.a);
   }
 
   bool drawButton(
@@ -130,16 +185,21 @@ class Context2D {
     final isHover = _input.isHovering(x, y, w, h);
     final bg = isHover ? hoverColor : defaultColor;
 
-    _g2d.drawRect(x, y, w, h, bg.r, bg.g, bg.b, bg.a);
-    _g2d.drawRectLines(x, y, w, h, 255, 255, 255, 100);
+    final px = _tx(x);
+    final py = _ty(y);
+    final pw = _tw(w);
+    final ph = _th(h);
 
-    final textX = x + 15;
-    final textY = y + (h ~/ 4);
+    _g2d.drawRect(px, py, pw, ph, bg.r, bg.g, bg.b, bg.a);
+    _g2d.drawRectLines(px, py, pw, ph, 255, 255, 255, 100);
+
+    final textX = _tx(x + 15);
+    final textY = _ty(y + (h ~/ 4));
     _g2d.drawText(
       label,
       textX,
       textY,
-      fontSize,
+      _tsz(fontSize),
       textColor.r,
       textColor.g,
       textColor.b,
@@ -151,9 +211,9 @@ class Context2D {
 
   void drawCircle(int centerX, int centerY, double radius, ColorRGBA color) {
     _g2d.drawCircle(
-      centerX,
-      centerY,
-      radius,
+      _tx(centerX),
+      _ty(centerY),
+      _tr(radius),
       color.r,
       color.g,
       color.b,
@@ -168,9 +228,9 @@ class Context2D {
     ColorRGBA color,
   ) {
     _g2d.drawCircleLines(
-      centerX,
-      centerY,
-      radius,
+      _tx(centerX),
+      _ty(centerY),
+      _tr(radius),
       color.r,
       color.g,
       color.b,
@@ -188,9 +248,9 @@ class Context2D {
     ColorRGBA color = ColorRGBA.white,
   }) {
     _g2d.drawArc(
-      centerX,
-      centerY,
-      radius,
+      _tx(centerX),
+      _ty(centerY),
+      _tr(radius),
       startAngle,
       endAngle,
       segments,
@@ -211,9 +271,9 @@ class Context2D {
     ColorRGBA color = ColorRGBA.white,
   }) {
     _g2d.drawArcLines(
-      centerX,
-      centerY,
-      radius,
+      _tx(centerX),
+      _ty(centerY),
+      _tr(radius),
       startAngle,
       endAngle,
       segments,
@@ -239,10 +299,10 @@ class Context2D {
   }) {
     _g2d.drawTexture(
       textureId,
-      x,
-      y,
-      width,
-      height,
+      _tx(x),
+      _ty(y),
+      _tw(width),
+      _th(height),
       rotation,
       tint.r,
       tint.g,
@@ -265,10 +325,10 @@ class Context2D {
     ColorRGBA color = ColorRGBA.white,
   }) {
     _g2d.drawRoundRect(
-      x,
-      y,
-      w,
-      h,
+      _tx(x),
+      _ty(y),
+      _tw(w),
+      _th(h),
       roundness,
       segments,
       color.r,
@@ -289,13 +349,13 @@ class Context2D {
     ColorRGBA color = ColorRGBA.white,
   }) {
     _g2d.drawRoundRectLines(
-      x,
-      y,
-      w,
-      h,
+      _tx(x),
+      _ty(y),
+      _tw(w),
+      _th(h),
       roundness,
       segments,
-      lineThick,
+      lineThick * _scaleX,
       color.r,
       color.g,
       color.b,
@@ -312,10 +372,10 @@ class Context2D {
     ColorRGBA color = ColorRGBA.white,
   }) {
     _g2d.drawPoly(
-      centerX,
-      centerY,
+      _tx(centerX),
+      _ty(centerY),
       sides,
-      radius,
+      _tr(radius),
       rotation,
       color.r,
       color.g,
@@ -334,12 +394,12 @@ class Context2D {
     ColorRGBA color = ColorRGBA.white,
   }) {
     _g2d.drawPolyLines(
-      centerX,
-      centerY,
+      _tx(centerX),
+      _ty(centerY),
       sides,
-      radius,
+      _tr(radius),
       rotation,
-      lineThick,
+      lineThick * _scaleX,
       color.r,
       color.g,
       color.b,
@@ -357,12 +417,12 @@ class Context2D {
     ColorRGBA color,
   ) {
     _g2d.drawTriangle(
-      x1,
-      y1,
-      x2,
-      y2,
-      x3,
-      y3,
+      _tx(x1),
+      _ty(y1),
+      _tx(x2),
+      _ty(y2),
+      _tx(x3),
+      _ty(y3),
       color.r,
       color.g,
       color.b,
@@ -380,12 +440,12 @@ class Context2D {
     ColorRGBA color,
   ) {
     _g2d.drawTriangleLines(
-      x1,
-      y1,
-      x2,
-      y2,
-      x3,
-      y3,
+      _tx(x1),
+      _ty(y1),
+      _tx(x2),
+      _ty(y2),
+      _tx(x3),
+      _ty(y3),
       color.r,
       color.g,
       color.b,

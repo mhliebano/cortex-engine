@@ -82,3 +82,62 @@ class InputEngine {
     return mx >= x && mx <= x + width && my >= y && my <= y + height;
   }
 }
+
+/// Encapsula una instancia de [InputEngine] aplicando una transformación
+/// de coordenadas (escala y desfasaje) para vistas de lienzo fijo (`CanvasView`).
+class TransformedInputEngine extends InputEngine {
+  final InputEngine _delegate;
+  final double offsetX;
+  final double offsetY;
+  final double scale;
+
+  TransformedInputEngine(
+    this._delegate, {
+    required this.offsetX,
+    required this.offsetY,
+    required this.scale,
+  });
+
+  @override
+  double get mouseX =>
+      scale > 0 ? (_delegate.mouseX - offsetX) / scale : _delegate.mouseX;
+
+  @override
+  double get mouseY =>
+      scale > 0 ? (_delegate.mouseY - offsetY) / scale : _delegate.mouseY;
+
+  @override
+  bool isMouseButtonPressed(int button) => _delegate.isMouseButtonPressed(button);
+
+  @override
+  bool isMouseButtonDown(int button) => _delegate.isMouseButtonDown(button);
+
+  @override
+  bool isMouseButtonReleased(int button) =>
+      _delegate.isMouseButtonReleased(button);
+
+  @override
+  double get mouseWheelMove => _delegate.mouseWheelMove;
+
+  @override
+  bool isKeyPressed(int key) => _delegate.isKeyPressed(key);
+
+  @override
+  bool isKeyDown(int key) => _delegate.isKeyDown(key);
+
+  @override
+  int getCharPressed() => _delegate.getCharPressed();
+
+  @override
+  double getFrameTime() => _delegate.getFrameTime();
+
+  @override
+  double getTime() => _delegate.getTime();
+
+  @override
+  bool isHovering(int x, int y, int width, int height) {
+    final mx = mouseX;
+    final my = mouseY;
+    return mx >= x && mx <= x + width && my >= y && my <= y + height;
+  }
+}
