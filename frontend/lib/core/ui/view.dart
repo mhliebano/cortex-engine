@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:frontend/core/context2d.dart';
 import 'package:frontend/core/context3d.dart';
 import 'package:frontend/core/input.dart';
@@ -117,13 +118,8 @@ class View {
       final int originalWidth = panel.width;
       final int originalHeight = panel.height;
 
-      print("el panel mide $originalWidth x $originalHeight");
-
-      // Ordenar candidates por cercanía al origen (x + y), luego y, luego x
+      // Ordenar candidatos por Y primero (arriba a abajo), luego por X (izquierda a derecha)
       candidates.sort((a, b) {
-        final distA = a.x + a.y;
-        final distB = b.x + b.y;
-        if (distA != distB) return distA.compareTo(distB);
         if (a.y != b.y) return a.y.compareTo(b.y);
         return a.x.compareTo(b.x);
       });
@@ -375,5 +371,168 @@ class View {
     _declared.clear();
     _panels.clear();
     _isBuilt = false;
+  }
+}
+
+/// Vista responsiva por defecto (Modo Reflow - Hoja Elástica).
+abstract class FluidView extends View {
+  FluidView({
+    required super.id,
+    super.isVisible,
+    super.useScissorClipping,
+    super.backgroundColor,
+  });
+
+  @override
+  void resize(int parentWidth, int parentHeight) {
+    _width = parentWidth;
+    _height = parentHeight;
+    _ensureBuilt();
+    _runGreedy();
+    onResize(_width, _height);
+  }
+}
+
+/// Vista de lienzo de resolución fija (Modo Fit - Escalado Fijo).
+abstract class CanvasView extends View {
+  int _logicalWidth;
+  int _logicalHeight;
+  ColorRGBA letterboxColor;
+
+  int get logicalWidth => _logicalWidth;
+  int get logicalHeight => _logicalHeight;
+
+  int _windowWidth = 0;
+  int _windowHeight = 0;
+  double _scale = 1.0;
+  double _offsetX = 0.0;
+  double _offsetY = 0.0;
+  bool _initializedLogicalSize = false;
+
+  CanvasView({
+    required super.id,
+    int? logicalWidth,
+    int? logicalHeight,
+    this.letterboxColor = ColorRGBA.black,
+    super.isVisible,
+    super.useScissorClipping,
+    super.backgroundColor,
+  })  : _logicalWidth = logicalWidth ?? 0,
+        _logicalHeight = logicalHeight ?? 0 {
+    if (_logicalWidth > 0 && _logicalHeight > 0) {
+      _initializedLogicalSize = true;
+      _width = _logicalWidth;
+      _height = _logicalHeight;
+    }
+  }
+
+  double get scale => _scale;
+  double get offsetX => _offsetX;
+  double get offsetY => _offsetY;
+
+  @override
+  void resize(int parentWidth, int parentHeight) {
+    _windowWidth = parentWidth;
+    _windowHeight = parentHeight;
+
+    bool isFirstLogicalInit = !_initializedLogicalSize;
+
+    if (isFirstLogicalInit && parentWidth > 0 && parentHeight > 0) {
+      _initializedLogicalSize = true;
+      _logicalWidth = parentWidth;
+      _logicalHeight = parentHeight;
+      _width = _logicalWidth;
+      _height = _logicalHeight;
+    }
+
+    final targetW = _logicalWidth > 0 ? _logicalWidth : parentWidth;
+    final targetH = _logicalHeight > 0 ? _logicalHeight : parentHeight;
+
+    final double scaleX = targetW > 0 ? parentWidth / targetW : 1.0;
+    final double scaleY = targetH > 0 ? parentHeight / targetH : 1.0;
+    _scale = math.min(scaleX, scaleY);
+
+    _offsetX = (parentWidth - (targetW * _scale)) / 2.0;
+    _offsetY = (parentHeight - (targetH * _scale)) / 2.0;
+
+    _ensureBuilt();
+
+    if (_panels.isEmpty || isFirstLogicalInit) {
+      _runGreedy();
+    }
+
+    onResize(targetW, targetH);
+  }
+
+  @override
+  void update(double dt, InputEngine input) {
+    if (!isVisible) return;
+    _ensureBuilt();
+
+    final transformedInput = TransformedInputEngine(
+      input,
+      offsetX: _offsetX,
+      offsetY: _offsetY,
+      scale: _scale,
+    );
+
+    onUpdate(dt, transformedInput);
+
+    for (final panel in panels) {
+      if (panel.isVisible) panel.onUpdate(dt, transformedInput);
+    }
+
+    Toast.updateActiveToasts(dt, transformedInput);
+    SnackBar.updateActiveSnackBar(dt, transformedInput);
+    Dialog.updateActiveDialog(
+      dt,
+      transformedInput,
+      _logicalWidth > 0 ? _logicalWidth : 1280,
+      _logicalHeight > 0 ? _logicalHeight : 720,
+    );
+  }
+
+  @override
+  void render(Context2D ctx2d, Context3D ctx3d) {
+    if (!isVisible) return;
+    _ensureBuilt();
+
+    final winW = _windowWidth > 0 ? _windowWidth : _logicalWidth;
+    final winH = _windowHeight > 0 ? _windowHeight : _logicalHeight;
+
+    if (winW > 0 && winH > 0 && _logicalWidth > 0 && _logicalHeight > 0) {
+      final double scaleX = winW / _logicalWidth;
+      final double scaleY = winH / _logicalHeight;
+      _scale = math.min(scaleX, scaleY);
+
+      _offsetX = (winW - (_logicalWidth * _scale)) / 2.0;
+      _offsetY = (winH - (_logicalHeight * _scale)) / 2.0;
+    }
+
+    Element.isRenderingPhase = true;
+    try {
+      if (winW > 0 && winH > 0) {
+        ctx2d.drawRect(0, 0, winW, winH, letterboxColor);
+      }
+
+      ctx2d.translate(_offsetX, _offsetY);
+      ctx2d.scale(_scale, _scale);
+
+      final useClip =
+          useScissorClipping && _logicalWidth > 0 && _logicalHeight > 0;
+      if (useClip) {
+        ctx2d.beginScissor(0, 0, _logicalWidth, _logicalHeight);
+      }
+
+      _renderInternal(ctx2d, ctx3d);
+
+      if (useClip) {
+        ctx2d.endScissor();
+      }
+
+      ctx2d.resetTransform();
+    } finally {
+      Element.isRenderingPhase = false;
+    }
   }
 }

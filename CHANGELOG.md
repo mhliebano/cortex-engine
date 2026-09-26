@@ -15,8 +15,11 @@
 - **Ray-Casting y Picking 3D**: Capacidad para lanzar rayos desde el ratón (Screen-to-World) y verificar colisiones contra Bounding Boxes (AABB) y malla poligonal exacta (`rayHitsModelMesh`).
 - **Scene Graph en Dart**: Nuevo sistema nativo (`scene3d.dart`) con clase `Transform3D` y jerarquías de dependencias (`Node3D`) para cálculo de matrices de mundo de forma jerárquica padre-hijo.
 - **Álgebra 3D**: Adición del paquete estándar `vector_math` al `pubspec.yaml` del SDK para manipulación de cuaterniones, matrices 4x4 y transformaciones.
-- **Nuevo Sistema de Layouts UI (Frontend)**: Refactorización completa del sistema de maquetación bajo una jerarquía estricta de 3 niveles (`View` -> `Panel` -> `Row`/`Col`):
-  - **`View`**: Marco global anclado a la ventana que orquesta la ubicación de los `Panel`s mediante el algoritmo Greedy de esquinas candidatas.
+- **Nuevo Sistema de Layouts UI (Frontend)**: Refactorización completa del sistema de maquetación bajo una jerarquía estricta de 3 niveles (`View` -> `Panel` -> `Row`/`Col`) y soporte polimórfico de modos de pantalla:
+  - **`FluidView` (Modo Reflow - Hoja Elástica)**: Vista responsiva para dashboards, MDI y CAD. Re-ejecuta el algoritmo Greedy de esquinas candidatas al cambiar el tamaño de ventana.
+  - **`CanvasView` (Modo Fit - Lienzo Lógico)**: Vista de resolución fija para juegos 2D, herramientas retro y mascotas de escritorio. Empaqueta el maquetado una sola vez y escala de forma uniforme con *letterboxing*/*pillarboxing*, transformando automáticamente las coordenadas del ratón (`TransformedInputEngine`) para interacción perfecta sin cambiar los componentes.
+  - **Corrección de Empaquetado Greedy (No Queue Jumping)**: Ajuste en el algoritmo de ordenamiento de esquinas candidatas en `View._placePanels` (priorización estricta `y` -> `x`) para garantizar la preservación del orden secuencial de declaración en `build()` sin saltos de cola.
+  - **Transformación de Contexto 2D**: Soporte integrado para matrices de escala y traslación (`translate` + `scale`) en `Context2D` durante la fase de renderizado de vistas de lienzo.
   - **`Panel`**: Lienzo acotado / viewport independiente con reglas estrictas de dimensiones (fijas o `expandWidth`/`expandHeight`) y recorte scissor automático.
   - **`Row` y `Col`**: Componentes de maquetación fina interna con auto-scroll integrado sin romper la estructura contenedora.
 

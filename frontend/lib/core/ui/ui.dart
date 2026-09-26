@@ -12,7 +12,7 @@ export 'icons.dart';
 export 'style.dart';
 //export 'text_editing_controller.dart';
 //export 'scroll_controller.dart';
-//export 'view.dart';
+export 'view.dart';
 export 'view_manager.dart';
 export 'package:frontend/core/navigator.dart';
 
