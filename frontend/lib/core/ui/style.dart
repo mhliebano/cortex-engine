@@ -1,4 +1,5 @@
 import 'package:frontend/core/context2d.dart';
+import 'package:frontend/core/ui/edge_insets.dart';
 
 /// Sistema de Estilos tipo CSS para componentes UI.
 /// Permite definir clases CSS globales (ej. `.fancy-button`, `.sidebar-panel`)
@@ -12,7 +13,7 @@ class Style {
   final ColorRGBA? activeColor;
   final ColorRGBA? dividerColor;
   final int? fontSize;
-  final int? padding;
+  final EdgeInsets? padding;
   final int? spacing;
   final int? width;
   final int? height;
@@ -56,7 +57,7 @@ class Style {
     ColorRGBA? active;
     ColorRGBA? divider;
     int? font;
-    int? pad;
+    EdgeInsets? pad;
     int? space;
     int? w;
     int? h;
