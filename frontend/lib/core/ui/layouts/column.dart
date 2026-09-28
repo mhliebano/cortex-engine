@@ -54,8 +54,7 @@ class Col extends StructureNode {
       children.any((c) => (c is Spacer && c.size == null) || c.isFlexHeight);
 
   @override
-  bool get isFlexWidth =>
-      children.any((c) => (c is Spacer && c.size == null) || c.isFlexWidth);
+  bool get isFlexWidth => children.any((c) => c.isFlexWidth);
 
   @override
   Map<String, dynamic>? exportState() {
@@ -75,48 +74,92 @@ class Col extends StructureNode {
   void _performLayout() {
     if (children.isEmpty) return;
 
-    final availableWidth = width;
-
-    // Paso 1 (Lo Rígido)
-    int rigidSum = children.length > 1 ? ((children.length - 1) * gap).round() : 0;
+    // Paso 1 (Medición Rígida y Eje Transversal)
+    int sumChildHeights = 0;
     int flexibleSpacerCount = 0;
+    int maxChildWidth = 0;
 
     for (final child in children) {
+      if (child.width > maxChildWidth) {
+        maxChildWidth = child.width;
+      }
+
       if (child is Spacer) {
         if (child.size != null) {
           final sz = child.size!.round();
-          rigidSum += sz;
+          sumChildHeights += sz;
           child.height = sz;
         } else {
           flexibleSpacerCount++;
         }
-      } else if (child.isFlexHeight || child.height == 0) {
+      } else if (child.isFlexHeight) {
         flexibleSpacerCount++;
       } else {
-        rigidSum += child.height;
+        sumChildHeights += child.height;
       }
     }
 
+    final gapTotal =
+        children.length > 1 ? ((children.length - 1) * gap).round() : 0;
+    int rigidSum = sumChildHeights + gapTotal;
+
     _contentHeight = rigidSum;
 
-    // Paso 2 (Los Resortes) & Paso 3 (Repartición / Shrink-Wrap Exclusivo)
+    // Eje Transversal (Width): shrink-wrap al ancho del hijo más ancho si no se asignó previamente
+    if (width == 0) {
+      width = maxChildWidth;
+    }
+
+    // Eje Principal (Height): si height no ha sido asignado por el padre, shrink-wrap a rigidSum
+    if (height == 0) {
+      height = rigidSum;
+    }
+
+    final availableWidth = width;
+
+    // Paso 2 (Los Resortes) & Paso 3 (Repartición de Espacio en Eje Principal)
+    double currentY = (y - scrollOffset).toDouble();
+    double currentGap = gap;
+
     if (flexibleSpacerCount > 0) {
       final remainingSpace = height - rigidSum;
-      final spacerHeight =
-          remainingSpace > 0 ? (remainingSpace / flexibleSpacerCount).floor() : 0;
+      final spacerHeight = remainingSpace > 0
+          ? (remainingSpace / flexibleSpacerCount).floor()
+          : 0;
       for (final child in children) {
-        if ((child is Spacer && child.size == null) ||
-            child.isFlexHeight ||
-            child.height == 0) {
+        if ((child is Spacer && child.size == null) || child.isFlexHeight) {
           child.height = spacerHeight;
         }
       }
     } else {
-      // Shrink-Wrap Exclusivo de Col cuando no contiene Spacers flexibles
-      height = rigidSum;
+      final freeSpace =
+          (height > rigidSum) ? (height - rigidSum).toDouble() : 0.0;
+      switch (mainAlign) {
+        case MainAlign.start:
+          currentY = (y - scrollOffset).toDouble();
+          break;
+        case MainAlign.center:
+          currentY = (y - scrollOffset) + (freeSpace / 2);
+          break;
+        case MainAlign.end:
+          currentY = (y - scrollOffset) + freeSpace;
+          break;
+        case MainAlign.spaceBetween:
+          currentY = (y - scrollOffset).toDouble();
+          if (children.length > 1) {
+            currentGap = gap + (freeSpace / (children.length - 1));
+          }
+          break;
+        case MainAlign.spaceAround:
+          if (children.isNotEmpty) {
+            final spacePerItem = freeSpace / children.length;
+            currentY = (y - scrollOffset) + (spacePerItem / 2);
+            currentGap = gap + spacePerItem;
+          }
+          break;
+      }
     }
 
-    double currentY = (y - scrollOffset).toDouble();
     for (final child in children) {
       child.y = currentY.round();
 
@@ -129,19 +172,21 @@ class Col extends StructureNode {
           child.x = x;
           break;
         case CrossAlign.center:
-          final spaceX =
-              availableWidth > child.width ? availableWidth - child.width : 0;
+          final spaceX = availableWidth > child.width
+              ? availableWidth - child.width
+              : 0;
           child.x = x + (spaceX ~/ 2);
           break;
         case CrossAlign.end:
-          final spaceX =
-              availableWidth > child.width ? availableWidth - child.width : 0;
+          final spaceX = availableWidth > child.width
+              ? availableWidth - child.width
+              : 0;
           child.x = x + spaceX;
           break;
       }
 
       child.onResize(child.width, child.height);
-      currentY += child.height + gap;
+      currentY += child.height + currentGap;
     }
   }
 
@@ -154,9 +199,9 @@ class Col extends StructureNode {
     if (maxScroll <= 0 || height <= 0) return;
 
     final scrollbarHeight = ((height / _contentHeight) * height).toInt().clamp(
-      20,
-      height,
-    );
+          20,
+          height,
+        );
     final scrollbarY =
         y + ((scrollOffset / maxScroll) * (height - scrollbarHeight)).toInt();
     final scrollbarHitX = x + width - 14;
@@ -203,9 +248,9 @@ class Col extends StructureNode {
     if (maxScroll <= 0) return;
 
     final scrollbarHeight = ((height / _contentHeight) * height).toInt().clamp(
-      20,
-      height,
-    );
+          20,
+          height,
+        );
     final scrollbarY =
         y + ((scrollOffset / maxScroll) * (height - scrollbarHeight)).toInt();
     final isHighlighted = _isDraggingScrollbar || _isHoveringScrollbar;

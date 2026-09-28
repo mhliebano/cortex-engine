@@ -103,7 +103,7 @@ class Panel extends CortexNode {
           } else {
             flexibleSpacerCount++;
           }
-        } else if (child.isFlexHeight || child.height == 0) {
+        } else if (child.isFlexHeight) {
           flexibleSpacerCount++;
         } else {
           rigidSum += child.height;
@@ -116,9 +116,7 @@ class Panel extends CortexNode {
         final spacerHeight =
             remainingSpace > 0 ? (remainingSpace / flexibleSpacerCount).floor() : 0;
         for (final child in children) {
-          if ((child is Spacer && child.size == null) ||
-              child.isFlexHeight ||
-              child.height == 0) {
+          if ((child is Spacer && child.size == null) || child.isFlexHeight) {
             child.height = spacerHeight;
           }
         }
@@ -145,7 +143,7 @@ class Panel extends CortexNode {
           } else {
             flexibleSpacerCount++;
           }
-        } else if (child.isFlexWidth || child.width == 0) {
+        } else if (child.isFlexWidth) {
           flexibleSpacerCount++;
         } else {
           rigidSum += child.width;
@@ -158,9 +156,7 @@ class Panel extends CortexNode {
         final spacerWidth =
             remainingSpace > 0 ? (remainingSpace / flexibleSpacerCount).floor() : 0;
         for (final child in children) {
-          if ((child is Spacer && child.size == null) ||
-              child.isFlexWidth ||
-              child.width == 0) {
+          if ((child is Spacer && child.size == null) || child.isFlexWidth) {
             child.width = spacerWidth;
           }
         }
