@@ -1,33 +1,28 @@
 import 'package:frontend/core/context2d.dart';
 import 'package:frontend/core/context3d.dart';
-import 'package:frontend/core/ui/element.dart';
-import 'package:frontend/core/ui/style.dart';
+import 'package:frontend/core/ui/control_node.dart';
 
-class Label extends Element {
+class Label extends ControlNode {
   String text;
-  late int fontSize;
-  late ColorRGBA color;
 
   Label({
-    String? className,
+    super.className,
     required this.text,
-    super.expand,
-    super.fillWidth,
-    super.fillHeight,
-    super.marginRight,
-    super.marginBottom,
   }) {
-    final style = className != null ? Style.merge(className) : null;
-    fontSize = style?.fontSize ?? 14;
-    color = style?.textColor ?? ColorRGBA.white;
+    _updateDimensions();
+  }
 
-    width = text.length * (fontSize ~/ 2);
-    height = fontSize + 6;
+  void _updateDimensions() {
+    final fs = currentStyle.fontSize ?? 14;
+    width = text.length * (fs ~/ 2);
+    height = fs + 6;
   }
 
   @override
   void onRender(Context2D ctx2d, Context3D ctx3d) {
     if (!isVisible) return;
+    final fontSize = currentStyle.fontSize ?? 14;
+    final color = currentStyle.textColor ?? ColorRGBA.white;
     ctx2d.drawText(text, x, y, fontSize, color);
   }
 }

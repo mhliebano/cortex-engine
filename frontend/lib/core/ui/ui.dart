@@ -25,6 +25,7 @@ export 'element.dart';
 export 'icons.dart';
 export 'style.dart';
 export 'structure_node.dart';
+export 'control_node.dart';
 export 'edge_insets.dart';
 export 'package:frontend/core/navigator.dart';
 
