@@ -20,9 +20,10 @@ class TestView extends FluidView {
           Col(children: [Spacer(50)]),
           Row(
             gap: 20,
+            overflow: Overflow.scroll,
             children: [
-              Label(text: "Bienvenido a Cortex"),
-              Label(text: "Es cool!"),
+              Label(text: "Bienvenido a Cortex", className: "text-h1"),
+              Label(text: "Es cool!", className: "text"),
             ],
           ),
           Col(children: [Spacer()]),
@@ -47,7 +48,17 @@ class MiPanel extends Panel {
   @override
   List<StructureNode> build() {
     return [
-      Row(children: [Spacer(50)]),
+      Row(
+        gap: 10,
+        children: [
+          Chip(text: "fácil", className: "chip-class"),
+          Chip(text: "difícil", className: "chip-class"),
+          Chip(text: "intermedio", className: "chip-class"),
+          Chip(text: "experto", className: "chip-class"),
+          Chip(text: "maestro", className: "chip-class"),
+          Chip(text: "mi casita de galleta iii", className: "chip-class"),
+        ],
+      ),
       Row(children: [Spacer()]),
       Row(children: [Spacer()]),
     ];
