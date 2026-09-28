@@ -2,11 +2,20 @@ import 'package:frontend/core/context2d.dart';
 import 'package:frontend/core/context3d.dart';
 import 'package:frontend/core/ui/control_node.dart';
 
+/// Primitivo visual puro para la proyección de texto ("tinta sobre pantalla").
+///
+/// Hereda de [ControlNode] resolviendo dinámicamente sus estilos (`textColor` y `fontSize`)
+/// sin implementar modelo de caja, padding ni decoraciones de fondo/borde.
 class Label extends ControlNode {
   String text;
 
   Label({
+    super.key,
+    super.x,
+    super.y,
+    super.isVisible,
     super.className,
+    super.isEnabled,
     required this.text,
   }) {
     _updateDimensions();
