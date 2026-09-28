@@ -45,7 +45,7 @@ export 'desktop/status_bar.dart';
 // Componentes de Interacción y Entradas
 export 'interaction/badge.dart';
 export 'interaction/button.dart';
-export 'interaction/card.dart';
+// export 'interaction/card.dart';
 export 'interaction/carousel.dart';
 export 'interaction/checkbox.dart';
 export 'interaction/chip.dart';
@@ -61,7 +61,7 @@ export 'interaction/label.dart';
 export 'interaction/text_field.dart';
 export 'interaction/dropdown.dart';
 export 'interaction/list_tile.dart';
-export 'interaction/list_view.dart';
+// export 'interaction/list_view.dart';
 export 'interaction/divider.dart';
 export 'interaction/loading_indicator.dart';
 export 'interaction/progress_bar.dart';
