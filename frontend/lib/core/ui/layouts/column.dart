@@ -1,29 +1,20 @@
 import 'package:frontend/core/context2d.dart';
 import 'package:frontend/core/context3d.dart';
 import 'package:frontend/core/input.dart';
-import 'package:frontend/core/ui/element.dart';
+import 'package:frontend/core/ui/cortex_node.dart';
+import 'package:frontend/core/ui/layout_alignment.dart';
 import 'package:frontend/core/ui/scroll_controller.dart';
+import 'package:frontend/core/ui/structure_node.dart';
+import 'package:frontend/core/ui/layouts/spacer.dart';
 
 /// Contenedor de Disposición Vertical (`Col`).
-///
-/// Opera exclusivamente dentro del espacio provisto por un [Panel], usando
-/// coordenadas locales. Organiza widgets finales (botones, textos, entradas)
-/// en un eje vertical.
-///
-/// El scroll vertical se activa **automáticamente** cuando el contenido supera
-/// el alto disponible — no requiere ningún flag explícito.
-///
-/// Regla de dimensionamiento:
-/// - Si el eje transversal (ancho) no es provisto por el Panel padre, debe
-///   especificarse explícitamente mediante [width].
-class Col extends Element {
+class Col extends StructureNode {
+  final MainAlign mainAlign;
+  final CrossAlign crossAlign;
+  final Overflow overflow;
+  final double gap;
+  final List<CortexNode> children;
   final ScrollController? controller;
-
-  int spacing;
-  int padding;
-
-  MainAxisAlignment mainAxisAlignment;
-  CrossAxisAlignment crossAxisAlignment;
 
   // Estado de scroll
   double scrollOffset = 0.0;
@@ -35,27 +26,15 @@ class Col extends Element {
   double _dragStartY = 0.0;
   double _dragStartOffset = 0.0;
 
-  final List<Element> children;
-
   Col({
     super.key,
+    this.mainAlign = MainAlign.start,
+    this.crossAlign = CrossAlign.stretch,
+    this.overflow = Overflow.visible,
+    this.gap = 0.0,
+    this.children = const [],
     this.controller,
-    int width = 0,
-    int height = 0,
-    this.spacing = 8,
-    this.padding = 0,
-    this.mainAxisAlignment = MainAxisAlignment.start,
-    this.crossAxisAlignment = CrossAxisAlignment.stretch,
-    super.expand,
-    super.fillWidth,
-    super.fillHeight,
-    super.marginRight,
-    super.marginBottom,
-    required this.children,
   }) {
-    this.width = width;
-    this.height = height;
-
     if (controller != null) {
       scrollOffset = controller!.offset;
       controller!.addListener((newOffset) {
@@ -68,7 +47,15 @@ class Col extends Element {
   }
 
   @override
-  List<Element> get childrenElements => children;
+  List<CortexNode> get childrenElements => children;
+
+  @override
+  bool get isFlexHeight =>
+      children.any((c) => (c is Spacer && c.size == null) || c.isFlexHeight);
+
+  @override
+  bool get isFlexWidth =>
+      children.any((c) => (c is Spacer && c.size == null) || c.isFlexWidth);
 
   @override
   Map<String, dynamic>? exportState() {
@@ -85,159 +72,84 @@ class Col extends Element {
     }
   }
 
-  // ─────────────────────────────────────────────
-  // Layout
-  // ─────────────────────────────────────────────
-
   void _performLayout() {
     if (children.isEmpty) return;
 
-    final availableWidth = width > (padding * 2) ? width - (padding * 2) : 0;
-    final netAvailableHeight = height > (padding * 2)
-        ? height - (padding * 2)
-        : 0;
+    final availableWidth = width;
 
-    // Pase 1: contabilizar hijos flex y no-flex
-    int nonFlexHeight = 0;
-    int flexCount = 0;
-    int maxChildWidth = 0;
+    // Paso 1 (Lo Rígido)
+    int rigidSum = children.length > 1 ? ((children.length - 1) * gap).round() : 0;
+    int flexibleSpacerCount = 0;
 
-    for (int i = 0; i < children.length; i++) {
-      final child = children[i];
-      if (child.isFlexHeight) {
-        flexCount++;
-      } else {
-        nonFlexHeight += child.height;
-      }
-      if (!child.isFlexWidth && child.width > maxChildWidth) {
-        maxChildWidth = child.width;
-      }
-      if (i > 0) nonFlexHeight += spacing;
-    }
-
-    // Pase 2: distribuir espacio entre hijos flex
-    int totalChildrenHeight = nonFlexHeight;
-
-    if (flexCount > 0 && netAvailableHeight > nonFlexHeight) {
-      final remaining = netAvailableHeight - nonFlexHeight;
-      final perFlex = remaining ~/ flexCount;
-
-      totalChildrenHeight = 0;
-      for (int i = 0; i < children.length; i++) {
-        final child = children[i];
-        if (child.isFlexHeight) child.height = perFlex;
-        totalChildrenHeight += child.height;
-        if (i > 0) totalChildrenHeight += spacing;
-      }
-    }
-
-    _contentHeight = totalChildrenHeight + (padding * 2);
-
-    // Auto-ajuste de alto si el Col no tiene alto fijo propio
-    if (height == 0 && _contentHeight > 0) {
-      height = _contentHeight;
-    }
-
-    final calcAvailableHeight = height > (padding * 2)
-        ? height - (padding * 2)
-        : 0;
-    final extraSpace = calcAvailableHeight > totalChildrenHeight
-        ? calcAvailableHeight - totalChildrenHeight
-        : 0;
-
-    // Pase 3: posición inicial Y según mainAxisAlignment
-    double startY = (y + padding - scrollOffset).toDouble();
-    double dynSpacing = spacing.toDouble();
-
-    final isScrollActive = _contentHeight > height;
-
-    if (extraSpace > 0 && !isScrollActive) {
-      switch (mainAxisAlignment) {
-        case MainAxisAlignment.start:
-          startY = (y + padding - scrollOffset).toDouble();
-          break;
-        case MainAxisAlignment.end:
-          startY = (y + padding + extraSpace - scrollOffset).toDouble();
-          break;
-        case MainAxisAlignment.center:
-          startY = (y + padding + (extraSpace / 2) - scrollOffset).toDouble();
-          break;
-        case MainAxisAlignment.spaceBetween:
-          startY = (y + padding - scrollOffset).toDouble();
-          if (children.length > 1) {
-            dynSpacing = spacing + (extraSpace / (children.length - 1));
-          }
-          break;
-        case MainAxisAlignment.spaceAround:
-          if (children.isNotEmpty) {
-            final gap = extraSpace / children.length;
-            startY = (y + padding + (gap / 2) - scrollOffset).toDouble();
-            dynSpacing = spacing + gap;
-          }
-          break;
-        case MainAxisAlignment.spaceEvenly:
-          if (children.isNotEmpty) {
-            final gap = extraSpace / (children.length + 1);
-            startY = (y + padding + gap - scrollOffset).toDouble();
-            dynSpacing = spacing + gap;
-          }
-          break;
-      }
-    }
-
-    // Pase 4: posicionar cada hijo
-    double currentY = startY;
     for (final child in children) {
-      child.y = currentY.toInt();
+      if (child is Spacer) {
+        if (child.size != null) {
+          final sz = child.size!.round();
+          rigidSum += sz;
+          child.height = sz;
+        } else {
+          flexibleSpacerCount++;
+        }
+      } else if (child.isFlexHeight || child.height == 0) {
+        flexibleSpacerCount++;
+      } else {
+        rigidSum += child.height;
+      }
+    }
 
-      switch (crossAxisAlignment) {
-        case CrossAxisAlignment.stretch:
-          child.x = x + padding;
+    _contentHeight = rigidSum;
+
+    // Paso 2 (Los Resortes) & Paso 3 (Repartición / Shrink-Wrap Exclusivo)
+    if (flexibleSpacerCount > 0) {
+      final remainingSpace = height - rigidSum;
+      final spacerHeight =
+          remainingSpace > 0 ? (remainingSpace / flexibleSpacerCount).floor() : 0;
+      for (final child in children) {
+        if ((child is Spacer && child.size == null) ||
+            child.isFlexHeight ||
+            child.height == 0) {
+          child.height = spacerHeight;
+        }
+      }
+    } else {
+      // Shrink-Wrap Exclusivo de Col cuando no contiene Spacers flexibles
+      height = rigidSum;
+    }
+
+    double currentY = (y - scrollOffset).toDouble();
+    for (final child in children) {
+      child.y = currentY.round();
+
+      switch (crossAlign) {
+        case CrossAlign.stretch:
+          child.x = x;
           if (availableWidth > 0) child.width = availableWidth;
           break;
-        case CrossAxisAlignment.start:
-          child.x = x + padding;
-          if (child.isFlexWidth && availableWidth > 0) {
-            child.width = availableWidth;
-          }
+        case CrossAlign.start:
+          child.x = x;
           break;
-        case CrossAxisAlignment.center:
-          if (child.isFlexWidth && availableWidth > 0) {
-            child.x = x + padding;
-            child.width = availableWidth;
-          } else {
-            final spaceX = availableWidth > child.width
-                ? availableWidth - child.width
-                : 0;
-            child.x = x + padding + (spaceX ~/ 2);
-          }
+        case CrossAlign.center:
+          final spaceX =
+              availableWidth > child.width ? availableWidth - child.width : 0;
+          child.x = x + (spaceX ~/ 2);
           break;
-        case CrossAxisAlignment.end:
-          if (child.isFlexWidth && availableWidth > 0) {
-            child.x = x + padding;
-            child.width = availableWidth;
-          } else {
-            final spaceX = availableWidth > child.width
-                ? availableWidth - child.width
-                : 0;
-            child.x = x + padding + spaceX;
-          }
+        case CrossAlign.end:
+          final spaceX =
+              availableWidth > child.width ? availableWidth - child.width : 0;
+          child.x = x + spaceX;
           break;
       }
 
       child.onResize(child.width, child.height);
-      currentY += child.height + dynSpacing;
+      currentY += child.height + gap;
     }
   }
-
-  // ─────────────────────────────────────────────
-  // Scroll interno
-  // ─────────────────────────────────────────────
 
   double get _maxScroll =>
       _contentHeight > height ? (_contentHeight - height).toDouble() : 0.0;
 
   void _handleScroll(InputEngine input) {
+    if (overflow != Overflow.scroll && overflow != Overflow.auto) return;
     final maxScroll = _maxScroll;
     if (maxScroll <= 0 || height <= 0) return;
 
@@ -252,7 +164,6 @@ class Col extends Element {
 
     _isHoveringScrollbar = input.isHovering(scrollbarHitX, y, 14, height);
 
-    // Iniciar arrastre
     if (input.isMouseButtonPressed(MouseButtons.left)) {
       if (input.isHovering(scrollbarHitX, scrollbarY, 14, scrollbarHeight) ||
           _isHoveringScrollbar) {
@@ -262,7 +173,6 @@ class Col extends Element {
       }
     }
 
-    // Arrastre continuo
     if (_isDraggingScrollbar) {
       if (input.isMouseButtonDown(MouseButtons.left)) {
         final deltaY = input.mouseY - _dragStartY;
@@ -277,7 +187,6 @@ class Col extends Element {
       }
     }
 
-    // Rueda del mouse
     if (input.isHovering(x, y, width, height)) {
       final wheel = input.mouseWheelMove;
       if (wheel != 0) {
@@ -314,10 +223,6 @@ class Col extends Element {
     );
   }
 
-  // ─────────────────────────────────────────────
-  // Lifecycle
-  // ─────────────────────────────────────────────
-
   @override
   void onUpdate(double dt, InputEngine input) {
     if (!isVisible) return;
@@ -333,15 +238,23 @@ class Col extends Element {
     if (!isVisible) return;
     _performLayout();
 
-    final useClip = width > 0 && height > 0;
-    if (useClip) ctx2d.beginScissor(x, y, width, height);
+    final useClip = overflow == Overflow.hidden ||
+        overflow == Overflow.scroll ||
+        (overflow == Overflow.auto && _contentHeight > height);
+
+    if (useClip && height > 0 && width > 0) {
+      ctx2d.beginScissor(x, y, width, height);
+    }
 
     for (final child in children) {
       if (child.isVisible) child.onRender(ctx2d, ctx3d);
     }
 
-    if (useClip) {
-      _renderScrollbar(ctx2d);
+    if (useClip && height > 0 && width > 0) {
+      if (overflow == Overflow.scroll ||
+          (overflow == Overflow.auto && _contentHeight > height)) {
+        _renderScrollbar(ctx2d);
+      }
       ctx2d.endScissor();
     }
   }
@@ -352,6 +265,7 @@ class Col extends Element {
     for (final child in children) {
       if (child.isVisible) child.onRenderOverlay(ctx2d, ctx3d);
     }
+    super.onRenderOverlay(ctx2d, ctx3d);
   }
 
   @override

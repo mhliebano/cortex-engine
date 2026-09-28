@@ -1,154 +1,188 @@
 import 'package:frontend/core/context2d.dart';
 import 'package:frontend/core/context3d.dart';
 import 'package:frontend/core/input.dart';
-import 'package:frontend/core/ui/element.dart';
-import 'package:frontend/core/ui/style.dart';
+import 'package:frontend/core/ui/cortex_node.dart';
+import 'package:frontend/core/ui/edge_insets.dart';
+import 'package:frontend/core/ui/structure_node.dart';
+import 'package:frontend/core/ui/layouts/spacer.dart';
 
-/// Lienzo Acotado / Viewport (`Panel`).
-///
-/// Es el hijo directo de una [View] y funciona como una hoja en blanco
-/// independiente. Recibe su posición final `(x, y)` del [View], pero define
-/// sus propias dimensiones bajo estas reglas estrictas:
-///
-/// - Si usa [expandWidth], su eje transversal debe estar definido
-///   (`height > 0`).
-/// - Si usa [expandHeight], su eje transversal debe estar definido
-///   (`width > 0`).
-///
-/// Aísla completamente los cambios de interfaz de su interior: cualquier
-/// modificación interna no fuerza recálculos en el resto de la pantalla.
-///
-/// Aplica un scissor propio sobre su contenido para evitar desbordamiento.
-///
-/// Opcionalmente acepta un [className] para aplicar estilos globales
-/// pre-registrados mediante el sistema [Style].
-class Panel extends Element {
-  ColorRGBA bgColor;
-  ColorRGBA borderColor;
-  int padding;
-  Element? child;
-  bool clipContent;
+/// Modos de disposición interna para Panel.
+enum PanelLayout { stack, vertical, horizontal }
 
-  final bool expandWidth;
-  final bool expandHeight;
+/// Contenedor Maestro Rígido (`Panel`).
+class Panel extends CortexNode {
+  final double rawWidth;
+  final double rawHeight;
+  final EdgeInsets padding;
+  final PanelLayout layout;
+  final List<StructureNode>? _explicitChildren;
+  late final List<StructureNode> children;
 
   Panel({
     super.key,
-    String? className,
-    int width = 0,
-    int height = 0,
-    this.expandWidth = false,
-    this.expandHeight = false,
-    ColorRGBA? bgColor,
-    ColorRGBA? borderColor,
-    int? padding,
-    this.child,
-    this.clipContent = true,
-    // Compat: fillWidth/fillHeight mapean a expandWidth/expandHeight
-    bool fillWidth = false,
-    bool fillHeight = false,
-    super.expand,
-    super.marginRight,
-    super.marginBottom,
-  }) : assert(
-         !(expandWidth && height == 0 && !expandHeight && !fillHeight),
-         'Panel: si expandWidth=true, height debe ser > 0 (o usar expandHeight=true)',
-       ),
-       assert(
-         !(expandHeight && width == 0 && !expandWidth && !fillWidth),
-         'Panel: si expandHeight=true, width debe ser > 0 (o usar expandWidth=true)',
-       ),
-       bgColor =
-           bgColor ??
-           (className != null
-               ? Style.merge(className).bgColor ??
-                     const ColorRGBA(40, 44, 52, 255)
-               : const ColorRGBA(40, 44, 52, 255)),
-       borderColor =
-           borderColor ??
-           (className != null
-               ? Style.merge(className).borderColor ?? ColorRGBA.transparent
-               : ColorRGBA.transparent),
-       padding =
-           padding ??
-           (className != null ? Style.merge(className).padding ?? 0 : 0) {
-    // Resolver dimensiones desde className si no se especificaron
-    final style = className != null ? Style.merge(className) : null;
-    this.width = width != 0 ? width : (style?.width ?? 0);
-    this.height = height != 0 ? height : (style?.height ?? 0);
-
-    // Propagar flags de expansión al sistema base de Element
-    final wExpand =
-        expandWidth ||
-        fillWidth ||
-        expand == Expand.width ||
-        expand == Expand.all;
-    final hExpand =
-        expandHeight ||
-        fillHeight ||
-        expand == Expand.height ||
-        expand == Expand.all;
-
-    if (wExpand && hExpand) {
-      this.expand = Expand.all;
-    } else if (wExpand) {
-      this.expand = Expand.width;
-    } else if (hExpand) {
-      this.expand = Expand.height;
-    } else {
-      this.expand = Expand.none;
-    }
-
+    required double width,
+    required double height,
+    this.padding = const EdgeInsets.all(0.0),
+    this.layout = PanelLayout.stack,
+    List<StructureNode>? children,
+  })  : rawWidth = width,
+        rawHeight = height,
+        _explicitChildren = children {
+    this.width = resolveDimension(rawWidth, 0);
+    this.height = resolveDimension(rawHeight, 0);
+    this.children = build();
     _updateChildBounds();
   }
 
-  bool get _isExpandingWidth => expand == Expand.width || expand == Expand.all;
-
-  bool get _isExpandingHeight =>
-      expand == Expand.height || expand == Expand.all;
-
-  @override
-  List<Element> get childrenElements => child != null ? [child!] : const [];
-
-  @override
-  bool get isFlexWidth => _isExpandingWidth;
-
-  @override
-  bool get isFlexHeight => _isExpandingHeight;
-
-  // ─────────────────────────────────────────────
-  // Layout interno
-  // ─────────────────────────────────────────────
-
-  void _updateChildBounds() {
-    if (child == null) return;
-
-    child!.x = x + padding;
-    child!.y = y + padding;
-
-    final availableWidth = width > (padding * 2) ? width - (padding * 2) : 0;
-    final availableHeight = height > (padding * 2) ? height - (padding * 2) : 0;
-
-    if (availableWidth > 0) child!.width = availableWidth;
-    if (availableHeight > 0) child!.height = availableHeight;
-
-    child!.onResize(
-      availableWidth > 0 ? availableWidth : child!.width,
-      availableHeight > 0 ? availableHeight : child!.height,
-    );
+  /// Hook sobreescribible para declarar los nodos estructurales hijos del Panel.
+  List<StructureNode> build() {
+    return _explicitChildren ?? const [];
   }
 
-  // ─────────────────────────────────────────────
-  // Lifecycle
-  // ─────────────────────────────────────────────
+  /// Resuelve un valor dimensional numérico (`double`) al tamaño final en píxeles (`int`).
+  static int resolveDimension(double spec, int parentTotal, [int? freeSpace]) {
+    if (spec == double.infinity || spec <= 0.0) {
+      return freeSpace ?? parentTotal;
+    }
+    if (spec > 0.0 && spec <= 1.0) {
+      return (parentTotal * spec).round();
+    }
+    if (spec > 1.0) {
+      return spec.toInt();
+    }
+    return 0;
+  }
+
+  @override
+  List<CortexNode> get childrenElements => children;
+
+  @override
+  bool get isFlexWidth =>
+      rawWidth == double.infinity || (rawWidth >= 0.0 && rawWidth <= 1.0);
+
+  @override
+  bool get isFlexHeight =>
+      rawHeight == double.infinity || (rawHeight >= 0.0 && rawHeight <= 1.0);
+
+  void _updateChildBounds() {
+    if (children.isEmpty) return;
+
+    final childX = x + padding.left.toInt();
+    final childY = y + padding.top.toInt();
+
+    final availableWidth = width > (padding.left + padding.right)
+        ? (width - (padding.left + padding.right)).toInt()
+        : 0;
+    final availableHeight = height > (padding.top + padding.bottom)
+        ? (height - (padding.top + padding.bottom)).toInt()
+        : 0;
+
+    if (layout == PanelLayout.stack) {
+      for (final child in children) {
+        child.x = childX;
+        child.y = childY;
+
+        if (availableWidth > 0) child.width = availableWidth;
+        if (availableHeight > 0) child.height = availableHeight;
+
+        child.onResize(
+          availableWidth > 0 ? availableWidth : child.width,
+          availableHeight > 0 ? availableHeight : child.height,
+        );
+      }
+    } else if (layout == PanelLayout.vertical) {
+      // Paso 1 (Lo Rígido)
+      int rigidSum = 0;
+      int flexibleSpacerCount = 0;
+      for (final child in children) {
+        if (child is Spacer) {
+          if (child.size != null) {
+            final sz = child.size!.round();
+            rigidSum += sz;
+            child.height = sz;
+          } else {
+            flexibleSpacerCount++;
+          }
+        } else if (child.isFlexHeight || child.height == 0) {
+          flexibleSpacerCount++;
+        } else {
+          rigidSum += child.height;
+        }
+      }
+
+      // Paso 2 (Los Resortes) & Paso 3 (Repartición)
+      if (flexibleSpacerCount > 0) {
+        final remainingSpace = availableHeight - rigidSum;
+        final spacerHeight =
+            remainingSpace > 0 ? (remainingSpace / flexibleSpacerCount).floor() : 0;
+        for (final child in children) {
+          if ((child is Spacer && child.size == null) ||
+              child.isFlexHeight ||
+              child.height == 0) {
+            child.height = spacerHeight;
+          }
+        }
+      }
+
+      int currentY = childY;
+      for (final child in children) {
+        child.x = childX;
+        child.y = currentY;
+        if (availableWidth > 0) child.width = availableWidth;
+        child.onResize(child.width, child.height);
+        currentY += child.height;
+      }
+    } else if (layout == PanelLayout.horizontal) {
+      // Paso 1 (Lo Rígido)
+      int rigidSum = 0;
+      int flexibleSpacerCount = 0;
+      for (final child in children) {
+        if (child is Spacer) {
+          if (child.size != null) {
+            final sz = child.size!.round();
+            rigidSum += sz;
+            child.width = sz;
+          } else {
+            flexibleSpacerCount++;
+          }
+        } else if (child.isFlexWidth || child.width == 0) {
+          flexibleSpacerCount++;
+        } else {
+          rigidSum += child.width;
+        }
+      }
+
+      // Paso 2 (Los Resortes) & Paso 3 (Repartición)
+      if (flexibleSpacerCount > 0) {
+        final remainingSpace = availableWidth - rigidSum;
+        final spacerWidth =
+            remainingSpace > 0 ? (remainingSpace / flexibleSpacerCount).floor() : 0;
+        for (final child in children) {
+          if ((child is Spacer && child.size == null) ||
+              child.isFlexWidth ||
+              child.width == 0) {
+            child.width = spacerWidth;
+          }
+        }
+      }
+
+      int currentX = childX;
+      for (final child in children) {
+        child.x = currentX;
+        child.y = childY;
+        if (availableHeight > 0) child.height = availableHeight;
+        child.onResize(child.width, child.height);
+        currentX += child.width;
+      }
+    }
+  }
 
   @override
   void onUpdate(double dt, InputEngine input) {
     if (!isVisible) return;
-    if (child != null) {
-      child!.x = x + padding;
-      child!.y = y + padding;
-      if (child!.isVisible) child!.onUpdate(dt, input);
+
+    for (final child in children) {
+      if (child.isVisible) child.onUpdate(dt, input);
     }
   }
 
@@ -156,48 +190,31 @@ class Panel extends Element {
   void onRender(Context2D ctx2d, Context3D ctx3d) {
     if (!isVisible) return;
 
-    if (child != null) {
-      child!.x = x + padding;
-      child!.y = y + padding;
-    }
+    if (children.isNotEmpty && width > 0 && height > 0) {
+      ctx2d.beginScissor(x, y, width, height);
 
-    // 1. Dibujar fondo y borde del Panel
-    ctx2d.drawPanel(
-      x,
-      y,
-      width,
-      height,
-      bgColor: bgColor,
-      borderColor: borderColor,
-    );
-
-    // 2. Renderizar contenido hijo con scissor propio
-    if (child != null && child!.isVisible) {
-      final useClip = clipContent && width > 0 && height > 0;
-      if (useClip) ctx2d.beginScissor(x, y, width, height);
-      child!.onRender(ctx2d, ctx3d);
-      if (useClip) ctx2d.endScissor();
+      for (final child in children) {
+        if (child.isVisible) {
+          child.onRender(ctx2d, ctx3d);
+        }
+      }
+      ctx2d.endScissor();
     }
   }
 
   @override
   void onRenderOverlay(Context2D ctx2d, Context3D ctx3d) {
     if (!isVisible) return;
-    if (child != null && child!.isVisible) {
-      child!.onRenderOverlay(ctx2d, ctx3d);
+    for (final child in children) {
+      if (child.isVisible) child.onRenderOverlay(ctx2d, ctx3d);
     }
+    super.onRenderOverlay(ctx2d, ctx3d);
   }
 
   @override
   void onResize(int allocatedWidth, int allocatedHeight) {
-    if (_isExpandingWidth) {
-      width = allocatedWidth > marginRight ? allocatedWidth - marginRight : 0;
-    }
-    if (_isExpandingHeight) {
-      height = allocatedHeight > marginBottom
-          ? allocatedHeight - marginBottom
-          : 0;
-    }
+    width = allocatedWidth;
+    height = allocatedHeight;
     _updateChildBounds();
   }
 }
