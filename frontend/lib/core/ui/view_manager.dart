@@ -50,14 +50,14 @@ class ViewManager {
   void switchView(String id) {
     // 1. Si la vista ya fue instanciada previamente en memoria
     if (_views.containsKey(id)) {
-      debugPrint("Cambiando a vista pre-instanciada: $id");
+      Debugger.debugPrint("Cambiando a vista pre-instanciada: $id");
       _setActiveView(_views[id]!);
       return;
     }
 
     // 2. Si la vista está registrada como una fábrica Lazy, crearla bajo demanda
     if (_factories.containsKey(id)) {
-      debugPrint("Creando vista bajo demanda: $id");
+      Debugger.debugPrint("Creando vista bajo demanda: $id");
       final rawView = _factories[id]!();
       if (rawView is _View) {
         _views[id] = rawView;

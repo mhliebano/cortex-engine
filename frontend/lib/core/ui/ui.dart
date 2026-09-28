@@ -10,6 +10,7 @@ import 'package:frontend/core/input.dart';
 import 'package:frontend/core/navigator.dart';
 import 'package:frontend/core/utils.dart';
 
+import 'cortex_node.dart';
 import 'element.dart';
 import 'layouts/panel.dart';
 import 'interaction/toast.dart';
@@ -19,15 +20,19 @@ import 'interaction/dialog.dart';
 export 'package:frontend/core/context2d.dart';
 export 'package:frontend/core/context3d.dart';
 export 'package:frontend/core/input.dart';
+export 'cortex_node.dart';
 export 'element.dart';
 export 'icons.dart';
 export 'style.dart';
+export 'structure_node.dart';
+export 'edge_insets.dart';
 export 'package:frontend/core/navigator.dart';
 
 // Componentes de Maquetación
 export 'layouts/column.dart';
 export 'layouts/row.dart';
 export 'layouts/panel.dart';
+export 'layouts/spacer.dart';
 
 // Componentes de Escritorio / CAD
 export 'desktop/desktop_layout.dart';

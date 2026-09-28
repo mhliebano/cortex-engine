@@ -163,19 +163,13 @@ abstract class _View {
   }
 
   int _resolveWidth(Panel panel, int candidateX, int originalWidth) {
-    if (panel.isFlexWidth) {
-      final free = _width - candidateX;
-      return free > 0 ? free : 0;
-    }
-    return originalWidth;
+    final free = _width - candidateX;
+    return Panel.resolveDimension(panel.rawWidth, _width, free > 0 ? free : _width);
   }
 
   int _resolveHeight(Panel panel, int candidateY, int originalHeight) {
-    if (panel.isFlexHeight) {
-      final free = _height - candidateY;
-      return free > 0 ? free : 0;
-    }
-    return originalHeight;
+    final free = _height - candidateY;
+    return Panel.resolveDimension(panel.rawHeight, _height, free > 0 ? free : _height);
   }
 
   String _panelKey(Panel panel, int index) {
@@ -199,7 +193,7 @@ abstract class _View {
   }
 
   Map<String, Map<String, dynamic>> _collectElementStates(
-    List<Element> elements, [
+    List<CortexNode> elements, [
     String prefix = '',
   ]) {
     final Map<String, Map<String, dynamic>> states = {};

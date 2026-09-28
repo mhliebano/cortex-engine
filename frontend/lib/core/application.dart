@@ -139,7 +139,7 @@ class Application {
   Future<void> run() async {
     _window.init(width, height, title, flags: flags);
 
-    debugPrint("Ventana de dimensiones $width x $height");
+    Debugger.debugPrint("Ventana de dimensiones $width x $height");
 
     // Inicializar dispositivo de audio
     AudioEngine.init();
