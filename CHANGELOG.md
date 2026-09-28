@@ -6,6 +6,34 @@
 
 ### Agregado
 
+- **Jerarquía Base de Nodos Segregada (`CortexNode`)**:
+  - Extraída la clase base abstracta `CortexNode` conteniendo estrictamente las propiedades geométricas puras (`key`, `x`, `y`, `width`, `height`, `isVisible`) y métodos base (`onUpdate`, `onRender`, `onRenderOverlay`, `onResize`).
+  - Refactorización de `Element` para heredar de `CortexNode`, desacoplando la base matemática de las propiedades cosméticas y reactivas.
+  - Modificación de `StructureNode` y `Panel` para heredar directamente de `CortexNode`.
+
+- **Sistema de Depuración Visual Layout (`Debugger.showLayout`)**:
+  - Implementación del Wireframe Debugger en `CortexNode.renderDebugWireframe`.
+  - Evaluación de tipos basada en herencia estricta (operador `is`): Rojo para `Panel`, Verde para `Col`, Azul para `Row` y Gris para componentes base.
+  - Renderizado de bordes rectangulares del viewport y etiqueta flotante superior izquierda con `runtimeType`.
+
+- **Enums de Flujo y Disposición Direccional**:
+  - Definición de los enumeradores universales `MainAlign` (`start`, `center`, `end`, `spaceBetween`, `spaceAround`), `CrossAlign` (`start`, `center`, `end`, `stretch`), `Overflow` (`visible`, `hidden`, `scroll`, `auto`) y `PanelLayout` (`stack`, `vertical`, `horizontal`).
+
+- **Nodos de Flujo Unidireccional (`Col` y `Row`)**:
+  - Implementación de las clases `Col` y `Row` heredando de `StructureNode`, exentas de dimensiones absolutas explícitas y márgenes externamente aplicados.
+
+- **Nodo de Espaciado `Spacer`**:
+  - Creación del nodo `Spacer([this.size])`. Funcionamiento dual como resorte flexible de expansión en el eje principal (`size == null`) o bloque rígido (`size != null`).
+
+- **Algoritmo de Distribución Matemática Lineal ("Shrink-Wrap" y Resortes)**:
+  - Algoritmo de 3 pasos para `Panel` (modos direccionales), `Col` y `Row`:
+    1. **Suma Rígida**: Cálculo de componentes fijos, Spacers rígidos y gaps de separación.
+    2. **Conteo de Resortes**: Detección de Spacers y nodos flexibles (`isFlexHeight`/`isFlexWidth` o nodos con dimensión inicial sin asignar `0`).
+    3. **Repartición y Posicionamiento**: División equitativa del espacio libre entre resortes y posicionamiento secuencial en las coordenadas de origen.
+  - **Inmutabilidad Dimensional en `Panel`**: El `Panel` preserva sus dimensiones absolutas o relativas asignadas (cero *shrink-wrap*), dejando espacio libre si los hijos no llenan el contenedor.
+  - **Shrink-Wrap Exclusivo**: Ajuste de tamaño total al contenido limitado únicamente a `Col` y `Row` sin resortes flexibles.
+  - **Propagación Recursiva de Flexibilidad**: Getters internos transparentes `isFlexHeight` e `isFlexWidth` en `Col`, `Row` y `Spacer`.
+
 - **Motor 3D Nativo (Backend y Frontend)**: Implementación completa de capacidades 3D exponiendo más de 40 funciones FFI hacia Dart de forma segura (mediante patrón de Handles/IDs y HashMaps concurrentes).
 - **Modelos y Mallas Procedurales**: Soporte para carga de modelos (GLTF, OBJ, etc.) y generación procedural (esferas, cubos, cilindros, conos, planos).
 - **Materiales y Texturas Interoperables**: Asignación de texturas del módulo 2D directamente en canales 3D (albedo, normal, emission, metalness, etc.).
@@ -15,6 +43,18 @@
 - **Ray-Casting y Picking 3D**: Capacidad para lanzar rayos desde el ratón (Screen-to-World) y verificar colisiones contra Bounding Boxes (AABB) y malla poligonal exacta (`rayHitsModelMesh`).
 - **Scene Graph en Dart**: Nuevo sistema nativo (`scene3d.dart`) con clase `Transform3D` y jerarquías de dependencias (`Node3D`) para cálculo de matrices de mundo de forma jerárquica padre-hijo.
 - **Álgebra 3D**: Adición del paquete estándar `vector_math` al `pubspec.yaml` del SDK para manipulación de cuaterniones, matrices 4x4 y transformaciones.
+
+### Corregido
+
+- **Superposición de Hijos en `Panel`**: Eliminación del reseteo forzado de coordenadas `x`/`y` a `padding` en `Panel.onUpdate()` y `Panel.onRender()`, permitiendo el renderizado secuencial correcto de los elementos organizados por el layout.
+
+### Cambios
+
+- **Saneamiento de la API Pública de Vistas (Minimalismo Ortogonal)**:
+  - Privatización de la clase base abstracta `View` a `_View`, eliminando detalles de herencia interna de la capa del usuario final.
+  - Renombrado de la vista de lienzo de resolución fija `CanvasView` a `ContainerView`.
+  - `FluidView` y `ContainerView` quedan expuestas como las dos únicas entidades públicas concretas del motor para composición e instanciación directa.
+  - Depuración de los exports públicos en `ui.dart` para encapsular la estructura base.
 
 ### Corregido
 

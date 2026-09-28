@@ -34,20 +34,23 @@ library;
 
 export 'dart:math';
 
-export 'engine/application.dart';
-export 'engine/app_window.dart';
-export 'engine/audio.dart';
-export 'engine/navigator.dart';
-export 'engine/context2d.dart';
-export 'engine/context3d.dart';
-export 'engine/input.dart';
-export 'engine/ui/ui.dart';
+// Core Framework Engine
+export 'core/application.dart';
+export 'core/app_window.dart';
+export 'core/audio.dart';
+export 'core/navigator.dart';
+export 'core/context2d.dart';
+export 'core/context3d.dart';
+export 'core/input.dart';
+export 'core/scene3d.dart';
+export 'core/ui/ui.dart';
 
-export 'audio.dart';
-export 'window.dart';
-export 'renderer.dart';
-export 'graphics2d.dart';
-export 'graphics3d.dart';
+// Native Wrappers
+export 'wrappers/audio.dart';
+export 'wrappers/window.dart';
+export 'wrappers/renderer.dart';
+export 'wrappers/graphics2d.dart';
+export 'wrappers/graphics3d.dart';
 
 ''';
   File(
@@ -61,7 +64,8 @@ export 'graphics3d.dart';
   print(
     '⚙️ Copiando binarios nativos del motor (libbackend.so / backend.dll) -> release/sdk/assets/native/...',
   );
-  final nativeDir = Directory('${releaseSdkDir.path}/assets/native')..createSync(recursive: true);
+  final nativeDir = Directory('${releaseSdkDir.path}/assets/native')
+    ..createSync(recursive: true);
   final backendDir = Directory('${rootDir.path}/backend/target');
   final libNames = ['libbackend.so', 'backend.dll'];
   for (final name in libNames) {
@@ -78,11 +82,12 @@ export 'graphics3d.dart';
       foundFile.copySync('${nativeDir.path}/$name');
       print('   -> Copiado $name a release/sdk/assets/native/');
     }
-
   }
 
   // 4. Copiar assets/, docs/, README.md, LICENSE y CHANGELOG.md
-  print('🎨 Copiando recursos de frontend/assets, docs y archivos informativos -> release/sdk/...');
+  print(
+    '🎨 Copiando recursos de frontend/assets, docs y archivos informativos -> release/sdk/...',
+  );
   _copyDirectory(
     Directory('${frontendDir.path}/assets'),
     Directory('${releaseSdkDir.path}/assets'),
@@ -101,7 +106,9 @@ export 'graphics3d.dart';
   }
 
   // 4b. Copiar Dart SDK embebido para distribución autónoma (Zero-Setup)
-  print('🎯 Empaquetando entorno autónomo de Dart SDK -> release/sdk/dart-sdk...');
+  print(
+    '🎯 Empaquetando entorno autónomo de Dart SDK -> release/sdk/dart-sdk...',
+  );
   final systemDartSdkDir = _findSystemDartSdk();
   if (systemDartSdkDir != null && systemDartSdkDir.existsSync()) {
     final targetDartSdkDir = Directory('${releaseSdkDir.path}/dart-sdk');
@@ -117,11 +124,15 @@ export 'graphics3d.dart';
     );
     print('   -> Dart SDK empaquetado correctamente en release/sdk/dart-sdk');
   } else {
-    print('   ⚠️ No se pudo localizar la carpeta completa de Dart SDK para empaquetar.');
+    print(
+      '   ⚠️ No se pudo localizar la carpeta completa de Dart SDK para empaquetar.',
+    );
   }
 
   // 5. Crear pubspec.yaml y analysis_options.yaml del SDK
-  print('⚙️ Generando release/sdk/pubspec.yaml y analysis_options.yaml (v$version)...');
+  print(
+    '⚙️ Generando release/sdk/pubspec.yaml y analysis_options.yaml (v$version)...',
+  );
   File('${releaseSdkDir.path}/pubspec.yaml').writeAsStringSync('''
 name: cortex
 description: Cortex Engine SDK Standalone Release
@@ -134,6 +145,7 @@ dependencies:
   ffi: ^2.2.0
   path: ^1.9.0
   args: ^2.4.2
+  vector_math: ^2.4.3
 
 executables:
   cortex: cortex
@@ -150,7 +162,8 @@ analyzer:
   print('🛠️ Creando herramienta CLI release/sdk/bin/cortex.dart...');
   Directory('${releaseSdkDir.path}/bin').createSync(recursive: true);
 
-  final cliCode = '''#!/usr/bin/env dart
+  final cliCode =
+      '''#!/usr/bin/env dart
 import 'dart:convert';
 import 'dart:io';
 import 'package:args/command_runner.dart';
@@ -233,8 +246,8 @@ class CreateCommand extends Command<void> {
     // 1. Generar cortex.json del SDK (¡0 archivos YAML de Dart!)
     final configContent = """{
   "name": "\${sanitizedName}",
-  "version": "1.0.0",
-  "engine": "Cortex Engine SDK v1.0.0",
+  "version": "$version",
+  "engine": "Cortex Engine SDK v$version",
   "dependencies": {}
 }
 """;
@@ -244,7 +257,7 @@ class CreateCommand extends Command<void> {
     final binDir = Directory(p.join(outputDir.path, 'bin'))..createSync();
     final viewsDir = Directory(p.join(binDir.path, 'views'))..createSync();
 
-    final appStylesContent = """import 'package:cortex/cortex.dart';
+    final appStylesContent = """import 'package:frontend/cortex.dart';
 
 void initAppStyles() {
   Style.register(
@@ -279,7 +292,7 @@ void initAppStyles() {
 """;
     File(p.join(binDir.path, 'app_styles.dart')).writeAsStringSync(appStylesContent);
 
-    final homeViewContent = """import 'package:cortex/cortex.dart';
+    final homeViewContent = """import 'package:frontend/cortex.dart';
 
 class HomeView extends View {
   HomeView() : super(id: 'home');
@@ -325,7 +338,7 @@ class HomeView extends View {
 """;
     File(p.join(viewsDir.path, 'home_view.dart')).writeAsStringSync(homeViewContent);
 
-    final mainContent = """import 'package:cortex/cortex.dart';
+    final mainContent = """import 'package:frontend/cortex.dart';
 import 'app_styles.dart';
 import 'views/home_view.dart';
 
@@ -412,14 +425,77 @@ void main() async {
       try { overrideFile.deleteSync(); } catch (_) {}
     }
 
-    final home = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '';
-    final pubCache = p.join(home, '.pub-cache', 'hosted', 'pub.dev');
-
     final projectName = p.basename(projectPath);
     final dartToolDir = Directory(p.join(projectPath, '.dart_tool'))..createSync(recursive: true);
     final packageConfigFile = File(p.join(dartToolDir.path, 'package_config.json'));
-    final pkgConfigContent = '{\\n  "configVersion": 2,\\n  "packages": [\\n    {\\n      "name": "' + projectName + '",\\n      "rootUri": "../",\\n      "packageUri": "lib/",\\n      "languageVersion": "3.12"\\n    },\\n    {\\n      "name": "cortex",\\n      "rootUri": "file://' + sdkPath + '",\\n      "packageUri": "lib/",\\n      "languageVersion": "3.12"\\n    },\\n    {\\n      "name": "ffi",\\n      "rootUri": "file://' + pubCache + '/ffi-2.2.0",\\n      "packageUri": "lib/",\\n      "languageVersion": "3.7"\\n    },\\n    {\\n      "name": "path",\\n      "rootUri": "file://' + pubCache + '/path-1.9.1",\\n      "packageUri": "lib/",\\n      "languageVersion": "3.4"\\n    },\\n    {\\n      "name": "args",\\n      "rootUri": "file://' + pubCache + '/args-2.7.0",\\n      "packageUri": "lib/",\\n      "languageVersion": "3.3"\\n    }\\n  ],\\n  "generator": "cortex"\\n}\\n';
-    packageConfigFile.writeAsStringSync(pkgConfigContent);
+
+    final sdkPackageConfigFile = File(p.join(sdkPath, '.dart_tool', 'package_config.json'));
+    final List<Map<String, dynamic>> packages = [
+      {
+        "name": projectName,
+        "rootUri": "../",
+        "packageUri": "lib/",
+        "languageVersion": "3.12",
+      },
+      {
+        "name": "cortex",
+        "rootUri": "file://\$sdkPath",
+        "packageUri": "lib/",
+        "languageVersion": "3.12",
+      },
+    ];
+
+    if (sdkPackageConfigFile.existsSync()) {
+      try {
+        final sdkJson = jsonDecode(sdkPackageConfigFile.readAsStringSync()) as Map<String, dynamic>;
+        final sdkPackages = (sdkJson['packages'] as List<dynamic>?) ?? [];
+        for (final pkg in sdkPackages) {
+          final name = pkg['name'] as String?;
+          if (name != null && name != 'cortex' && name != projectName) {
+            packages.add(Map<String, dynamic>.from(pkg as Map));
+          }
+        }
+      } catch (_) {}
+    }
+
+    // Fallbacks si no estaban resueltos en el SDK
+    final packageNames = packages.map((e) => e['name'] as String).toSet();
+    final home = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '';
+    final pubCache = p.join(home, '.pub-cache', 'hosted', 'pub.dev');
+
+    void addFallback(String name, String dirPattern, String langVersion) {
+      if (!packageNames.contains(name)) {
+        String packageUri = 'file://\$pubCache/\$dirPattern';
+        try {
+          final parentDir = Directory(pubCache);
+          if (parentDir.existsSync()) {
+            final match = parentDir.listSync().firstWhere(
+              (e) => p.basename(e.path).startsWith('\$name-'),
+              orElse: () => Directory(p.join(pubCache, dirPattern)),
+            );
+            packageUri = 'file://\${match.path}';
+          }
+        } catch (_) {}
+        packages.add({
+          "name": name,
+          "rootUri": packageUri,
+          "packageUri": "lib/",
+          "languageVersion": langVersion,
+        });
+      }
+    }
+
+    addFallback('ffi', 'ffi-2.2.0', '3.7');
+    addFallback('path', 'path-1.9.1', '3.4');
+    addFallback('args', 'args-2.7.0', '3.3');
+    addFallback('vector_math', 'vector_math-2.4.3', '3.0');
+
+    final configMap = {
+      "configVersion": 2,
+      "packages": packages,
+      "generator": "cortex",
+    };
+    packageConfigFile.writeAsStringSync(jsonEncode(configMap));
   }
 
   static void _copyDir(Directory src, Directory dst) {
@@ -623,14 +699,21 @@ class BuildCommand extends Command<void> {
   print(
     '👉 Para usar los comandos "cortex" y "dart" desde cualquier terminal, agrega la ruta bin a tu PATH:',
   );
-  print('   export PATH="\$PATH:${releaseSdkDir.path}/bin:${releaseSdkDir.path}/dart-sdk/bin"');
+  print(
+    '   export PATH="\$PATH:${releaseSdkDir.path}/bin:${releaseSdkDir.path}/dart-sdk/bin"',
+  );
 }
 
 Directory? _findSystemDartSdk() {
   try {
-    final exePath = File(Platform.resolvedExecutable).resolveSymbolicLinksSync();
-    final flutterDartSdk = Directory('${Directory(exePath).parent.parent.path}/cache/dart-sdk');
-    if (flutterDartSdk.existsSync() && File('${flutterDartSdk.path}/bin/dart').existsSync()) {
+    final exePath = File(
+      Platform.resolvedExecutable,
+    ).resolveSymbolicLinksSync();
+    final flutterDartSdk = Directory(
+      '${Directory(exePath).parent.parent.path}/cache/dart-sdk',
+    );
+    if (flutterDartSdk.existsSync() &&
+        File('${flutterDartSdk.path}/bin/dart').existsSync()) {
       return flutterDartSdk;
     }
     final standardSdk = Directory(Directory(exePath).parent.parent.path);
@@ -643,7 +726,11 @@ Directory? _findSystemDartSdk() {
   return null;
 }
 
-void _copyDirectory(Directory source, Directory destination, {bool Function(String path)? ignoreFilter}) {
+void _copyDirectory(
+  Directory source,
+  Directory destination, {
+  bool Function(String path)? ignoreFilter,
+}) {
   destination.createSync(recursive: true);
   for (var entity in source.listSync(recursive: false)) {
     if (ignoreFilter != null && ignoreFilter(entity.path)) {
