@@ -2,8 +2,8 @@ use raylib_sys::{
     Color, DrawCircle, DrawCircleLines, DrawCircleSector, DrawCircleSectorLines, DrawPoly,
     DrawPolyLinesEx, DrawRectangle, DrawRectangleLines, DrawRectangleRounded,
     DrawRectangleRoundedLinesEx, DrawText, DrawTextEx, DrawTexturePro, DrawTriangle,
-    DrawTriangleLines, Font, LoadFontEx, LoadTexture, Rectangle, SetTextureFilter, Texture2D,
-    UnloadFont, UnloadTexture, Vector2,
+    DrawTriangleLines, Font, LoadFontEx, LoadTexture, MeasureText, MeasureTextEx, Rectangle,
+    SetTextureFilter, Texture2D, UnloadFont, UnloadTexture, Vector2,
 };
 use std::collections::HashMap;
 use std::os::raw::{c_char, c_float, c_int, c_uchar};
@@ -321,6 +321,38 @@ pub extern "C" fn g2d_draw_arc_lines(
         segments,
         Color { r, g, b, a },
     );
+}
+
+pub fn measure_text(text: *const c_char, font_size: c_int) -> c_int {
+    unsafe {
+        if text.is_null() {
+            return 0;
+        }
+        let c_str = std::ffi::CStr::from_ptr(text);
+        if let Ok(str_slice) = c_str.to_str() {
+            let contains_icon = str_slice
+                .chars()
+                .any(|ch| (ch as u32) >= 0xE000 && (ch as u32) <= 0xF8FF);
+            if contains_icon {
+                if let Some(icon_font) = ICON_FONT {
+                    let vec = MeasureTextEx(icon_font, text, font_size as f32, 1.0);
+                    return vec.x as i32;
+                }
+            }
+        }
+
+        if let Some(font) = CUSTOM_FONT {
+            let vec = MeasureTextEx(font, text, font_size as f32, 1.0);
+            vec.x as i32
+        } else {
+            MeasureText(text, font_size)
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn g2d_measure_text(text: *const c_char, font_size: c_int) -> c_int {
+    measure_text(text, font_size)
 }
 
 #[unsafe(no_mangle)]
