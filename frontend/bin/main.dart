@@ -1,10 +1,12 @@
 import 'package:frontend/core/application.dart';
 import 'package:frontend/core/navigator.dart';
+import 'package:frontend/core/utils.dart';
 
 import 'app_styles.dart';
 import 'views/test_view.dart';
 
 void main() async {
+  Debugger.showLayout = true;
   // 0. Inicializar Hoja de Estilos CSS Globales
   initAppStyles();
 

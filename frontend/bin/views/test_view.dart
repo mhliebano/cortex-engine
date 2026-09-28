@@ -18,7 +18,13 @@ class TestView extends FluidView {
         padding: EdgeInsets.all(15),
         children: [
           Col(children: [Spacer(50)]),
-          Row(children: [Spacer()]),
+          Row(
+            gap: 20,
+            children: [
+              Label(text: "Bienvenido a Cortex"),
+              Label(text: "Es cool!"),
+            ],
+          ),
           Col(children: [Spacer()]),
         ],
         layout: PanelLayout.vertical,
