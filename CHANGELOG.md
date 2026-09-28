@@ -6,6 +6,15 @@
 
 ### Agregado
 
+- **Componente Ficha (`Chip`) y Modelo de Caja**:
+  - Creación del componente `Chip` (`chip.dart`) heredando de `ControlNode` como la primera implementación de modelo de caja (`padding`, `bgColor`, `borderColor`, `borderRadius`).
+  - Integración de `EdgeInsets` en el tipo de propiedad `Style.padding` (`style.dart`) y consumo directo en la geometría de caja.
+  - Centrado horizontal y vertical simétrico de texto dentro del área disponible del chip.
+
+- **Medición Nativa de Texto (`g2d_measure_text`)**:
+  - Adición de la función nativa `g2d_measure_text` en el backend en Rust (`graphics2d.rs`), utilizando `MeasureTextEx` de Raylib C API para medir la métrica exacta de glifos en fuentes TTF.
+  - Exposición vía FFI en `graphics2d_bindings.dart`, `graphics2d.dart` y `Context2D.measureText`.
+
 - **Nodo Base de Control (`ControlNode`)**:
   - Creación de la clase base abstracta `ControlNode` (`control_node.dart`) heredando directamente de `CortexNode`.
   - Gestión de estado interno de interactividad (`isEnabled`, `isHovered`, `isFocused`) e interceptores de eventos base con guardas de estado.
