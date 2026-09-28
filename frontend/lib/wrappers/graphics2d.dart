@@ -9,6 +9,7 @@ class Graphics2D {
   late final G2dDrawRect _drawRect;
   late final G2dDrawRect _drawRectLines;
   late final G2dDrawText _drawText;
+  late final G2dMeasureText _measureText;
   late final G2dDrawCircle _drawCircle;
   late final G2dDrawCircleLines _drawCircleLines;
   late final G2dDrawArc _drawArc;
@@ -51,6 +52,9 @@ class Graphics2D {
     );
     _drawText = dylib.lookupFunction<G2dDrawTextC, G2dDrawText>(
       'g2d_draw_text',
+    );
+    _measureText = dylib.lookupFunction<G2dMeasureTextC, G2dMeasureText>(
+      'g2d_measure_text',
     );
     _drawCircle = dylib.lookupFunction<G2dDrawCircleC, G2dDrawCircle>(
       'g2d_draw_circle',
@@ -140,6 +144,11 @@ class Graphics2D {
   ) {
     final ptr = _arenaWriteUtf8(text);
     _drawText(ptr, x, y, fontSize, r, g, b, a);
+  }
+
+  int measureText(String text, int fontSize) {
+    final ptr = _arenaWriteUtf8(text);
+    return _measureText(ptr, fontSize);
   }
 
   /// Copia [text] codificado en UTF-8 + '\0' en el arena y devuelve el puntero.
