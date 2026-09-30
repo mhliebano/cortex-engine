@@ -3,28 +3,25 @@ import 'dart:math' as math;
 import 'package:frontend/core/context2d.dart';
 import 'package:frontend/core/context3d.dart';
 import 'package:frontend/core/input.dart';
-import 'package:frontend/core/ui/element.dart';
+import 'package:frontend/core/ui/control_node.dart';
 import 'package:frontend/core/ui/icons.dart';
-import 'package:frontend/core/ui/style.dart';
 
 /// Modalidad de ajuste de imagen (`BoxFit`).
 enum BoxFit { contain, cover, fill }
 
-/// Componente de Renderización de Imagen (`ImageElement` / `Image`).
+/// Componente de Renderización de Imagen (`Image`) bajo la arquitectura `ControlNode`.
 ///
 /// Soporta:
 /// - Carga local mediante ruta de archivo (`src`).
 /// - Carga remota por HTTP/HTTPS automáticamente (`src: 'https://...'` o `Image.network(...)`).
 /// - Reutilización de texturas por ID nativo (`textureId`).
 /// - Modos de ajuste (`fill`, `contain`, `cover`).
-/// - Bordes redondeados integrados (`borderRadius`).
-/// - Spinner animado de carga (Loading) mientras descarga de la red.
-class ImageElement extends Element {
+/// - Estilizado dinámico mediante clases CSS (`className` / `currentStyle`).
+/// - Spinner animado de carga mientras descarga de la red.
+class Image extends ControlNode {
   final String? src;
   int? textureId;
   final BoxFit fit;
-  final double borderRadius;
-  late ColorRGBA tint;
   final String? placeholderLabel;
 
   static final Map<String, String> _networkCache = {};
@@ -39,25 +36,21 @@ class ImageElement extends Element {
   double _animAngle = 0.0;
   double _animTime = 0.0;
 
-  ImageElement({
-    String? className,
+  Image({
+    super.key,
+    super.isVisible,
+    super.className,
+    super.isEnabled,
     this.src,
     this.textureId,
     this.fit = BoxFit.cover,
-    this.borderRadius = 0.0,
     this.placeholderLabel,
     int width = 0,
     int height = 0,
-    bool fillWidth = false,
-    bool fillHeight = false,
-    super.expand,
-    super.marginRight,
-    super.marginBottom,
-  }) : super(fillWidth: fillWidth, fillHeight: fillHeight) {
-    final style = className != null ? Style.merge(className) : null;
-    this.width = width != 0 ? width : (style?.width ?? 120);
-    this.height = height != 0 ? height : (style?.height ?? 120);
-    this.tint = style?.textColor ?? ColorRGBA.white;
+  }) {
+    final style = currentStyle;
+    this.width = width > 0 ? width : (style.width ?? 120);
+    this.height = height > 0 ? height : (style.height ?? 120);
 
     if (src != null &&
         (src!.startsWith('http://') || src!.startsWith('https://'))) {
@@ -67,30 +60,28 @@ class ImageElement extends Element {
     }
   }
 
-  /// Constructor nombrado intuitivo estilo Flutter `Image.network(url)`
-  factory ImageElement.network(
+  /// Constructor nombrado intuitivo estilo `Image.network(url)`
+  factory Image.network(
     String url, {
+    String? key,
+    bool isVisible = true,
     String? className,
+    bool isEnabled = true,
     BoxFit fit = BoxFit.cover,
-    double borderRadius = 0.0,
     String? placeholderLabel,
     int width = 0,
     int height = 0,
-    bool fillWidth = false,
-    bool fillHeight = false,
-    Expand? expand,
   }) {
-    return ImageElement(
+    return Image(
+      key: key,
+      isVisible: isVisible,
       className: className,
+      isEnabled: isEnabled,
       src: url,
       fit: fit,
-      borderRadius: borderRadius,
       placeholderLabel: placeholderLabel,
       width: width,
       height: height,
-      fillWidth: fillWidth,
-      fillHeight: fillHeight,
-      expand: expand,
     );
   }
 
@@ -151,7 +142,13 @@ class ImageElement extends Element {
 
   @override
   void onRender(Context2D ctx2d, Context3D ctx3d) {
-    if (!isVisible || width <= 0 || height <= 0) return;
+    final style = currentStyle;
+    final renderWidth = width > 0 ? width : (style.width ?? 120);
+    final renderHeight = height > 0 ? height : (style.height ?? 120);
+    final borderRadius = style.borderRadius ?? 0.0;
+    final tint = style.textColor ?? ColorRGBA.white;
+
+    if (!isVisible || renderWidth <= 0 || renderHeight <= 0) return;
 
     // 1. Carga diferida de la textura al resolver la ruta local
     if (!_attemptedLoad && _resolvedLocalPath != null && textureId == null) {
@@ -170,28 +167,43 @@ class ImageElement extends Element {
 
     // 2. Si no hay textura o la descarga está en proceso/falló, renderizar marcador con spinner animado
     if (!hasTexture) {
-      final bg = const ColorRGBA(28, 34, 46);
-      final border = const ColorRGBA(50, 60, 78);
+      final bg = style.bgColor ?? const ColorRGBA(28, 34, 46);
+      final border = style.borderColor ?? const ColorRGBA(50, 60, 78);
       if (borderRadius > 0) {
-        ctx2d.drawRoundRect(x, y, width, height, borderRadius, color: bg);
+        ctx2d.drawRoundRect(
+          x,
+          y,
+          renderWidth,
+          renderHeight,
+          borderRadius,
+          color: bg,
+        );
         ctx2d.drawRoundRectLines(
           x,
           y,
-          width,
-          height,
+          renderWidth,
+          renderHeight,
           borderRadius,
           color: border,
         );
       } else {
-        ctx2d.drawPanel(x, y, width, height, bgColor: bg, borderColor: border);
+        ctx2d.drawPanel(
+          x,
+          y,
+          renderWidth,
+          renderHeight,
+          bgColor: bg,
+          borderColor: border,
+        );
       }
 
-      final centerX = x + (width ~/ 2);
-      final centerY = y + (height ~/ 2);
+      final centerX = x + (renderWidth ~/ 2);
+      final centerY = y + (renderHeight ~/ 2);
 
       if (!_loadFailed) {
         // Spinner animado de carga en anillo azul
-        final spinnerRadius = (math.min(width, height) * 0.22).clamp(8.0, 26.0);
+        final spinnerRadius = (math.min(renderWidth, renderHeight) * 0.22)
+            .clamp(8.0, 26.0);
         ctx2d.drawCircleLines(
           centerX,
           centerY,
@@ -237,10 +249,10 @@ class ImageElement extends Element {
       return;
     }
 
-    // 3. Renderizar textura con recorte scissor si tiene bordes o límites
+    // 3. Renderizar textura con recorte scissor si tiene bordes redondeados
     final useClip = borderRadius > 0;
     if (useClip) {
-      ctx2d.beginScissor(x, y, width, height);
+      ctx2d.beginScissor(x, y, renderWidth, renderHeight);
     }
 
     if (fit == BoxFit.fill || _imgWidth <= 0 || _imgHeight <= 0) {
@@ -248,39 +260,39 @@ class ImageElement extends Element {
         textureId!,
         x,
         y,
-        width: width,
-        height: height,
+        width: renderWidth,
+        height: renderHeight,
         tint: tint,
       );
     } else {
       // Ajuste proporcional (contain / cover)
       final aspectImg = _imgWidth / _imgHeight;
-      final aspectBox = width / height;
+      final aspectBox = renderWidth / renderHeight;
 
-      int drawW = width;
-      int drawH = height;
+      int drawW = renderWidth;
+      int drawH = renderHeight;
       int drawX = x;
       int drawY = y;
 
       if (fit == BoxFit.contain) {
         if (aspectImg > aspectBox) {
-          drawW = width;
-          drawH = (width / aspectImg).toInt();
-          drawY = y + ((height - drawH) ~/ 2);
+          drawW = renderWidth;
+          drawH = (renderWidth / aspectImg).toInt();
+          drawY = y + ((renderHeight - drawH) ~/ 2);
         } else {
-          drawH = height;
-          drawW = (height * aspectImg).toInt();
-          drawX = x + ((width - drawW) ~/ 2);
+          drawH = renderHeight;
+          drawW = (renderHeight * aspectImg).toInt();
+          drawX = x + ((renderWidth - drawW) ~/ 2);
         }
       } else if (fit == BoxFit.cover) {
         if (aspectImg > aspectBox) {
-          drawH = height;
-          drawW = (height * aspectImg).toInt();
-          drawX = x - ((drawW - width) ~/ 2);
+          drawH = renderHeight;
+          drawW = (renderHeight * aspectImg).toInt();
+          drawX = x - ((drawW - renderWidth) ~/ 2);
         } else {
-          drawW = width;
-          drawH = (width / aspectImg).toInt();
-          drawY = y - ((drawH - height) ~/ 2);
+          drawW = renderWidth;
+          drawH = (renderWidth / aspectImg).toInt();
+          drawY = y - ((drawH - renderHeight) ~/ 2);
         }
       }
 
@@ -299,6 +311,3 @@ class ImageElement extends Element {
     }
   }
 }
-
-/// Alias typedef para sintaxis limpia `Image(src: 'path')`
-typedef Image = ImageElement;

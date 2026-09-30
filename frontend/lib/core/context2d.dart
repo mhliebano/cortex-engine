@@ -160,6 +160,11 @@ class Context2D {
     _g2d.drawText(text, _tx(x), _ty(y), _tsz(fontSize), color.r, color.g, color.b, color.a);
   }
 
+  int measureText(String text, int fontSize) {
+    if (text.isEmpty) return 0;
+    return _g2d.measureText(text, _tsz(fontSize));
+  }
+
   /// Resetea el arena de texto al final de cada frame (llámalo tras endFrame()).
   /// Libera efectivamente todos los punteros UTF-8 del frame anterior poniendo
   /// el offset a 0, sin ejecutar ningún free() nativo.

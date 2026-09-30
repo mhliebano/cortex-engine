@@ -1,11 +1,29 @@
-import 'package:frontend/core/context2d.dart';
-import 'package:frontend/core/ui/style.dart';
+import 'package:frontend/cortex.dart';
 
 /// Registra todas las Clases CSS de la Aplicación en el registro global de estilos.
 void initAppStyles() {
   // Encabezados y Etiquetas
-  Style.register('panel-1', const Style(bgColor: ColorRGBA(255, 255, 255)));
-  Style.register('panel-2', const Style(bgColor: ColorRGBA(255, 0, 255)));
-  Style.register('panel-3', const Style(bgColor: ColorRGBA(0, 255, 255)));
-  Style.register('panel-4', const Style(bgColor: ColorRGBA(255, 255, 0)));
+  Style.register(
+    'text-h1',
+    const Style(fontSize: 25, textColor: ColorRGBA.accentBlue),
+  );
+  Style.register(
+    'text',
+    const Style(fontSize: 16, textColor: ColorRGBA(255, 0, 0, 255)),
+  );
+  Style.register(
+    'chip-class',
+    const Style(
+      fontSize: 12,
+      textColor: ColorRGBA.accentBlue,
+      bgColor: ColorRGBA.white,
+      borderRadius: 25,
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      borderColor: ColorRGBA(255, 0, 0),
+    ),
+  );
+  Style.register(
+    'icon-class',
+    const Style(fontSize: 40, textColor: ColorRGBA.white),
+  );
 }

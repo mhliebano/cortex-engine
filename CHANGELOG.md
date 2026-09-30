@@ -6,6 +6,37 @@
 
 ### Agregado
 
+- **Migración y Refactorización de Controles UI a `ControlNode`**:
+  - Migración completa de los componentes `Button`, `Chip`, `Icon`, `IconButton`, `Label` e `Image` a la nueva arquitectura `ControlNode` ubicados en `lib/core/ui/controls/`.
+  - Encapsulamiento estricto de coordenadas (`x`, `y`) y parámetros de layout dentro del estado interno del nodo, eliminándolos de los constructores públicos y delegando el posicionamiento a los contenedores padres (`Col`, `Row`, `Panel`).
+  - Vínculo total con clases CSS (`className`) y resolución dinámica de pseudo-clases en `currentStyle` (`:hover`, `:active`, `:focus`, `:disabled`).
+
+- **Alineación Transversal Predeterminada (`CrossAlign.start`)**:
+  - Cambio del valor por defecto de `crossAlign` a `CrossAlign.start` en `Col` y `Row` para evitar la expansión forzada estilo Qt/GTK de los controles hijos.
+
+- **Centralización de Definición `VoidCallback`**:
+  - Definición unificada de `typedef VoidCallback = void Function()` en `control_node.dart` para evitar conflictos de exportación.
+
+### Cambiado / Eliminado
+
+- **Eliminación de Componentes Legacy de Interacción**:
+  - Eliminados los archivos legacy en `lib/core/ui/interaction/`: `button.dart`, `chip.dart`, `icon.dart`, `icon_button.dart`, `image.dart` y `label.dart`.
+  - Actualización de exportaciones centralizadas en `lib/core/ui/ui.dart`.
+
+- **Componente Ficha (`Chip`) y Modelo de Caja**:
+  - Creación del componente `Chip` (`chip.dart`) heredando de `ControlNode` como la primera implementación de modelo de caja (`padding`, `bgColor`, `borderColor`, `borderRadius`).
+  - Integración de `EdgeInsets` en el tipo de propiedad `Style.padding` (`style.dart`) y consumo directo en la geometría de caja.
+  - Centrado horizontal y vertical simétrico de texto dentro del área disponible del chip.
+
+- **Medición Nativa de Texto (`g2d_measure_text`)**:
+  - Adición de la función nativa `g2d_measure_text` en el backend en Rust (`graphics2d.rs`), utilizando `MeasureTextEx` de Raylib C API para medir la métrica exacta de glifos en fuentes TTF.
+  - Exposición vía FFI en `graphics2d_bindings.dart`, `graphics2d.dart` y `Context2D.measureText`.
+
+- **Nodo Base de Control (`ControlNode`)**:
+  - Creación de la clase base abstracta `ControlNode` (`control_node.dart`) heredando directamente de `CortexNode`.
+  - Gestión de estado interno de interactividad (`isEnabled`, `isHovered`, `isFocused`) e interceptores de eventos base con guardas de estado.
+  - Vínculo dinámico con el sistema de estilos (`Style.merge`) resolviendo pseudoclases CSS en tiempo real con precedencia estricta: `disabled > focus > hover > normal`.
+
 - **Jerarquía Base de Nodos Segregada (`CortexNode`)**:
   - Extraída la clase base abstracta `CortexNode` conteniendo estrictamente las propiedades geométricas puras (`key`, `x`, `y`, `width`, `height`, `isVisible`) y métodos base (`onUpdate`, `onRender`, `onRenderOverlay`, `onResize`).
   - Refactorización de `Element` para heredar de `CortexNode`, desacoplando la base matemática de las propiedades cosméticas y reactivas.
@@ -46,10 +77,19 @@
 
 ### Corregido
 
+- **Cálculo Ortogonal de Shrink-Wrap y Propagación de Resortes en `Row`, `Col` y `Panel`**:
+  - Medición dinámica del eje transversal (*cross-axis*) en `Row` (altura máxima de hijos) y `Col` (ancho máximo de hijos).
+  - Preservación de dimensiones asignadas por contenedores padre (`Panel`), evitando el colapso accidental de ancho/alto.
+  - Propagación inteligente de flexibilidad (`isFlexHeight` / `isFlexWidth`) en `Row` y `Col` evaluando si contienen `Spacer` o elementos flexibles para que el `Panel` padre distribuya el espacio sobrante equitativamente.
+- **Inicialización de Dimensiones en `Spacer` Rígidos**:
+  - Fijadas las dimensiones iniciales `width` y `height` a `size.round()` en `Spacer` cuando se especifica un tamaño numérico explícito.
 - **Superposición de Hijos en `Panel`**: Eliminación del reseteo forzado de coordenadas `x`/`y` a `padding` en `Panel.onUpdate()` y `Panel.onRender()`, permitiendo el renderizado secuencial correcto de los elementos organizados por el layout.
 
 ### Cambios
 
+- **Refactorización de `Label` sobre `ControlNode`**:
+  - Migración de `Label` para heredar de `ControlNode` en lugar de la clase obsoleta `Element`.
+  - Eliminación de parámetros obsoletos de layout y resolución dinámica de color y `fontSize` desde `currentStyle`.
 - **Saneamiento de la API Pública de Vistas (Minimalismo Ortogonal)**:
   - Privatización de la clase base abstracta `View` a `_View`, eliminando detalles de herencia interna de la capa del usuario final.
   - Renombrado de la vista de lienzo de resolución fija `CanvasView` a `ContainerView`.

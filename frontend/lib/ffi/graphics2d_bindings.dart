@@ -47,6 +47,10 @@ typedef G2dDrawText =
       int a,
     );
 
+typedef G2dMeasureTextC =
+    ffi.Int32 Function(ffi.Pointer<Utf8> text, ffi.Int32 fontSize);
+typedef G2dMeasureText = int Function(ffi.Pointer<Utf8> text, int fontSize);
+
 // Circle
 typedef G2dDrawCircleC =
     ffi.Void Function(
