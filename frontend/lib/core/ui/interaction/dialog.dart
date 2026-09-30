@@ -3,7 +3,7 @@ import 'package:frontend/core/context3d.dart';
 import 'package:frontend/core/input.dart';
 import 'package:frontend/core/ui/element.dart';
 import 'package:frontend/core/ui/icons.dart';
-import 'package:frontend/core/ui/interaction/button.dart';
+import 'package:frontend/core/ui/controls/button.dart';
 
 /// Componente de Ventana Modal Emergente (`Dialog` / `AlertDialog`).
 ///
@@ -19,7 +19,7 @@ class Dialog extends Element {
   final IconData? icon;
   final String confirmLabel;
   final String? cancelLabel;
-  final ButtonVariant confirmVariant;
+  //final ButtonVariant confirmVariant;
   final void Function()? onConfirm;
   final void Function()? onCancel;
   final bool dismissibleOutsideClick;
@@ -39,7 +39,7 @@ class Dialog extends Element {
     this.icon,
     this.confirmLabel = "Aceptar",
     this.cancelLabel = "Cancelar",
-    this.confirmVariant = ButtonVariant.filled,
+    //this.confirmVariant = ButtonVariant.filled,
     this.onConfirm,
     this.onCancel,
     this.dismissibleOutsideClick = true,
@@ -55,29 +55,29 @@ class Dialog extends Element {
              ? height
              : (child != null ? 160 + child.height : 210),
        ) {
-    _confirmBtn = Button(
-      label: confirmLabel,
-      variant: confirmVariant,
-      onPressed: () {
-        _dismissed = true;
-        _activeDialog = null;
-        if (onConfirm != null) onConfirm!();
-      },
-    );
+    // _confirmBtn = Button(
+    //   label: confirmLabel,
+    //   variant: confirmVariant,
+    //   onPressed: () {
+    //     _dismissed = true;
+    //     _activeDialog = null;
+    //     if (onConfirm != null) onConfirm!();
+    //   },
+    // );
 
-    if (cancelLabel != null) {
-      _cancelBtn = Button(
-        label: cancelLabel!,
-        variant: ButtonVariant.outlined,
-        onPressed: () {
-          _dismissed = true;
-          _activeDialog = null;
-          if (onCancel != null) onCancel!();
-        },
-      );
-    } else {
-      _cancelBtn = null;
-    }
+    // if (cancelLabel != null) {
+    //   _cancelBtn = Button(
+    //     label: cancelLabel!,
+    //     variant: ButtonVariant.outlined,
+    //     onPressed: () {
+    //       _dismissed = true;
+    //       _activeDialog = null;
+    //       if (onCancel != null) onCancel!();
+    //     },
+    //   );
+    // } else {
+    //   _cancelBtn = null;
+    // }
   }
 
   /// Muestra un Diálogo Modal en pantalla.
@@ -88,7 +88,7 @@ class Dialog extends Element {
     IconData? icon,
     String confirmLabel = "Aceptar",
     String? cancelLabel = "Cancelar",
-    ButtonVariant confirmVariant = ButtonVariant.filled,
+    //  ButtonVariant confirmVariant = ButtonVariant.filled,
     void Function()? onConfirm,
     void Function()? onCancel,
     bool dismissibleOutsideClick = true,
@@ -101,7 +101,7 @@ class Dialog extends Element {
       icon: icon,
       confirmLabel: confirmLabel,
       cancelLabel: cancelLabel,
-      confirmVariant: confirmVariant,
+      //  confirmVariant: confirmVariant,
       onConfirm: onConfirm,
       onCancel: onCancel,
       dismissibleOutsideClick: dismissibleOutsideClick,

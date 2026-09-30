@@ -1,6 +1,8 @@
 import 'package:frontend/core/ui/cortex_node.dart';
 import 'package:frontend/core/ui/style.dart';
 
+typedef VoidCallback = void Function();
+
 /// Nodo base abstracto para componentes interactivos de control.
 abstract class ControlNode extends CortexNode {
   final String? className;
@@ -10,10 +12,6 @@ abstract class ControlNode extends CortexNode {
 
   ControlNode({
     super.key,
-    super.x,
-    super.y,
-    super.width,
-    super.height,
     super.isVisible,
     this.className,
     this.isEnabled = true,

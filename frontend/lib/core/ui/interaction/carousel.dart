@@ -3,7 +3,7 @@ import 'package:frontend/core/context3d.dart';
 import 'package:frontend/core/input.dart';
 import 'package:frontend/core/ui/element.dart';
 import 'package:frontend/core/ui/icons.dart';
-import 'package:frontend/core/ui/interaction/icon_button.dart';
+import 'package:frontend/core/ui/controls/icon_button.dart';
 
 import 'package:frontend/core/ui/style.dart';
 
@@ -56,14 +56,12 @@ class Carousel extends Element {
 
     _prevBtn = IconButton(
       icon: Icons.chevronLeft,
-      variant: IconButtonVariant.filled,
-      onPressed: previousPage,
+      onClick: previousPage,
     );
 
     _nextBtn = IconButton(
       icon: Icons.chevronRight,
-      variant: IconButtonVariant.filled,
-      onPressed: nextPage,
+      onClick: nextPage,
     );
 
     _updateLayout();
