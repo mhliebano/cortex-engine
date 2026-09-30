@@ -17,20 +17,61 @@ class TestView extends FluidView {
         height: 300.0,
         padding: EdgeInsets.all(15),
         children: [
-          Col(children: [Spacer(50)]),
+          Col(
+            children: [
+              Label(text: "Es cool!", className: "text"),
+              Button(
+                text: "Click!",
+                onClick: () {
+                  print("click");
+                },
+              ),
+            ],
+          ),
           Row(
             gap: 20,
             overflow: Overflow.scroll,
             children: [
               Label(text: "Bienvenido a Cortex", className: "text-h1"),
-              Label(text: "Es cool!", className: "text"),
+              Icon(Icons.access_alarm, className: "icon-class"),
             ],
           ),
-          Col(children: [Spacer()]),
+          Col(children: [Image(src: "assets/images/2.png")]),
         ],
         layout: PanelLayout.vertical,
       ),
-      Panel(width: 0.5, height: 300.0),
+      Panel(
+        width: 0.5,
+        height: 300.0,
+        layout: PanelLayout.vertical,
+        children: [
+          Row(
+            overflow: Overflow.visible,
+            children: [
+              IconButton(
+                icon: Icons.save,
+                onClick: () {
+                  print("click");
+                },
+              ),
+              IconButton(
+                icon: Icons.settings,
+                onClick: () {
+                  print("click");
+                },
+              ),
+              IconButton(
+                icon: Icons.check_box,
+                onClick: () {
+                  print("click");
+                },
+              ),
+            ],
+          ),
+          Spacer(),
+          Col(children: [Image(src: "assets/images/3.png")]),
+        ],
+      ),
       MiPanel(),
     ];
   }

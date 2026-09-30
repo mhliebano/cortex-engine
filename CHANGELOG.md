@@ -6,6 +6,23 @@
 
 ### Agregado
 
+- **Migración y Refactorización de Controles UI a `ControlNode`**:
+  - Migración completa de los componentes `Button`, `Chip`, `Icon`, `IconButton`, `Label` e `Image` a la nueva arquitectura `ControlNode` ubicados en `lib/core/ui/controls/`.
+  - Encapsulamiento estricto de coordenadas (`x`, `y`) y parámetros de layout dentro del estado interno del nodo, eliminándolos de los constructores públicos y delegando el posicionamiento a los contenedores padres (`Col`, `Row`, `Panel`).
+  - Vínculo total con clases CSS (`className`) y resolución dinámica de pseudo-clases en `currentStyle` (`:hover`, `:active`, `:focus`, `:disabled`).
+
+- **Alineación Transversal Predeterminada (`CrossAlign.start`)**:
+  - Cambio del valor por defecto de `crossAlign` a `CrossAlign.start` en `Col` y `Row` para evitar la expansión forzada estilo Qt/GTK de los controles hijos.
+
+- **Centralización de Definición `VoidCallback`**:
+  - Definición unificada de `typedef VoidCallback = void Function()` en `control_node.dart` para evitar conflictos de exportación.
+
+### Cambiado / Eliminado
+
+- **Eliminación de Componentes Legacy de Interacción**:
+  - Eliminados los archivos legacy en `lib/core/ui/interaction/`: `button.dart`, `chip.dart`, `icon.dart`, `icon_button.dart`, `image.dart` y `label.dart`.
+  - Actualización de exportaciones centralizadas en `lib/core/ui/ui.dart`.
+
 - **Componente Ficha (`Chip`) y Modelo de Caja**:
   - Creación del componente `Chip` (`chip.dart`) heredando de `ControlNode` como la primera implementación de modelo de caja (`padding`, `bgColor`, `borderColor`, `borderRadius`).
   - Integración de `EdgeInsets` en el tipo de propiedad `Style.padding` (`style.dart`) y consumo directo en la geometría de caja.
