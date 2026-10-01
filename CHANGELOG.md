@@ -6,6 +6,17 @@
 
 ### Agregado
 
+- **Componente Campo de Texto (`TextField`) bajo `ControlNode`**:
+  - Migración completa de `TextField` a `lib/core/ui/controls/text_field.dart` heredando de `ControlNode`.
+  - Captura de clic en control e íconos mediante sobrescritura de `onMouseDown()`, foco global exclusivo (`_activeFocusedTextField`) y dimensiones inicializadas vía `_updateDimensions()`.
+  - Soporte completo para entrada de caracteres Unicode, teclas de navegación (`Left`, `Right`, `Home`, `End`), `Enter` y borrado (`Backspace`, `Delete`) con temporizadores de autorrepetición continua.
+
+- **Corrección Crítica en Cola de Entrada Nativa Raylib (`Application`)**:
+  - Eliminación de la llamada destructiva `input.getCharPressed() != 0` en el detector de actividad/idle FPS de `application.dart`, la cual desencolaba y descartaba prematuramente los caracteres escritos de Raylib antes de ser procesados por los controles UI.
+
+- **Restauración Recursiva de Estado en Vistas (`View`)**:
+  - Implementación de `_restoreElementStates()` en `view.dart` para restaurar de forma transparente los estados (`text`, `isFocused`, `cursorIndex`) en toda la jerarquía de nodos hijos (`TextField`, `Row`, `Col`) ante reconstrucciones de pantalla.
+
 - **Migración y Refactorización de Controles UI a `ControlNode`**:
   - Migración completa de los componentes `Button`, `Chip`, `Icon`, `IconButton`, `Label` e `Image` a la nueva arquitectura `ControlNode` ubicados en `lib/core/ui/controls/`.
   - Encapsulamiento estricto de coordenadas (`x`, `y`) y parámetros de layout dentro del estado interno del nodo, eliminándolos de los constructores públicos y delegando el posicionamiento a los contenedores padres (`Col`, `Row`, `Panel`).
@@ -20,7 +31,7 @@
 ### Cambiado / Eliminado
 
 - **Eliminación de Componentes Legacy de Interacción**:
-  - Eliminados los archivos legacy en `lib/core/ui/interaction/`: `button.dart`, `chip.dart`, `icon.dart`, `icon_button.dart`, `image.dart` y `label.dart`.
+  - Eliminados los archivos legacy en `lib/core/ui/interaction/`: `button.dart`, `chip.dart`, `icon.dart`, `icon_button.dart`, `image.dart`, `label.dart` y `text_field.dart`.
   - Actualización de exportaciones centralizadas en `lib/core/ui/ui.dart`.
 
 - **Componente Ficha (`Chip`) y Modelo de Caja**:

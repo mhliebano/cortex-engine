@@ -24,6 +24,15 @@ void initAppStyles() {
   );
   Style.register(
     'icon-class',
-    const Style(fontSize: 40, textColor: ColorRGBA.white),
+    const Style(
+      fontSize: 25,
+      textColor: ColorRGBA.white,
+      borderColor: ColorRGBA(255, 0, 0),
+      bgColor: ColorRGBA(255, 128, 0),
+    ),
+  );
+  Style.register(
+    'image-class',
+    const Style(borderColor: ColorRGBA(0, 0, 255), borderRadius: 20),
   );
 }

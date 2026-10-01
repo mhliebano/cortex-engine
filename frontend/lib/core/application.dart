@@ -185,7 +185,7 @@ class Application {
           input.isMouseButtonDown(1) ||
           input.isMouseButtonDown(2) ||
           input.mouseWheelMove != 0.0 ||
-          input.getCharPressed() != 0 ||
+          TextField.activeFocusedTextField != null ||
           resized;
 
       if (hasInput) {

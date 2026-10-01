@@ -126,6 +126,7 @@ abstract class _View {
           if (savedStates.containsKey(key)) {
             panel.importState(savedStates[key]!);
           }
+          _restoreElementStates(panel.childrenElements, key, savedStates);
 
           final rightCorner = (x: panel.x + panel.width, y: panel.y);
           final bottomCorner = (x: panel.x, y: panel.y + panel.height);
@@ -210,6 +211,27 @@ abstract class _View {
       }
     }
     return states;
+  }
+
+  void _restoreElementStates(
+    List<CortexNode> elements,
+    String prefix,
+    Map<String, Map<String, dynamic>> savedStates,
+  ) {
+    final Map<String, int> typeCounts = {};
+    for (final element in elements) {
+      final typeName = element.runtimeType.toString();
+      final count = typeCounts[typeName] ?? 0;
+      typeCounts[typeName] = count + 1;
+      final key = element.key ?? '$prefix/$typeName#$count';
+
+      if (savedStates.containsKey(key)) {
+        element.importState(savedStates[key]!);
+      }
+      if (element.childrenElements.isNotEmpty) {
+        _restoreElementStates(element.childrenElements, key, savedStates);
+      }
+    }
   }
 
   // =======================================================

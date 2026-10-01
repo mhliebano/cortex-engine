@@ -3,6 +3,8 @@ import 'package:frontend/core/ui/ui.dart';
 class TestView extends FluidView {
   TestView() : super(id: 'test_view');
 
+  String textVar = "";
+
   @override
   void onInit() {
     print('init Vista de prueba');
@@ -23,7 +25,7 @@ class TestView extends FluidView {
               Button(
                 text: "Click!",
                 onClick: () {
-                  print("click");
+                  print("click by $textVar");
                 },
               ),
             ],
@@ -53,6 +55,7 @@ class TestView extends FluidView {
                 onClick: () {
                   print("click");
                 },
+                className: "icon-class",
               ),
               IconButton(
                 icon: Icons.settings,
@@ -68,8 +71,26 @@ class TestView extends FluidView {
               ),
             ],
           ),
+          Row(
+            gap: 10,
+            overflow: Overflow.scroll,
+            children: [
+              TextField(
+                placeholder: "user",
+                onChanged: (val) {
+                  textVar = val;
+                  print("TextField value: $val");
+                },
+              ),
+              TextField(placeholder: "email"),
+            ],
+          ),
           Spacer(),
-          Col(children: [Image(src: "assets/images/3.png")]),
+          Col(
+            children: [
+              Image(src: "assets/images/3.png", className: "image-class"),
+            ],
+          ),
         ],
       ),
       MiPanel(),

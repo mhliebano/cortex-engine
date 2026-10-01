@@ -58,7 +58,7 @@ export 'interaction/fab.dart';
 export 'interaction/split_button.dart';
 export 'controls/icon.dart';
 export 'controls/label.dart';
-export 'interaction/text_field.dart';
+export 'controls/text_field.dart';
 export 'interaction/dropdown.dart';
 export 'interaction/list_tile.dart';
 // export 'interaction/list_view.dart';
