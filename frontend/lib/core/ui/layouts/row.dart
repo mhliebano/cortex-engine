@@ -29,7 +29,7 @@ class Row extends StructureNode {
   Row({
     super.key,
     this.mainAlign = MainAlign.start,
-    this.crossAlign = CrossAlign.stretch,
+    this.crossAlign = CrossAlign.start,
     this.overflow = Overflow.visible,
     this.gap = 0.0,
     this.children = const [],
