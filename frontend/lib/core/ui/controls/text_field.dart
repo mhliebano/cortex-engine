@@ -1,36 +1,30 @@
 import 'package:frontend/core/context2d.dart';
 import 'package:frontend/core/context3d.dart';
 import 'package:frontend/core/input.dart';
-import 'package:frontend/core/ui/element.dart';
+import 'package:frontend/core/ui/control_node.dart';
 import 'package:frontend/core/ui/icons.dart';
-import 'package:frontend/core/ui/style.dart';
+import 'package:frontend/core/ui/text_editing_controller.dart';
 
-/// Componente de entrada de texto (`TextField`) mejorado para ingresar medidas, búsquedas, contraseñas o nombres.
-/// Soporta borrado continuo por `Backspace`, navegación con flechas/cursor, botón de limpiado rápido (`clearable`),
-/// modo contraseña (`obscureText`), íconos decorativos (`prefixIcon`/`suffixIcon`) y vinculación bidireccional mediante `TextEditingController`.
-class TextField extends Element {
+/// Componente interactivo de Entrada de Texto (`TextField`) bajo la arquitectura `ControlNode`.
+///
+/// Soporta:
+/// - Edición de texto con cursor parpadeante, navegación por flechas (Home/End) y borrado (Backspace/Delete con auto-repeat).
+/// - Foco global exclusivo (`_activeFocusedTextField`).
+/// - Modo contraseña (`obscureText`), botón de limpiado rápido (`clearable`) e íconos decorativos.
+/// - Estilizado dinámico mediante clases CSS (`className` / `currentStyle`).
+class TextField extends ControlNode {
   final TextEditingController controller;
   String placeholder;
-  bool isFocused = false;
   bool clearable;
   bool obscureText;
   String? prefixIcon;
   String? suffixIcon;
-  bool enabled;
   void Function(String text)? onChanged;
   void Function(String text)? onSubmitted;
-
-  late ColorRGBA bgColor;
-  late ColorRGBA focusedBorderColor;
-  late ColorRGBA defaultBorderColor;
-  late ColorRGBA hoverBorderColor;
-  late ColorRGBA textColor;
-  late int fontSize;
 
   int _cursorIndex = 0;
   double _cursorTimer = 0.0;
   bool _showCursor = true;
-  bool _isHovered = false;
   bool _isPasswordVisible = false;
 
   // Temporizadores para autorrepetición de borrado/navegación con teclado
@@ -39,13 +33,11 @@ class TextField extends Element {
   double _deleteHoldTime = 0.0;
   double _deleteRepeatTimer = 0.0;
 
-  final bool _isWidthUserSpecified;
-
   TextField({
     super.key,
-    String? className,
-    int width = 0,
-    int height = 0,
+    super.isVisible,
+    super.className,
+    super.isEnabled = true,
     String text = '',
     TextEditingController? controller,
     this.placeholder = 'Ingresar valor...',
@@ -54,30 +46,15 @@ class TextField extends Element {
     this.obscureText = false,
     this.prefixIcon,
     this.suffixIcon,
-    this.enabled = true,
     this.onChanged,
     this.onSubmitted,
-    super.expand,
-    super.fillWidth,
-    super.fillHeight,
-    super.marginRight,
-    super.marginBottom,
-  }) : _isWidthUserSpecified =
-           width != 0 ||
-           (className != null && Style.merge(className).width != null),
-       controller = controller ?? TextEditingController(text: text) {
-    final style = className != null ? Style.merge(className) : null;
-    this.width = width != 0 ? width : (style?.width ?? 220);
-    this.height = height != 0 ? height : (style?.height ?? 34);
-
-    bgColor = style?.bgColor ?? const ColorRGBA(22, 27, 36);
-    focusedBorderColor = style?.accentColor ?? ColorRGBA.accentBlue;
-    defaultBorderColor = style?.borderColor ?? const ColorRGBA(60, 70, 85);
-    hoverBorderColor = const ColorRGBA(90, 110, 135);
-    textColor = style?.textColor ?? ColorRGBA.white;
-    fontSize = style?.fontSize ?? 14;
-
+    int width = 0,
+    int height = 0,
+  }) : controller = controller ?? TextEditingController(text: text) {
     _cursorIndex = this.controller.text.length;
+    this.width = width;
+    this.height = height;
+    _updateDimensions();
 
     if (isFocused) {
       requestFocus();
@@ -96,12 +73,6 @@ class TextField extends Element {
       _cursorIndex = value.length;
     }
   }
-
-  @override
-  bool get isFlexWidth => !_isWidthUserSpecified || fillWidth;
-
-  @override
-  bool get isFlexHeight => fillHeight;
 
   /// Instancia estática del TextField enfocado activamente en toda la aplicación.
   static TextField? _activeFocusedTextField;
@@ -135,24 +106,45 @@ class TextField extends Element {
     }
   }
 
+  void _updateDimensions() {
+    final style = currentStyle;
+    if (style.width != null) {
+      width = style.width!;
+    } else if (width <= 0) {
+      width = 220;
+    }
+
+    if (style.height != null) {
+      height = style.height!;
+    } else if (height <= 0) {
+      height = 34;
+    }
+  }
+
+  @override
+  void onMouseDown() {
+    super.onMouseDown();
+    if (!isVisible || !isEnabled) return;
+    requestFocus();
+  }
+
   @override
   void onUpdate(double dt, InputEngine input) {
-    if (!isVisible || !enabled) {
+    super.onUpdate(dt, input);
+
+    if (!isVisible || !isEnabled) {
       if (isFocused) unfocus();
       return;
     }
 
-    // Sincronización estricta de foco global exclusivo
-    if (_activeFocusedTextField != this && isFocused) {
-      isFocused = false;
-    }
+    _updateDimensions();
+    isHovered = input.isHovering(x, y, width, height);
 
-    _isHovered = input.isHovering(x, y, width, height);
-
-    // 1. Manejo de clics y selección de foco exclusivo
+    // 1. Manejo de clics y detección de acción en íconos o área del control
     if (input.isMouseButtonPressed(MouseButtons.left)) {
-      if (_isHovered) {
-        // Verificar si se hizo clic en el botón de limpiar 'X' o alternar contraseña
+      if (isHovered) {
+        onMouseDown();
+
         final rightButtonX = x + width - 28;
         final mx = input.mouseX;
         final my = input.mouseY;
@@ -180,11 +172,15 @@ class TextField extends Element {
           return;
         }
 
-        requestFocus();
         _cursorIndex = controller.text.length;
       } else if (isFocused) {
         unfocus();
       }
+    }
+
+    // Sincronización estricta de foco global exclusivo
+    if (_activeFocusedTextField != this && isFocused) {
+      isFocused = false;
     }
 
     if (isFocused) {
@@ -219,13 +215,11 @@ class TextField extends Element {
         _cursorTimer = 0.0;
       }
       if (input.isKeyPressed(268)) {
-        // Home
         _cursorIndex = 0;
         _showCursor = true;
         _cursorTimer = 0.0;
       }
       if (input.isKeyPressed(269)) {
-        // End
         _cursorIndex = currentText.length;
         _showCursor = true;
         _cursorTimer = 0.0;
@@ -240,10 +234,8 @@ class TextField extends Element {
       } else if (input.isKeyDown(259)) {
         _backspaceHoldTime += dt;
         if (_backspaceHoldTime >= 0.35) {
-          // Retardo inicial antes de repetición continua
           _backspaceRepeatTimer += dt;
           if (_backspaceRepeatTimer >= 0.04) {
-            // Tasa de borrado continuo
             triggerBackspace = true;
             _backspaceRepeatTimer = 0.0;
           }
@@ -323,15 +315,37 @@ class TextField extends Element {
   @override
   void onRender(Context2D ctx2d, Context3D ctx3d) {
     if (!isVisible) return;
+    _updateDimensions();
 
-    final border = isFocused
-        ? focusedBorderColor
-        : (enabled && _isHovered ? hoverBorderColor : defaultBorderColor);
+    final style = currentStyle;
+    final borderRadius = style.borderRadius ?? 0.0;
+    final fontSize = style.fontSize ?? 14;
+    final textColor = style.textColor ?? ColorRGBA.white;
 
-    final fillBg = enabled ? bgColor : const ColorRGBA(16, 20, 26);
+    final fillBg = isEnabled
+        ? (style.bgColor ?? const ColorRGBA(22, 27, 36))
+        : const ColorRGBA(16, 20, 26);
+
+    final borderColor = isFocused
+        ? (style.accentColor ?? ColorRGBA.accentBlue)
+        : (isHovered
+            ? (style.borderColor ?? const ColorRGBA(90, 110, 135))
+            : (style.borderColor ?? const ColorRGBA(60, 70, 85)));
 
     // 1. Dibujar contenedor del campo
-    ctx2d.drawPanel(x, y, width, height, bgColor: fillBg, borderColor: border);
+    if (borderRadius > 0) {
+      ctx2d.drawRoundRect(x, y, width, height, borderRadius, color: fillBg);
+      ctx2d.drawRoundRectLines(
+        x,
+        y,
+        width,
+        height,
+        borderRadius,
+        color: borderColor,
+      );
+    } else {
+      ctx2d.drawPanel(x, y, width, height, bgColor: fillBg, borderColor: borderColor);
+    }
 
     // 2. Calcular padding interior
     int leftPadding = 12;
@@ -396,7 +410,7 @@ class TextField extends Element {
           );
         }
       } else {
-        final textColorToUse = enabled
+        final textColorToUse = isEnabled
             ? textColor
             : const ColorRGBA(110, 120, 135);
         ctx2d.drawText(
@@ -480,9 +494,7 @@ class TextField extends Element {
       }
     }
 
-    // Únicamente restaurar el texto borrador si el campo estaba enfocado (edición activa del usuario).
-    // Si NO estaba enfocado, se respeta el nuevo valor pasado dinámicamente en build() desde el modelo.
-    if (restoredFocused && state.containsKey('text')) {
+    if (state.containsKey('text')) {
       controller.text = state['text'] as String;
     }
 
@@ -507,22 +519,5 @@ class TextField extends Element {
     if (state.containsKey('deleteRepeatTimer')) {
       _deleteRepeatTimer = (state['deleteRepeatTimer'] as num).toDouble();
     }
-  }
-
-  @override
-  void onResize(int allocatedWidth, int allocatedHeight) {
-    if (isFlexWidth) {
-      if (allocatedWidth > 0) {
-        width = allocatedWidth > marginRight ? allocatedWidth - marginRight : 0;
-      }
-    }
-    if (isFlexHeight) {
-      if (allocatedHeight > 0) {
-        height = allocatedHeight > marginBottom
-            ? allocatedHeight - marginBottom
-            : 0;
-      }
-    }
-    super.onResize(allocatedWidth, allocatedHeight);
   }
 }
