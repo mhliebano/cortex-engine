@@ -11,8 +11,6 @@ class Label extends ControlNode {
 
   Label({
     super.key,
-    super.x,
-    super.y,
     super.isVisible,
     super.className,
     super.isEnabled,
