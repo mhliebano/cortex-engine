@@ -6,6 +6,24 @@
 
 ### Agregado
 
+- **Patrón de Doble Registro Desacoplado (`StyleRules` & `LayoutRules`)**:
+  - Creación de `StyleRules` (`lib/core/ui/style_rules.dart`) para encapsular exclusivamente propiedades cosméticas y de pintura (`bgColor`, `hoverColor`, `textColor`, `borderColor`, `borderRadius`, `fontSize`, etc.).
+  - Creación de `LayoutRules` (`lib/core/ui/layout_rules.dart`) para gobernar la matemática espacial, dimensiones y espaciado (`width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight`, `padding`, `margin`, `spacing`).
+  - Soporte para registro global (`register`) y combinación de clases separadas por espacios (`merge`).
+
+- **Deducción Matemática de Flexibilidad en `ControlNode`**:
+  - Eliminadas las banderas booleanas de flexión (`expand`); `ControlNode` ahora deduce reactivamente su comportamiento de resorte en `isFlexWidth` e `isFlexHeight` evaluando si la regla es `double.infinity` o un porcentaje (`> 0.0 && <= 1.0`).
+  - Implementación del ciclo de vida `onResize(allocatedWidth, allocatedHeight)` adaptativo para escalar dimensiones por porcentaje, ancho total o píxeles fijos.
+
+- **Componente Contenedor Limpio (`Container`)**:
+  - Implementación de `Container` (`lib/core/ui/controls/container.dart`) heredando de `ControlNode` sin parámetros espaciales inline en su constructor.
+  - Gestión integral de ciclo de vida (`_updateDimensions`, `onResize`, `onUpdate`, `onRender`, `onRenderOverlay`), soporte de recorte (`Scissor`) y propagación de layout a nodos hijos respetando `padding`.
+
+- **Adaptación y Blindaje de Toda la Suite de Controles (`lib/core/ui/controls/`)**:
+  - Refactorización de `Button`, `IconButton`, `TextField`, `Chip`, `Icon`, `Label` e `Image` para adoptar constructores limpios con `styleClass` y `layoutClass`.
+  - Protección de `_updateDimensions` contra excepciones de redondeo en dimensiones infinitas (`double.infinity.round()`).
+  - Manejo consistente de `onResize` en todos los controles para soportar dimensiones absolutas, porcentuales y de expansión flexible.
+
 - **Componente Campo de Texto (`TextField`) bajo `ControlNode`**:
   - Migración completa de `TextField` a `lib/core/ui/controls/text_field.dart` heredando de `ControlNode`.
   - Captura de clic en control e íconos mediante sobrescritura de `onMouseDown()`, foco global exclusivo (`_activeFocusedTextField`) y dimensiones inicializadas vía `_updateDimensions()`.
