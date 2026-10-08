@@ -10,14 +10,6 @@ import 'package:frontend/core/ui/icons.dart';
 enum BoxFit { contain, cover, fill }
 
 /// Componente de Renderización de Imagen (`Image`) bajo la arquitectura `ControlNode`.
-///
-/// Soporta:
-/// - Carga local mediante ruta de archivo (`src`).
-/// - Carga remota por HTTP/HTTPS automáticamente (`src: 'https://...'` o `Image.network(...)`).
-/// - Reutilización de texturas por ID nativo (`textureId`).
-/// - Modos de ajuste (`fill`, `contain`, `cover`).
-/// - Estilizado dinámico mediante clases CSS (`className` / `currentStyle`).
-/// - Spinner animado de carga mientras descarga de la red.
 class Image extends ControlNode {
   final String? src;
   int? textureId;
@@ -39,18 +31,15 @@ class Image extends ControlNode {
   Image({
     super.key,
     super.isVisible,
-    super.className,
+    super.styleClass,
+    super.layoutClass,
     super.isEnabled,
     this.src,
     this.textureId,
     this.fit = BoxFit.cover,
     this.placeholderLabel,
-    int width = 0,
-    int height = 0,
   }) {
-    final style = currentStyle;
-    this.width = width > 0 ? width : (style.width ?? 120);
-    this.height = height > 0 ? height : (style.height ?? 120);
+    _updateDimensions();
 
     if (src != null &&
         (src!.startsWith('http://') || src!.startsWith('https://'))) {
@@ -65,24 +54,69 @@ class Image extends ControlNode {
     String url, {
     String? key,
     bool isVisible = true,
-    String? className,
+    String? styleClass,
+    String? layoutClass,
     bool isEnabled = true,
     BoxFit fit = BoxFit.cover,
     String? placeholderLabel,
-    int width = 0,
-    int height = 0,
   }) {
     return Image(
       key: key,
       isVisible: isVisible,
-      className: className,
+      styleClass: styleClass,
+      layoutClass: layoutClass,
       isEnabled: isEnabled,
       src: url,
       fit: fit,
       placeholderLabel: placeholderLabel,
-      width: width,
-      height: height,
     );
+  }
+
+  @override
+  void onResize(int allocatedWidth, int allocatedHeight) {
+    final layout = currentLayout;
+    final wRule = layout.width;
+    if (wRule != null) {
+      if (wRule == double.infinity) {
+        width = allocatedWidth;
+      } else if (wRule > 0.0 && wRule <= 1.0) {
+        width = (allocatedWidth * wRule).round();
+      } else if (wRule.isFinite) {
+        width = wRule.round();
+      }
+    } else {
+      width = allocatedWidth > 0 ? allocatedWidth : 120;
+    }
+
+    final hRule = layout.height;
+    if (hRule != null) {
+      if (hRule == double.infinity) {
+        height = allocatedHeight;
+      } else if (hRule > 0.0 && hRule <= 1.0) {
+        height = (allocatedHeight * hRule).round();
+      } else if (hRule.isFinite) {
+        height = hRule.round();
+      }
+    } else {
+      height = allocatedHeight > 0 ? allocatedHeight : 120;
+    }
+  }
+
+  void _updateDimensions() {
+    final layout = currentLayout;
+    final wRule = layout.width;
+    if (wRule != null && wRule.isFinite && wRule > 1.0) {
+      width = wRule.round();
+    } else if (!isFlexWidth && width <= 0) {
+      width = 120;
+    }
+
+    final hRule = layout.height;
+    if (hRule != null && hRule.isFinite && hRule > 1.0) {
+      height = hRule.round();
+    } else if (!isFlexHeight && height <= 0) {
+      height = 120;
+    }
   }
 
   void _initNetworkDownload(String url) async {
@@ -97,8 +131,8 @@ class Image extends ControlNode {
       final uri = Uri.parse(url);
       final ext =
           uri.pathSegments.isNotEmpty && uri.pathSegments.last.contains('.')
-          ? uri.pathSegments.last.split('.').last
-          : 'png';
+              ? uri.pathSegments.last.split('.').last
+              : 'png';
       final fileName = 'cortex_net_${url.hashCode}.$ext';
       final cacheDir = Directory('${Directory.systemTemp.path}/cortex_cache');
       if (!cacheDir.existsSync()) {
@@ -142,9 +176,11 @@ class Image extends ControlNode {
 
   @override
   void onRender(Context2D ctx2d, Context3D ctx3d) {
+    _updateDimensions();
     final style = currentStyle;
-    final renderWidth = width > 0 ? width : (style.width ?? 120);
-    final renderHeight = height > 0 ? height : (style.height ?? 120);
+    final layout = currentLayout;
+    final renderWidth = layout.width?.round() ?? width;
+    final renderHeight = layout.height?.round() ?? height;
     final borderRadius = style.borderRadius ?? 0.0;
     final tint = style.textColor ?? ColorRGBA.white;
 
@@ -277,21 +313,21 @@ class Image extends ControlNode {
       if (fit == BoxFit.contain) {
         if (aspectImg > aspectBox) {
           drawW = renderWidth;
-          drawH = (renderWidth / aspectImg).toInt();
+          drawH = (renderWidth / aspectImg).round();
           drawY = y + ((renderHeight - drawH) ~/ 2);
         } else {
           drawH = renderHeight;
-          drawW = (renderHeight * aspectImg).toInt();
+          drawW = (renderHeight * aspectImg).round();
           drawX = x + ((renderWidth - drawW) ~/ 2);
         }
       } else if (fit == BoxFit.cover) {
         if (aspectImg > aspectBox) {
           drawH = renderHeight;
-          drawW = (renderHeight * aspectImg).toInt();
+          drawW = (renderHeight * aspectImg).round();
           drawX = x - ((drawW - renderWidth) ~/ 2);
         } else {
           drawW = renderWidth;
-          drawH = (renderWidth / aspectImg).toInt();
+          drawH = (renderWidth / aspectImg).round();
           drawY = y - ((drawH - renderHeight) ~/ 2);
         }
       }

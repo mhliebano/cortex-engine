@@ -36,7 +36,8 @@ class TextField extends ControlNode {
   TextField({
     super.key,
     super.isVisible,
-    super.className,
+    super.styleClass,
+    super.layoutClass,
     super.isEnabled = true,
     String text = '',
     TextEditingController? controller,
@@ -48,12 +49,8 @@ class TextField extends ControlNode {
     this.suffixIcon,
     this.onChanged,
     this.onSubmitted,
-    int width = 0,
-    int height = 0,
   }) : controller = controller ?? TextEditingController(text: text) {
     _cursorIndex = this.controller.text.length;
-    this.width = width;
-    this.height = height;
     _updateDimensions();
 
     if (isFocused) {
@@ -106,17 +103,49 @@ class TextField extends ControlNode {
     }
   }
 
+  @override
+  void onResize(int allocatedWidth, int allocatedHeight) {
+    final layout = currentLayout;
+    final wRule = layout.width;
+    if (wRule != null) {
+      if (wRule == double.infinity) {
+        width = allocatedWidth;
+      } else if (wRule > 0.0 && wRule <= 1.0) {
+        width = (allocatedWidth * wRule).round();
+      } else if (wRule.isFinite) {
+        width = wRule.round();
+      }
+    } else {
+      width = allocatedWidth > 0 ? allocatedWidth : 220;
+    }
+
+    final hRule = layout.height;
+    if (hRule != null) {
+      if (hRule == double.infinity) {
+        height = allocatedHeight;
+      } else if (hRule > 0.0 && hRule <= 1.0) {
+        height = (allocatedHeight * hRule).round();
+      } else if (hRule.isFinite) {
+        height = hRule.round();
+      }
+    } else {
+      height = allocatedHeight > 0 ? allocatedHeight : 34;
+    }
+  }
+
   void _updateDimensions() {
-    final style = currentStyle;
-    if (style.width != null) {
-      width = style.width!;
-    } else if (width <= 0) {
+    final layout = currentLayout;
+    final wRule = layout.width;
+    if (wRule != null && wRule.isFinite && wRule > 1.0) {
+      width = wRule.round();
+    } else if (!isFlexWidth && width <= 0) {
       width = 220;
     }
 
-    if (style.height != null) {
-      height = style.height!;
-    } else if (height <= 0) {
+    final hRule = layout.height;
+    if (hRule != null && hRule.isFinite && hRule > 1.0) {
+      height = hRule.round();
+    } else if (!isFlexHeight && height <= 0) {
       height = 34;
     }
   }
@@ -329,8 +358,8 @@ class TextField extends ControlNode {
     final borderColor = isFocused
         ? (style.accentColor ?? ColorRGBA.accentBlue)
         : (isHovered
-            ? (style.borderColor ?? const ColorRGBA(90, 110, 135))
-            : (style.borderColor ?? const ColorRGBA(60, 70, 85)));
+              ? (style.borderColor ?? const ColorRGBA(90, 110, 135))
+              : (style.borderColor ?? const ColorRGBA(60, 70, 85)));
 
     // 1. Dibujar contenedor del campo
     if (borderRadius > 0) {
@@ -344,7 +373,14 @@ class TextField extends ControlNode {
         color: borderColor,
       );
     } else {
-      ctx2d.drawPanel(x, y, width, height, bgColor: fillBg, borderColor: borderColor);
+      ctx2d.drawPanel(
+        x,
+        y,
+        width,
+        height,
+        bgColor: fillBg,
+        borderColor: borderColor,
+      );
     }
 
     // 2. Calcular padding interior

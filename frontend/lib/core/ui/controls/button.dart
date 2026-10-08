@@ -3,9 +3,10 @@ import 'package:frontend/core/context3d.dart';
 import 'package:frontend/core/input.dart';
 import 'package:frontend/core/ui/control_node.dart';
 import 'package:frontend/core/ui/edge_insets.dart';
-import 'package:frontend/core/ui/style.dart';
+import 'package:frontend/core/ui/style_rules.dart';
 import 'package:frontend/wrappers/graphics2d.dart';
-/// Componente interactivo de Botón (`Button`) bajo la arquitectura `ControlNode`.
+
+/// Componente interactivo de Botón (`Button`) bajo la arquitectura Cortex.
 class Button extends ControlNode {
   String text;
   VoidCallback? onClick;
@@ -14,7 +15,8 @@ class Button extends ControlNode {
   Button({
     super.key,
     super.isVisible,
-    super.className,
+    super.styleClass,
+    super.layoutClass,
     super.isEnabled,
     required this.text,
     this.onClick,
@@ -24,12 +26,13 @@ class Button extends ControlNode {
   }
 
   @override
-  Style get currentStyle {
-    if (className == null || className!.trim().isEmpty) {
-      return const Style();
+  StyleRules get currentStyle {
+    final raw = styleClass;
+    if (raw == null || raw.trim().isEmpty) {
+      return const StyleRules();
     }
 
-    final classes = className!.trim().split(RegExp(r'\s+'));
+    final classes = raw.trim().split(RegExp(r'\s+'));
     final buffer = <String>[];
 
     for (final cls in classes) {
@@ -40,7 +43,46 @@ class Button extends ControlNode {
       if (!isEnabled) buffer.add('$cls:disabled');
     }
 
-    return Style.merge(buffer.join(' '));
+    return StyleRules.merge(buffer.join(' '));
+  }
+
+  @override
+  void onResize(int allocatedWidth, int allocatedHeight) {
+    final layout = currentLayout;
+    final style = currentStyle;
+    final fontSize = style.fontSize ?? 14;
+    final padding =
+        layout.padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 8);
+
+    final textWidth = _measureTextWidth(text, fontSize);
+    final minW = (textWidth + padding.left + padding.right).round();
+    final minH = (fontSize + padding.top + padding.bottom).round();
+
+    final wRule = layout.width;
+    if (wRule != null) {
+      if (wRule == double.infinity) {
+        width = allocatedWidth;
+      } else if (wRule > 0.0 && wRule <= 1.0) {
+        width = (allocatedWidth * wRule).round();
+      } else if (wRule.isFinite) {
+        width = wRule.round();
+      }
+    } else {
+      width = allocatedWidth > 0 ? allocatedWidth : minW;
+    }
+
+    final hRule = layout.height;
+    if (hRule != null) {
+      if (hRule == double.infinity) {
+        height = allocatedHeight;
+      } else if (hRule > 0.0 && hRule <= 1.0) {
+        height = (allocatedHeight * hRule).round();
+      } else if (hRule.isFinite) {
+        height = hRule.round();
+      }
+    } else {
+      height = allocatedHeight > 0 ? allocatedHeight : minH;
+    }
   }
 
   @override
@@ -93,20 +135,28 @@ class Button extends ControlNode {
 
   void _updateDimensions() {
     final style = currentStyle;
+    final layout = currentLayout;
     final fontSize = style.fontSize ?? 14;
     final padding =
-        style.padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 8);
+        layout.padding ??
+        const EdgeInsets.symmetric(horizontal: 16, vertical: 8);
 
     final textWidth = _measureTextWidth(text, fontSize);
-    final minW = style.width ?? (textWidth + padding.left + padding.right).round();
-    final minH = style.height ?? (fontSize + padding.top + padding.bottom).round();
+    final minW = (textWidth + padding.left + padding.right).round();
+    final minH = (fontSize + padding.top + padding.bottom).round();
 
-    if (width < minW) {
-      width = minW;
+    final wRule = layout.width;
+    if (wRule != null && wRule.isFinite && wRule > 1.0) {
+      width = wRule.round();
+    } else if (!isFlexWidth) {
+      if (width < minW) width = minW;
     }
 
-    if (height < minH) {
-      height = minH;
+    final hRule = layout.height;
+    if (hRule != null && hRule.isFinite && hRule > 1.0) {
+      height = hRule.round();
+    } else if (!isFlexHeight) {
+      if (height < minH) height = minH;
     }
   }
 
@@ -118,7 +168,7 @@ class Button extends ControlNode {
     final style = currentStyle;
     final fontSize = style.fontSize ?? 14;
 
-    // 1. Resolver colores visuales (Estilo asignado o Fallback por defecto)
+    // 1. Resolver colores visuales
     ColorRGBA bgColor;
     ColorRGBA textColor;
     ColorRGBA? borderColor;
@@ -128,7 +178,8 @@ class Button extends ControlNode {
       textColor = style.textColor ?? const ColorRGBA(140, 145, 155, 180);
       borderColor = style.borderColor;
     } else if (isPressed) {
-      bgColor = style.activeColor ??
+      bgColor =
+          style.activeColor ??
           style.hoverColor ??
           (style.bgColor != null
               ? ColorRGBA(
@@ -141,7 +192,8 @@ class Button extends ControlNode {
       textColor = style.textColor ?? ColorRGBA.white;
       borderColor = style.borderColor ?? const ColorRGBA(255, 255, 255, 140);
     } else if (isHovered) {
-      bgColor = style.hoverColor ??
+      bgColor =
+          style.hoverColor ??
           (style.bgColor != null
               ? ColorRGBA(
                   (style.bgColor!.r * 1.2).clamp(0, 255).round(),
@@ -159,12 +211,13 @@ class Button extends ControlNode {
     }
 
     final borderRadius = style.borderRadius ?? 6.0;
-    final roundness = (borderRadius > 1.0
-            ? borderRadius / (height > 0 ? height : 1)
-            : borderRadius)
-        .clamp(0.0, 1.0);
+    final roundness =
+        (borderRadius > 1.0
+                ? borderRadius / (height > 0 ? height : 1)
+                : borderRadius)
+            .clamp(0.0, 1.0);
 
-    // 2. Fondo del Botón (idéntico al modelo de Chip con drawRoundRect)
+    // 2. Fondo del Botón
     if (bgColor.a > 0) {
       if (roundness > 0) {
         ctx2d.drawRoundRect(x, y, width, height, roundness, color: bgColor);
@@ -173,7 +226,7 @@ class Button extends ControlNode {
       }
     }
 
-    // 3. Borde del Botón (idéntico al modelo de Chip con drawRoundRectLines)
+    // 3. Borde del Botón
     if (borderColor != null && borderColor.a > 0) {
       if (roundness > 0) {
         ctx2d.drawRoundRectLines(
@@ -192,7 +245,7 @@ class Button extends ControlNode {
       }
     }
 
-    // 4. Texto centrado horizontal y verticalmente
+    // 4. Texto centrado
     final textWidth = ctx2d.measureText(text, fontSize);
     final textX = (x + (width - textWidth) / 2).round();
     final textY = (y + (height - fontSize) / 2).round();

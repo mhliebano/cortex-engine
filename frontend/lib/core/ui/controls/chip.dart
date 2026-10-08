@@ -11,7 +11,8 @@ class Chip extends ControlNode {
   Chip({
     super.key,
     super.isVisible,
-    super.className,
+    super.styleClass,
+    super.layoutClass,
     super.isEnabled,
     required this.text,
   }) {
@@ -38,17 +39,72 @@ class Chip extends ControlNode {
     return totalWidth.round();
   }
 
-  void _updateDimensions() {
+  @override
+  void onResize(int allocatedWidth, int allocatedHeight) {
     final style = currentStyle;
+    final layout = currentLayout;
     final fontSize = style.fontSize ?? 14;
     final padding =
-        style.padding ?? const EdgeInsets.symmetric(horizontal: 10, vertical: 4);
+        layout.padding ??
+        const EdgeInsets.symmetric(horizontal: 10, vertical: 4);
+
+    final textWidth = _measureTextWidth(text, fontSize);
+    final minW = (textWidth + padding.left + padding.right).round();
+    final minH = (fontSize + padding.top + padding.bottom).round();
+
+    final wRule = layout.width;
+    if (wRule != null) {
+      if (wRule == double.infinity) {
+        width = allocatedWidth;
+      } else if (wRule > 0.0 && wRule <= 1.0) {
+        width = (allocatedWidth * wRule).round();
+      } else if (wRule.isFinite) {
+        width = wRule.round();
+      }
+    } else {
+      width = allocatedWidth > 0 ? allocatedWidth : minW;
+    }
+
+    final hRule = layout.height;
+    if (hRule != null) {
+      if (hRule == double.infinity) {
+        height = allocatedHeight;
+      } else if (hRule > 0.0 && hRule <= 1.0) {
+        height = (allocatedHeight * hRule).round();
+      } else if (hRule.isFinite) {
+        height = hRule.round();
+      }
+    } else {
+      height = allocatedHeight > 0 ? allocatedHeight : minH;
+    }
+  }
+
+  void _updateDimensions() {
+    final style = currentStyle;
+    final layout = currentLayout;
+    final fontSize = style.fontSize ?? 14;
+    final padding =
+        layout.padding ??
+        const EdgeInsets.symmetric(horizontal: 10, vertical: 4);
 
     final textWidth = _measureTextWidth(text, fontSize);
     final textHeight = fontSize;
+    final minW = (textWidth + padding.left + padding.right).round();
+    final minH = (textHeight + padding.top + padding.bottom).round();
 
-    width = style.width ?? (textWidth + padding.left + padding.right).round();
-    height = style.height ?? (textHeight + padding.top + padding.bottom).round();
+    final wRule = layout.width;
+    if (wRule != null && wRule.isFinite && wRule > 1.0) {
+      width = wRule.round();
+    } else if (!isFlexWidth) {
+      width = minW;
+    }
+
+    final hRule = layout.height;
+    if (hRule != null && hRule.isFinite && hRule > 1.0) {
+      height = hRule.round();
+    } else if (!isFlexHeight) {
+      height = minH;
+    }
   }
 
   @override
@@ -63,10 +119,11 @@ class Chip extends ControlNode {
     final borderRadius = style.borderRadius ?? 0.0;
     final textColor = style.textColor ?? ColorRGBA.white;
 
-    final roundness = (borderRadius > 1.0
-            ? borderRadius / (height > 0 ? height : 1)
-            : borderRadius)
-        .clamp(0.0, 1.0);
+    final roundness =
+        (borderRadius > 1.0
+                ? borderRadius / (height > 0 ? height : 1)
+                : borderRadius)
+            .clamp(0.0, 1.0);
 
     // 1. Fondo
     if (bgColor != null && bgColor.a > 0) {

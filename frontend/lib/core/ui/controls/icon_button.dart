@@ -3,7 +3,7 @@ import 'package:frontend/core/context3d.dart';
 import 'package:frontend/core/input.dart';
 import 'package:frontend/core/ui/control_node.dart';
 import 'package:frontend/core/ui/icons.dart';
-import 'package:frontend/core/ui/style.dart';
+
 /// Componente interactivo de Botón de Ícono (`IconButton`) bajo la arquitectura `ControlNode`.
 class IconButton extends ControlNode {
   final IconData icon;
@@ -19,7 +19,8 @@ class IconButton extends ControlNode {
     required this.icon,
     super.key,
     super.isVisible,
-    super.className,
+    super.styleClass,
+    super.layoutClass,
     super.isEnabled,
     this.selectedIcon,
     this.isToggle = false,
@@ -33,23 +34,37 @@ class IconButton extends ControlNode {
   }
 
   @override
-  Style get currentStyle {
-    if (className == null || className!.trim().isEmpty) {
-      return const Style();
+  void onResize(int allocatedWidth, int allocatedHeight) {
+    final style = currentStyle;
+    final layout = currentLayout;
+    final size = style.fontSize ?? iconSize;
+    final minSize = size + 16;
+
+    final wRule = layout.width;
+    if (wRule != null) {
+      if (wRule == double.infinity) {
+        width = allocatedWidth;
+      } else if (wRule > 0.0 && wRule <= 1.0) {
+        width = (allocatedWidth * wRule).round();
+      } else if (wRule.isFinite) {
+        width = wRule.round();
+      }
+    } else {
+      width = allocatedWidth > 0 ? allocatedWidth : minSize;
     }
 
-    final classes = className!.trim().split(RegExp(r'\s+'));
-    final buffer = <String>[];
-
-    for (final cls in classes) {
-      buffer.add(cls);
-      if (isHovered) buffer.add('$cls:hover');
-      if (isPressed) buffer.add('$cls:active');
-      if (isFocused) buffer.add('$cls:focus');
-      if (!isEnabled) buffer.add('$cls:disabled');
+    final hRule = layout.height;
+    if (hRule != null) {
+      if (hRule == double.infinity) {
+        height = allocatedHeight;
+      } else if (hRule > 0.0 && hRule <= 1.0) {
+        height = (allocatedHeight * hRule).round();
+      } else if (hRule.isFinite) {
+        height = hRule.round();
+      }
+    } else {
+      height = allocatedHeight > 0 ? allocatedHeight : minSize;
     }
-
-    return Style.merge(buffer.join(' '));
   }
 
   @override
@@ -86,19 +101,22 @@ class IconButton extends ControlNode {
 
   void _updateDimensions() {
     final style = currentStyle;
+    final layout = currentLayout;
     final size = style.fontSize ?? iconSize;
     final minSize = size + 16;
 
-    if (style.width != null) {
-      width = style.width!;
-    } else if (width < minSize) {
-      width = minSize;
+    final wRule = layout.width;
+    if (wRule != null && wRule.isFinite && wRule > 1.0) {
+      width = wRule.round();
+    } else if (!isFlexWidth) {
+      if (width < minSize) width = minSize;
     }
 
-    if (style.height != null) {
-      height = style.height!;
-    } else if (height < minSize) {
-      height = minSize;
+    final hRule = layout.height;
+    if (hRule != null && hRule.isFinite && hRule > 1.0) {
+      height = hRule.round();
+    } else if (!isFlexHeight) {
+      if (height < minSize) height = minSize;
     }
   }
 
@@ -109,8 +127,9 @@ class IconButton extends ControlNode {
 
     final style = currentStyle;
     final size = style.fontSize ?? iconSize;
-    final IconData activeIcon =
-        (isToggle && isSelected && selectedIcon != null) ? selectedIcon! : icon;
+    final IconData activeIcon = (isToggle && isSelected && selectedIcon != null)
+        ? selectedIcon!
+        : icon;
 
     // 1. Resolver colores visuales
     ColorRGBA bg;
@@ -122,7 +141,8 @@ class IconButton extends ControlNode {
       fg = style.textColor ?? const ColorRGBA(140, 145, 155, 150);
       borderColor = style.borderColor;
     } else if (isPressed) {
-      bg = style.activeColor ??
+      bg =
+          style.activeColor ??
           style.hoverColor ??
           (style.bgColor != null
               ? ColorRGBA(
@@ -135,7 +155,8 @@ class IconButton extends ControlNode {
       fg = style.textColor ?? ColorRGBA.white;
       borderColor = style.borderColor ?? const ColorRGBA(255, 255, 255, 120);
     } else if (isHovered) {
-      bg = style.hoverColor ??
+      bg =
+          style.hoverColor ??
           (style.bgColor != null
               ? ColorRGBA(
                   (style.bgColor!.r * 1.2).clamp(0, 255).round(),
@@ -148,7 +169,8 @@ class IconButton extends ControlNode {
       borderColor = style.borderColor ?? const ColorRGBA(255, 255, 255, 180);
     } else {
       bg = style.bgColor ?? ColorRGBA.transparent;
-      fg = style.textColor ??
+      fg =
+          style.textColor ??
           (isSelected
               ? const ColorRGBA(52, 152, 219)
               : const ColorRGBA(220, 225, 235));
@@ -156,10 +178,11 @@ class IconButton extends ControlNode {
     }
 
     final borderRadius = style.borderRadius ?? (height / 2.0);
-    final roundness = (borderRadius > 1.0
-            ? borderRadius / (height > 0 ? height : 1)
-            : borderRadius)
-        .clamp(0.0, 1.0);
+    final roundness =
+        (borderRadius > 1.0
+                ? borderRadius / (height > 0 ? height : 1)
+                : borderRadius)
+            .clamp(0.0, 1.0);
 
     // 2. Fondo del Botón
     if (bg.a > 0) {
