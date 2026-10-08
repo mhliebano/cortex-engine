@@ -1,11 +1,13 @@
 import 'package:frontend/core/ui/cortex_node.dart';
-import 'package:frontend/core/ui/style.dart';
+import 'package:frontend/core/ui/layout_rules.dart';
+import 'package:frontend/core/ui/style_rules.dart';
 
 typedef VoidCallback = void Function();
 
-/// Nodo base abstracto para componentes interactivos de control.
+/// Nodo base abstracto para componentes interactivos de control bajo la arquitectura Cortex.
 abstract class ControlNode extends CortexNode {
-  final String? className;
+  final String? styleClass;
+  final String? layoutClass;
   bool isEnabled;
   bool isHovered;
   bool isFocused;
@@ -13,20 +15,22 @@ abstract class ControlNode extends CortexNode {
   ControlNode({
     super.key,
     super.isVisible,
-    this.className,
+    this.styleClass,
+    this.layoutClass,
     this.isEnabled = true,
     this.isHovered = false,
     this.isFocused = false,
-  });
+  }) : super();
 
-  /// Getter dinámico que resuelve el estilo concatenando pseudoclases CSS según el estado.
-  /// Jerarquía de precedencia en Style.merge: disabled > focus > hover > normal.
-  Style get currentStyle {
-    if (className == null || className!.trim().isEmpty) {
-      return const Style();
+  /// Resuelve cosmética y pintura contra el registro global [StyleRules],
+  /// evaluando pseudoclases según el estado interactivo.
+  StyleRules get currentStyle {
+    final raw = styleClass;
+    if (raw == null || raw.trim().isEmpty) {
+      return const StyleRules();
     }
 
-    final classes = className!.trim().split(RegExp(r'\s+'));
+    final classes = raw.trim().split(RegExp(r'\s+'));
     final buffer = <String>[];
 
     for (final cls in classes) {
@@ -36,7 +40,30 @@ abstract class ControlNode extends CortexNode {
       if (!isEnabled) buffer.add('$cls:disabled');
     }
 
-    return Style.merge(buffer.join(' '));
+    return StyleRules.merge(buffer.join(' '));
+  }
+
+  /// Resuelve matemática espacial, dimensiones y layout contra el registro global [LayoutRules].
+  LayoutRules get currentLayout {
+    final raw = layoutClass;
+    if (raw == null || raw.trim().isEmpty) {
+      return const LayoutRules();
+    }
+    return LayoutRules.merge(raw.trim());
+  }
+
+  @override
+  bool get isFlexWidth {
+    final w = currentLayout.width;
+    if (w == null) return false;
+    return w == double.infinity || (w > 0.0 && w <= 1.0);
+  }
+
+  @override
+  bool get isFlexHeight {
+    final h = currentLayout.height;
+    if (h == null) return false;
+    return h == double.infinity || (h > 0.0 && h <= 1.0);
   }
 
   void onMouseEnter() {
