@@ -25,8 +25,34 @@
   - Implementación de `Container` (`lib/core/ui/controls/container.dart`) heredando de `ControlNode` sin parámetros espaciales inline en su constructor.
   - Gestión integral de ciclo de vida (`_updateDimensions`, `onResize`, `onUpdate`, `onRender`, `onRenderOverlay`), soporte de recorte (`Scissor`) y propagación de layout a nodos hijos respetando `padding`.
 
+- **Componente Insignia / Indicador (`Badge`) bajo `ControlNode`**:
+  - Migración completa de `Badge` a `lib/core/ui/controls/badge.dart` heredando de `ControlNode` y eliminación de la versión legacy en `interaction/`.
+  - Soporte limpio para los modos Dot Indicator y Numeric/Label Badge con resolución dinámica de estilos (`styleClass`) y layout (`layoutClass`).
+  - Capacidad dual: anclaje automático sobre componentes hijos (`child`) en la esquina superior derecha o uso independiente como insignia standalone.
+
+- **Componente Casilla de Verificación (`Checkbox`) bajo `ControlNode`**:
+  - Migración completa de `Checkbox` a `lib/core/ui/controls/checkbox.dart` heredando de `ControlNode` y eliminación de la versión legacy en `interaction/`.
+  - Soporte para 3 estados (`true`, `false`, `null` indeterminado), pseudoclases CSS (`:hover`, `:active`, `:disabled`), colores dinámicos (`activeColor`, `checkColor`, `borderColor`) y etiqueta de texto reactiva.
+
+- **Componentes de Selección Única (`RadioButton` y `RadioGroup`) bajo `ControlNode`**:
+  - Migración completa de `RadioButton<T>` y `RadioGroup<T>` a `lib/core/ui/controls/radio_button.dart` heredando de `ControlNode` y eliminación de la versión legacy en `interaction/`.
+  - Disposición flexible en fila/columna con espaciado `gap`, sincronización automática de estado `groupValue` / `selectedValue` y renderizado de radio circular con indicador interior animable.
+
+- **Componente Conmutador Deslizante (`Switch`) bajo `ControlNode`**:
+  - Migración completa de `Switch` a `lib/core/ui/controls/switch.dart` heredando de `ControlNode` y eliminación de la versión legacy en `interaction/`.
+  - Transición interpolada animada del actuador (`thumb`), soporte para etiqueta de texto, pseudoclases CSS y resolución de estilos vía `StyleRules` / `LayoutRules`.
+
+- **Componente Divisor / Separador (`Divider`) bajo `ControlNode`**:
+  - Migración completa de `Divider` a `lib/core/ui/controls/divider.dart` heredando de `ControlNode` y eliminación de la versión legacy en `interaction/`.
+  - Soporte de orientación horizontal y vertical (`DividerAxis`), sangrías (`indent`, `endIndent`), expansión automática en el eje principal correspondiente (`isFlexWidth` / `isFlexHeight`) y resolución de color vía `StyleRules` (`borderColor` / `bgColor`).
+
+- **Componente Selector Desplegable (`Dropdown`) bajo `ControlNode`**:
+  - Migración completa de `Dropdown<T>` a `lib/core/ui/controls/dropdown.dart` heredando de `ControlNode` y eliminación de la versión legacy en `interaction/`.
+  - Proyección de menú emergente sobre la capa flotante (`onRenderOverlay`) con soporte para scroll interactivo con rueda de mouse, arrastre de barra de scroll, auto-scroll a la opción activa y aislamiento estático global (`_activeOpenDropdown`).
+  - Resolución dinámica de estilos mediante `StyleRules` (`bgColor`, `hoverColor`, `activeColor`, `borderColor`, `borderRadius`, `fontSize`) y layout responsivo vía `LayoutRules`.
+
 - **Adaptación y Blindaje de Toda la Suite de Controles (`lib/core/ui/controls/`)**:
-  - Refactorización de `Button`, `IconButton`, `TextField`, `Chip`, `Icon`, `Label` e `Image` para adoptar constructores limpios con `styleClass` y `layoutClass`.
+  - Refactorización de `Button`, `IconButton`, `TextField`, `Chip`, `Icon`, `Label`, `Image`, `Badge`, `Checkbox`, `RadioButton`, `RadioGroup`, `Switch`, `Divider` y `Dropdown` para adoptar constructores limpios con `styleClass` y `layoutClass`.
   - Protección de `_updateDimensions` contra excepciones de redondeo en dimensiones infinitas (`double.infinity.round()`).
   - Manejo consistente de `onResize` en todos los controles para soportar dimensiones absolutas, porcentuales y de expansión flexible.
 
