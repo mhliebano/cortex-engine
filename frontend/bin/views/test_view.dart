@@ -37,45 +37,27 @@ class TestView extends FluidView {
         width: 0.5,
         height: 300.0,
         padding: EdgeInsets.all(15),
+        layout: PanelLayout.vertical,
         children: [
           Col(
+            crossAlign: CrossAlign.center,
+            mainAlign: MainAlign.center,
             children: [
-              Label(text: "Es cool!", styleClass: "label"),
-              Button(
-                text: "Click!",
-                layoutClass: "button",
-                styleClass: "round_corners label",
-                onClick: () {
-                  print("click by $textVar");
-                },
-              ),
+              Label(text: "text"),
+              Button(text: "button1"),
+              Button(text: "button2"),
             ],
           ),
           Row(
-            gap: 20,
-            overflow: Overflow.scroll,
             children: [
-              Label(text: "Bienvenido a Cortex"),
-              Icon(Icons.access_alarm),
+              Chip(text: "chip1"),
+              Chip(text: "chip2"),
+              Chip(text: "chip3"),
             ],
           ),
-          Col(children: [Image(src: "assets/images/2.png")]),
-          Row(
-            children: [
-              Container(
-                styleClass: "container round_corners",
-                layoutClass: "container",
-                child: Col(
-                  children: [
-                    Label(text: "Hello!", styleClass: "label"),
-                    Label(text: "Cortex!", styleClass: "label"),
-                  ],
-                ),
-              ),
-            ],
-          ),
+          Col(children: []),
+          Row(children: []),
         ],
-        layout: PanelLayout.vertical,
       ),
       Panel(
         width: 0.5,

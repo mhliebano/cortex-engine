@@ -50,10 +50,13 @@ class Row extends StructureNode {
   List<CortexNode> get childrenElements => children;
 
   @override
-  bool get isFlexHeight => children.any((c) => c.isFlexHeight);
+  bool get isFlexHeight =>
+      children.any((c) => (c is Spacer && c.size == null) || c.isFlexHeight);
 
   @override
   bool get isFlexWidth =>
+      children.isEmpty ||
+      mainAlign != MainAlign.start ||
       children.any((c) => (c is Spacer && c.size == null) || c.isFlexWidth);
 
   @override
@@ -163,26 +166,31 @@ class Row extends StructureNode {
     for (final child in children) {
       child.x = currentX.round();
 
-      switch (crossAlign) {
-        case CrossAlign.stretch:
-          child.y = y;
-          if (availableHeight > 0) child.height = availableHeight;
-          break;
-        case CrossAlign.start:
-          child.y = y;
-          break;
-        case CrossAlign.center:
-          final spaceY = availableHeight > child.height
-              ? availableHeight - child.height
-              : 0;
-          child.y = y + (spaceY ~/ 2);
-          break;
-        case CrossAlign.end:
-          final spaceY = availableHeight > child.height
-              ? availableHeight - child.height
-              : 0;
-          child.y = y + spaceY;
-          break;
+      if (child is StructureNode) {
+        child.y = y;
+        if (availableHeight > 0) child.height = availableHeight;
+      } else {
+        switch (crossAlign) {
+          case CrossAlign.stretch:
+            child.y = y;
+            if (availableHeight > 0) child.height = availableHeight;
+            break;
+          case CrossAlign.start:
+            child.y = y;
+            break;
+          case CrossAlign.center:
+            final spaceY = availableHeight > child.height
+                ? availableHeight - child.height
+                : 0;
+            child.y = y + (spaceY ~/ 2);
+            break;
+          case CrossAlign.end:
+            final spaceY = availableHeight > child.height
+                ? availableHeight - child.height
+                : 0;
+            child.y = y + spaceY;
+            break;
+        }
       }
 
       child.onResize(child.width, child.height);

@@ -6,6 +6,12 @@
 
 ### Agregado
 
+- **Expansión y Flexibilidad Automática en Nodos Estructurales (`Col` & `Row`)**:
+  - `Col` y `Row` ahora consumen por defecto todo el espacio disponible asignado por el contenedor padre (`isFlexWidth` y propagación recursiva de geometría).
+  - Activación automática de flexibilidad (`isFlexHeight` en `Col` e `isFlexWidth` en `Row`) para bloques vacíos de maqueta o cuando se configuran alineaciones activas (`mainAlign != MainAlign.start`), repartiendo el espacio equitativamente entre bloques de la maqueta.
+  - Propagación del ancho disponible (`availableWidth`) a nodos estructurales hijos (`StructureNode`) dentro de un `Col`, permitiendo que `Row` con `MainAlign.center` y `Col` anidados centren y distribuyan sus elementos sobre la totalidad del área visible.
+  - Corrección en el cálculo de espacio libre (`freeSpace`), habilitando el centrado vertical (`MainAlign.center`) y transversal (`CrossAlign.center`) sin requerir sobredeclaración de parámetros ni `Spacers` artificiales.
+
 - **Patrón de Doble Registro Desacoplado (`StyleRules` & `LayoutRules`)**:
   - Creación de `StyleRules` (`lib/core/ui/style_rules.dart`) para encapsular exclusivamente propiedades cosméticas y de pintura (`bgColor`, `hoverColor`, `textColor`, `borderColor`, `borderRadius`, `fontSize`, etc.).
   - Creación de `LayoutRules` (`lib/core/ui/layout_rules.dart`) para gobernar la matemática espacial, dimensiones y espaciado (`width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight`, `padding`, `margin`, `spacing`).

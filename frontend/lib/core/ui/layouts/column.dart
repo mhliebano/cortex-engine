@@ -51,10 +51,12 @@ class Col extends StructureNode {
 
   @override
   bool get isFlexHeight =>
+      children.isEmpty ||
+      mainAlign != MainAlign.start ||
       children.any((c) => (c is Spacer && c.size == null) || c.isFlexHeight);
 
   @override
-  bool get isFlexWidth => children.any((c) => c.isFlexWidth);
+  bool get isFlexWidth => true;
 
   @override
   Map<String, dynamic>? exportState() {
@@ -163,26 +165,31 @@ class Col extends StructureNode {
     for (final child in children) {
       child.y = currentY.round();
 
-      switch (crossAlign) {
-        case CrossAlign.stretch:
-          child.x = x;
-          if (availableWidth > 0) child.width = availableWidth;
-          break;
-        case CrossAlign.start:
-          child.x = x;
-          break;
-        case CrossAlign.center:
-          final spaceX = availableWidth > child.width
-              ? availableWidth - child.width
-              : 0;
-          child.x = x + (spaceX ~/ 2);
-          break;
-        case CrossAlign.end:
-          final spaceX = availableWidth > child.width
-              ? availableWidth - child.width
-              : 0;
-          child.x = x + spaceX;
-          break;
+      if (child is StructureNode) {
+        child.x = x;
+        if (availableWidth > 0) child.width = availableWidth;
+      } else {
+        switch (crossAlign) {
+          case CrossAlign.stretch:
+            child.x = x;
+            if (availableWidth > 0) child.width = availableWidth;
+            break;
+          case CrossAlign.start:
+            child.x = x;
+            break;
+          case CrossAlign.center:
+            final spaceX = availableWidth > child.width
+                ? availableWidth - child.width
+                : 0;
+            child.x = x + (spaceX ~/ 2);
+            break;
+          case CrossAlign.end:
+            final spaceX = availableWidth > child.width
+                ? availableWidth - child.width
+                : 0;
+            child.x = x + spaceX;
+            break;
+        }
       }
 
       child.onResize(child.width, child.height);
