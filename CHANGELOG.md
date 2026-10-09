@@ -51,8 +51,12 @@
   - Proyección de menú emergente sobre la capa flotante (`onRenderOverlay`) con soporte para scroll interactivo con rueda de mouse, arrastre de barra de scroll, auto-scroll a la opción activa y aislamiento estático global (`_activeOpenDropdown`).
   - Resolución dinámica de estilos mediante `StyleRules` (`bgColor`, `hoverColor`, `activeColor`, `borderColor`, `borderRadius`, `fontSize`) y layout responsivo vía `LayoutRules`.
 
+- **Componente Deslizador Numérico (`Slider`) bajo `ControlNode`**:
+  - Migración completa de `Slider` a `lib/core/ui/controls/slider.dart` heredando de `ControlNode` y eliminación de la versión legacy en `interaction/`.
+  - Selección de valores continuos y discretos (`divisions`), arrastre suave, halo reactivo, formateador personalizado (`valueFormatter`), etiquetas dinámicas y resolución cosmética vía `StyleRules` (`activeColor`, `hoverColor`, `bgColor`, `textColor`).
+
 - **Adaptación y Blindaje de Toda la Suite de Controles (`lib/core/ui/controls/`)**:
-  - Refactorización de `Button`, `IconButton`, `TextField`, `Chip`, `Icon`, `Label`, `Image`, `Badge`, `Checkbox`, `RadioButton`, `RadioGroup`, `Switch`, `Divider` y `Dropdown` para adoptar constructores limpios con `styleClass` y `layoutClass`.
+  - Refactorización de `Button`, `IconButton`, `TextField`, `Chip`, `Icon`, `Label`, `Image`, `Badge`, `Checkbox`, `RadioButton`, `RadioGroup`, `Switch`, `Divider`, `Dropdown` y `Slider` para adoptar constructores limpios con `styleClass` y `layoutClass`.
   - Protección de `_updateDimensions` contra excepciones de redondeo en dimensiones infinitas (`double.infinity.round()`).
   - Manejo consistente de `onResize` en todos los controles para soportar dimensiones absolutas, porcentuales y de expansión flexible.
 

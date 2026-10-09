@@ -54,7 +54,7 @@ export 'controls/chip.dart';
 export 'controls/icon_button.dart';
 export 'controls/radio_button.dart';
 export 'interaction/segmented_button.dart';
-export 'interaction/slider.dart';
+export 'controls/slider.dart';
 export 'controls/switch.dart';
 export 'interaction/fab.dart';
 export 'interaction/split_button.dart';

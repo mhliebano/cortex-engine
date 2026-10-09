@@ -194,6 +194,12 @@ class MiPanel extends Panel {
               RadioButton(value: "opcion2", label: "B"),
             ],
           ),
+          Slider(
+            value: 45,
+            min: 0,
+            max: 100,
+            label: "Volumen",
+          ),
         ],
       ),
     ];
