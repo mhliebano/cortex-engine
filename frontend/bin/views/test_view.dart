@@ -46,6 +46,10 @@ class TestView extends FluidView {
               Label(text: "text"),
               Button(text: "button1"),
               Button(text: "button2"),
+              Badge(
+                label: "99+",
+                child: Label(text: "notificaciones"),
+              ),
             ],
           ),
           Row(
@@ -55,8 +59,29 @@ class TestView extends FluidView {
               Chip(text: "chip3"),
             ],
           ),
-          Col(children: []),
-          Row(children: []),
+          Row(
+            children: [
+              Container(
+                styleClass: "round_corners container",
+                layoutClass: "container",
+                child: Col(
+                  children: [
+                    Label(text: "Encabezado del container"),
+                    Divider(axis: DividerAxis.horizontal),
+                    Label(text: "Contenido del container"),
+                    Row(
+                      gap: 10,
+                      children: [
+                        Button(text: "boton 1"),
+                        Button(text: "boton 2"),
+                        Button(text: "boton 3"),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
       Panel(
@@ -102,7 +127,31 @@ class TestView extends FluidView {
             ],
           ),
           Spacer(),
-          Col(children: [Image(src: "assets/images/3.png")]),
+          Row(
+            children: [
+              Checkbox(label: "Activo", value: true),
+              Switch(label: "Modo Oscuro", value: false),
+              RadioGroup<String>(
+                selectedValue: "opcion1",
+                options: [
+                  RadioButton(value: "opcion1", label: "A"),
+                  RadioButton(value: "opcion2", label: "B"),
+                ],
+              ),
+            ],
+          ),
+          Col(
+            children: [
+              Image(src: "assets/images/3.png"),
+              Dropdown(
+                options: [
+                  DropdownOption(label: "A", value: "A"),
+                  DropdownOption(label: "B", value: "B"),
+                ],
+                selectedValue: "A",
+              ),
+            ],
+          ),
         ],
       ),
       MiPanel(),
@@ -133,8 +182,20 @@ class MiPanel extends Panel {
           Chip(text: "mi casita de galleta iii"),
         ],
       ),
-      Row(children: [Spacer()]),
-      Row(children: [Spacer()]),
+      Row(
+        gap: 15,
+        children: [
+          Checkbox(label: "Activo", value: true),
+          Switch(label: "Modo Oscuro", value: true),
+          RadioGroup<String>(
+            selectedValue: "opcion1",
+            options: [
+              RadioButton(value: "opcion1", label: "A"),
+              RadioButton(value: "opcion2", label: "B"),
+            ],
+          ),
+        ],
+      ),
     ];
   }
 }

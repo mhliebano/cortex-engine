@@ -6,7 +6,7 @@ import 'app_styles.dart';
 import 'views/test_view.dart';
 
 void main() async {
-  Debugger.showLayout = true;
+  Debugger.showLayout = false;
   // 0. Inicializar Hoja de Estilos CSS Globales
   initAppStyles();
 

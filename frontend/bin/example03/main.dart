@@ -23,16 +23,7 @@ void main() async {
 }
 
 class MyHomeView extends ContainerView {
-  MyHomeView() : super(id: 'home', backgroundColor: ColorRGBA(255, 255, 255)) {
-    StyleRules.register(
-      "label-header",
-      StyleRules(fontSize: 28, textColor: ColorRGBA(0, 0, 255)),
-    );
-    StyleRules.register(
-      "label-body",
-      StyleRules(textColor: ColorRGBA(0, 0, 0)),
-    );
-  }
+  MyHomeView() : super(id: 'home');
 
   int _count = 0;
 
@@ -54,22 +45,16 @@ class MyHomeView extends ContainerView {
             children: [
               Row(
                 mainAlign: MainAlign.center,
-                crossAlign: CrossAlign.center,
-                children: [
-                  Label(text: 'Cortex demo view', styleClass: "label-header"),
-                ],
+                children: [Label(text: 'Cortex demo view')],
               ),
               Col(
                 mainAlign: MainAlign.center,
                 crossAlign: CrossAlign.center,
 
                 children: [
-                  Label(
-                    text: 'You have pushed the button',
-                    styleClass: "label-body",
-                  ),
-                  Label(text: 'this many times:', styleClass: "label-body"),
-                  Label(text: '$_count', styleClass: "label-body"),
+                  Label(text: 'You have pushed the button'),
+                  Label(text: 'this many times:'),
+                  Label(text: '$_count'),
                   Button(text: 'Increment', onClick: incrementCount),
                 ],
               ),
