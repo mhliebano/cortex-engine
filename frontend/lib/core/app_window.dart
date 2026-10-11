@@ -13,9 +13,26 @@ class AppWindow {
     String title, {
     int flags = WindowFlags.windowResizable | WindowFlags.vsyncHint,
   }) {
-    _windowManager.setConfigFlags(flags);
+    int effectiveFlags = flags;
+    // Las ventanas maximizadas requieren ser redimensionables para que el Window Manager permita la maximización
+    if ((effectiveFlags & WindowFlags.windowMaximized) != 0) {
+      effectiveFlags |= WindowFlags.windowResizable;
+    }
+    _windowManager.setConfigFlags(effectiveFlags);
     _windowManager.init(width, height, title);
+
+    if ((effectiveFlags & WindowFlags.windowMaximized) != 0) {
+      _windowManager.maximize();
+    }
+    if ((effectiveFlags & WindowFlags.windowMinimized) != 0) {
+      _windowManager.minimize();
+    }
   }
+
+  void maximize() => _windowManager.maximize();
+  void minimize() => _windowManager.minimize();
+  void restore() => _windowManager.restore();
+  void toggleFullscreen() => _windowManager.toggleFullscreen();
 
   bool get shouldClose => _windowManager.shouldClose;
 

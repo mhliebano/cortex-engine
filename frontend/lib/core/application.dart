@@ -15,6 +15,8 @@ class Application {
   final int height;
   final int flags;
   final ColorRGBA clearColor;
+  final Map<String, LayoutRules>? globalLayoutRules;
+  final Map<String, StyleRules>? globalStyleRules;
 
   late final AppWindow _window;
   late final Context2D _ctx2d;
@@ -27,6 +29,8 @@ class Application {
     this.height = 680,
     this.flags = WindowFlags.windowResizable | WindowFlags.vsyncHint,
     this.clearColor = const ColorRGBA(20, 22, 28, 255),
+    this.globalLayoutRules,
+    this.globalStyleRules,
   }) {
     _window = AppWindow();
     _ctx2d = Context2D();
@@ -137,9 +141,23 @@ class Application {
 
   /// Inicia el ciclo de vida de la aplicación, el bucle principal y maneja el redimensionamiento y la limpieza automáticamente.
   Future<void> run() async {
+    // Registrar reglas globales declarativas de layout y estilos si fueron provistas
+    if (globalLayoutRules != null) {
+      for (final entry in globalLayoutRules!.entries) {
+        LayoutRules.register(entry.key, entry.value);
+      }
+    }
+    if (globalStyleRules != null) {
+      for (final entry in globalStyleRules!.entries) {
+        StyleRules.register(entry.key, entry.value);
+      }
+    }
+
     _window.init(width, height, title, flags: flags);
 
-    Debugger.debugPrint("Ventana de dimensiones $width x $height");
+    Debugger.debugPrint(
+      "Ventana de dimensiones ${_window.width} x ${_window.height}",
+    );
 
     // Inicializar dispositivo de audio
     AudioEngine.init();

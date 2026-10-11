@@ -1,3 +1,4 @@
+import 'package:frontend/core/ui/controls/container.dart';
 import 'package:frontend/core/ui/ui.dart';
 
 class TestView extends FluidView {
@@ -8,6 +9,24 @@ class TestView extends FluidView {
   @override
   void onInit() {
     print('init Vista de prueba');
+    StyleRules.register(
+      "label",
+      StyleRules(fontSize: 16, textColor: ColorRGBA(255, 0, 0)),
+    );
+    StyleRules.register("round_corners", StyleRules(borderRadius: 20));
+    LayoutRules.register("button", LayoutRules(width: double.infinity));
+    StyleRules.register(
+      "container",
+      StyleRules(
+        bgColor: ColorRGBA(255, 255, 255),
+        borderColor: ColorRGBA(255, 0, 0),
+      ),
+    );
+    LayoutRules.register(
+      "container",
+      LayoutRules(width: 0.5, padding: EdgeInsets.all(10)),
+    );
+
     super.onInit();
   }
 
@@ -18,29 +37,52 @@ class TestView extends FluidView {
         width: 0.5,
         height: 300.0,
         padding: EdgeInsets.all(15),
+        layout: PanelLayout.vertical,
         children: [
           Col(
+            crossAlign: CrossAlign.center,
+            mainAlign: MainAlign.center,
             children: [
-              Label(text: "Es cool!", className: "text"),
-              Button(
-                text: "Click!",
-                onClick: () {
-                  print("click by $textVar");
-                },
+              Label(text: "text"),
+              Button(text: "button1"),
+              Button(text: "button2"),
+              Badge(
+                label: "99+",
+                child: Label(text: "notificaciones"),
               ),
             ],
           ),
           Row(
-            gap: 20,
-            overflow: Overflow.scroll,
             children: [
-              Label(text: "Bienvenido a Cortex", className: "text-h1"),
-              Icon(Icons.access_alarm, className: "icon-class"),
+              Chip(text: "chip1"),
+              Chip(text: "chip2"),
+              Chip(text: "chip3"),
             ],
           ),
-          Col(children: [Image(src: "assets/images/2.png")]),
+          Row(
+            children: [
+              Container(
+                styleClass: "round_corners container",
+                layoutClass: "container",
+                child: Col(
+                  children: [
+                    Label(text: "Encabezado del container"),
+                    Divider(axis: DividerAxis.horizontal),
+                    Label(text: "Contenido del container"),
+                    Row(
+                      gap: 10,
+                      children: [
+                        Button(text: "boton 1"),
+                        Button(text: "boton 2"),
+                        Button(text: "boton 3"),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
-        layout: PanelLayout.vertical,
       ),
       Panel(
         width: 0.5,
@@ -48,14 +90,12 @@ class TestView extends FluidView {
         layout: PanelLayout.vertical,
         children: [
           Row(
-            overflow: Overflow.visible,
             children: [
               IconButton(
                 icon: Icons.save,
                 onClick: () {
                   print("click");
                 },
-                className: "icon-class",
               ),
               IconButton(
                 icon: Icons.settings,
@@ -73,7 +113,6 @@ class TestView extends FluidView {
           ),
           Row(
             gap: 10,
-            overflow: Overflow.scroll,
             children: [
               TextField(
                 placeholder: "user",
@@ -86,9 +125,29 @@ class TestView extends FluidView {
             ],
           ),
           Spacer(),
+          Row(
+            children: [
+              Checkbox(label: "Activo", value: true),
+              Switch(label: "Modo Oscuro", value: false),
+              RadioGroup<String>(
+                selectedValue: "opcion1",
+                options: [
+                  RadioButton(value: "opcion1", label: "A"),
+                  RadioButton(value: "opcion2", label: "B"),
+                ],
+              ),
+            ],
+          ),
           Col(
             children: [
-              Image(src: "assets/images/3.png", className: "image-class"),
+              Image(src: "assets/images/3.png"),
+              Dropdown(
+                options: [
+                  DropdownOption(label: "A", value: "A"),
+                  DropdownOption(label: "B", value: "B"),
+                ],
+                selectedValue: "A",
+              ),
             ],
           ),
         ],
@@ -113,16 +172,34 @@ class MiPanel extends Panel {
       Row(
         gap: 10,
         children: [
-          Chip(text: "fácil", className: "chip-class"),
-          Chip(text: "difícil", className: "chip-class"),
-          Chip(text: "intermedio", className: "chip-class"),
-          Chip(text: "experto", className: "chip-class"),
-          Chip(text: "maestro", className: "chip-class"),
-          Chip(text: "mi casita de galleta iii", className: "chip-class"),
+          Chip(text: "fácil"),
+          Chip(text: "difícil"),
+          Chip(text: "intermedio"),
+          Chip(text: "experto"),
+          Chip(text: "maestro"),
+          Chip(text: "mi casita de galleta iii"),
         ],
       ),
-      Row(children: [Spacer()]),
-      Row(children: [Spacer()]),
+      Row(
+        gap: 15,
+        children: [
+          Checkbox(label: "Activo", value: true),
+          Switch(label: "Modo Oscuro", value: true),
+          RadioGroup<String>(
+            selectedValue: "opcion1",
+            options: [
+              RadioButton(value: "opcion1", label: "A"),
+              RadioButton(value: "opcion2", label: "B"),
+            ],
+          ),
+          Slider(
+            value: 45,
+            min: 0,
+            max: 100,
+            label: "Volumen",
+          ),
+        ],
+      ),
     ];
   }
 }

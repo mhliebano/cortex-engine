@@ -32,10 +32,16 @@ pub fn set_config_flags(flags: c_uint) {
     unsafe { SetConfigFlags(raylib_flags) }
 }
 pub fn init(width: c_int, height: c_int, title: *const c_char) {
+    let flags = SAVED_CONFIG_FLAGS.load(std::sync::atomic::Ordering::SeqCst);
     unsafe { 
         InitWindow(width, height, title);
+        if (flags & flags::WINDOW_MAXIMIZED) != 0 {
+            MaximizeWindow();
+        }
+        if (flags & flags::WINDOW_MINIMIZED) != 0 {
+            MinimizeWindow();
+        }
     }
-    let flags = SAVED_CONFIG_FLAGS.load(std::sync::atomic::Ordering::SeqCst);
     if (flags & flags::WINDOW_SKIP_TASKBAR) != 0 {
         apply_skip_taskbar();
     }

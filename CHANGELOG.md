@@ -4,7 +4,78 @@
 
 ## [UNRELEASED]
 
+### Corregido
+
+- **Abrazo en Eje Principal y Distribución Proporcional de Remanente (`Row` & `Col`)**:
+  - `Row` y `Col` abrazan estrictamente el tamaño acumulado de sus hijos y separadores (`rigidSum`) en su eje principal, evitando la expansión voraz que consumía todo el contenedor padre y empujaba a los elementos hermanos fuera de pantalla.
+  - La expansión al límite máximo recibido (`effectiveMaxW` / `effectiveMaxH`) ahora ocurre únicamente si existe un `Spacer` flexible (`size == null`), un hijo con `isFlexWidth` / `isFlexHeight`, o una alineación principal activa (`mainAlign != MainAlign.start`).
+  - Distribución del remanente en una sola pasada: cada hijo recibe en `onResize` el espacio no consumido por los hermanos precedentes (`max(0, límite - consumido - gaps)`).
+  - Distinción entre porcentaje y expansión libre (`double.infinity`): los hijos con porcentaje calculan su tamaño sobre la base total del padre (`límite - gaps`), mientras que `infinity` y dimensiones fijas consumen el remanente.
+  - Los hijos con porcentaje se limitan al remanente disponible (`child.width = min(child.width, remainingForChild)`), evitando el achicamiento en cadena y garantizando que las tarjetas mantengan anchos uniformes mientras la última se recorta si no cabe.
+  - Habilitada la alineación transversal (`CrossAlign.center` y `CrossAlign.end`) para nodos estructurales (`StructureNode`), permitiendo centrar filas/columnas anidadas dentro de sus padres.
+  - Corrección de la semántica de límite cero: se incorporó la constante interna `unconstrained = 1000000` para diferenciar "sin límite aún recibido" de "mi límite es 0", corrigiendo las comparaciones `> 0` en `ControlNode.updateDimensions`, `Container`, `Row` y `Col`.
+
 ### Agregado
+
+- **Alineación Bidimensional 2D en `Container` y Regla `align` en `LayoutRules`**:
+  - Definición del enum `Alignment2D` (y su alias `Alignment`) en `layout_alignment.dart` con 9 posiciones espaciales (`topLeft`, `topCenter`, `topRight`, `centerLeft`, `center`, `centerRight`, `bottomLeft`, `bottomCenter`, `bottomRight`) y factores de interpolación normalizados `(fx, fy)`.
+  - Soporte para la propiedad declarativa `align` en `LayoutRules` (`lib/core/ui/layout_rules.dart`), integrando su propagación y combinación en `LayoutRules.merge`.
+  - Implementación del helper `_computeChildPosition` en `Container` (`lib/core/ui/controls/container.dart`), calculando `(x, y)` del hijo tras resolver su tamaño en `onResize` respetando padding y alineación 2D.
+  - Sincronización transparente en `onUpdate` para preservar `c.x` y `c.y` estables entre frames sin re-ejecutar `onResize` continuamente ni alterar el comportamiento por defecto cuando `align` es nulo.
+
+- **Expansión y Flexibilidad Automática en Nodos Estructurales (`Col` & `Row`)**:
+  - `Col` y `Row` ahora consumen por defecto todo el espacio disponible asignado por el contenedor padre (`isFlexWidth` y propagación recursiva de geometría).
+  - Activación automática de flexibilidad (`isFlexHeight` en `Col` e `isFlexWidth` en `Row`) para bloques vacíos de maqueta o cuando se configuran alineaciones activas (`mainAlign != MainAlign.start`), repartiendo el espacio equitativamente entre bloques de la maqueta.
+  - Propagación del ancho disponible (`availableWidth`) a nodos estructurales hijos (`StructureNode`) dentro de un `Col`, permitiendo que `Row` con `MainAlign.center` y `Col` anidados centren y distribuyan sus elementos sobre la totalidad del área visible.
+  - Corrección en el cálculo de espacio libre (`freeSpace`), habilitando el centrado vertical (`MainAlign.center`) y transversal (`CrossAlign.center`) sin requerir sobredeclaración de parámetros ni `Spacers` artificiales.
+
+- **Patrón de Doble Registro Desacoplado (`StyleRules` & `LayoutRules`)**:
+  - Creación de `StyleRules` (`lib/core/ui/style_rules.dart`) para encapsular exclusivamente propiedades cosméticas y de pintura (`bgColor`, `hoverColor`, `textColor`, `borderColor`, `borderRadius`, `fontSize`, etc.).
+  - Creación de `LayoutRules` (`lib/core/ui/layout_rules.dart`) para gobernar la matemática espacial, dimensiones y espaciado (`width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight`, `padding`, `margin`, `spacing`).
+  - Soporte para registro global (`register`) y combinación de clases separadas por espacios (`merge`).
+
+- **Deducción Matemática de Flexibilidad en `ControlNode`**:
+  - Eliminadas las banderas booleanas de flexión (`expand`); `ControlNode` ahora deduce reactivamente su comportamiento de resorte en `isFlexWidth` e `isFlexHeight` evaluando si la regla es `double.infinity` o un porcentaje (`> 0.0 && <= 1.0`).
+  - Implementación del ciclo de vida `onResize(allocatedWidth, allocatedHeight)` adaptativo para escalar dimensiones por porcentaje, ancho total o píxeles fijos.
+
+- **Componente Contenedor Limpio (`Container`)**:
+  - Implementación de `Container` (`lib/core/ui/controls/container.dart`) heredando de `ControlNode` sin parámetros espaciales inline en su constructor.
+  - Gestión integral de ciclo de vida (`_updateDimensions`, `onResize`, `onUpdate`, `onRender`, `onRenderOverlay`), soporte de recorte (`Scissor`) y propagación de layout a nodos hijos respetando `padding`.
+
+- **Componente Insignia / Indicador (`Badge`) bajo `ControlNode`**:
+  - Migración completa de `Badge` a `lib/core/ui/controls/badge.dart` heredando de `ControlNode` y eliminación de la versión legacy en `interaction/`.
+  - Soporte limpio para los modos Dot Indicator y Numeric/Label Badge con resolución dinámica de estilos (`styleClass`) y layout (`layoutClass`).
+  - Capacidad dual: anclaje automático sobre componentes hijos (`child`) en la esquina superior derecha o uso independiente como insignia standalone.
+
+- **Componente Casilla de Verificación (`Checkbox`) bajo `ControlNode`**:
+  - Migración completa de `Checkbox` a `lib/core/ui/controls/checkbox.dart` heredando de `ControlNode` y eliminación de la versión legacy en `interaction/`.
+  - Soporte para 3 estados (`true`, `false`, `null` indeterminado), pseudoclases CSS (`:hover`, `:active`, `:disabled`), colores dinámicos (`activeColor`, `checkColor`, `borderColor`) y etiqueta de texto reactiva.
+
+- **Componentes de Selección Única (`RadioButton` y `RadioGroup`) bajo `ControlNode`**:
+  - Migración completa de `RadioButton<T>` y `RadioGroup<T>` a `lib/core/ui/controls/radio_button.dart` heredando de `ControlNode` y eliminación de la versión legacy en `interaction/`.
+  - Disposición flexible en fila/columna con espaciado `gap`, sincronización automática de estado `groupValue` / `selectedValue` y renderizado de radio circular con indicador interior animable.
+
+- **Componente Conmutador Deslizante (`Switch`) bajo `ControlNode`**:
+  - Migración completa de `Switch` a `lib/core/ui/controls/switch.dart` heredando de `ControlNode` y eliminación de la versión legacy en `interaction/`.
+  - Transición interpolada animada del actuador (`thumb`), soporte para etiqueta de texto, pseudoclases CSS y resolución de estilos vía `StyleRules` / `LayoutRules`.
+
+- **Componente Divisor / Separador (`Divider`) bajo `ControlNode`**:
+  - Migración completa de `Divider` a `lib/core/ui/controls/divider.dart` heredando de `ControlNode` y eliminación de la versión legacy en `interaction/`.
+  - Soporte de orientación horizontal y vertical (`DividerAxis`), sangrías (`indent`, `endIndent`), expansión automática en el eje principal correspondiente (`isFlexWidth` / `isFlexHeight`) y resolución de color vía `StyleRules` (`borderColor` / `bgColor`).
+
+- **Componente Selector Desplegable (`Dropdown`) bajo `ControlNode`**:
+  - Migración completa de `Dropdown<T>` a `lib/core/ui/controls/dropdown.dart` heredando de `ControlNode` y eliminación de la versión legacy en `interaction/`.
+  - Proyección de menú emergente sobre la capa flotante (`onRenderOverlay`) con soporte para scroll interactivo con rueda de mouse, arrastre de barra de scroll, auto-scroll a la opción activa y aislamiento estático global (`_activeOpenDropdown`).
+  - Resolución dinámica de estilos mediante `StyleRules` (`bgColor`, `hoverColor`, `activeColor`, `borderColor`, `borderRadius`, `fontSize`) y layout responsivo vía `LayoutRules`.
+
+- **Componente Deslizador Numérico (`Slider`) bajo `ControlNode`**:
+  - Migración completa de `Slider` a `lib/core/ui/controls/slider.dart` heredando de `ControlNode` y eliminación de la versión legacy en `interaction/`.
+  - Selección de valores continuos y discretos (`divisions`), arrastre suave, halo reactivo, formateador personalizado (`valueFormatter`), etiquetas dinámicas y resolución cosmética vía `StyleRules` (`activeColor`, `hoverColor`, `bgColor`, `textColor`).
+
+- **Adaptación y Blindaje de Toda la Suite de Controles (`lib/core/ui/controls/`)**:
+  - Refactorización de `Button`, `IconButton`, `TextField`, `Chip`, `Icon`, `Label`, `Image`, `Badge`, `Checkbox`, `RadioButton`, `RadioGroup`, `Switch`, `Divider`, `Dropdown` y `Slider` para adoptar constructores limpios con `styleClass` y `layoutClass`.
+  - Protección de `_updateDimensions` contra excepciones de redondeo en dimensiones infinitas (`double.infinity.round()`).
+  - Manejo consistente de `onResize` en todos los controles para soportar dimensiones absolutas, porcentuales y de expansión flexible.
 
 - **Componente Campo de Texto (`TextField`) bajo `ControlNode`**:
   - Migración completa de `TextField` a `lib/core/ui/controls/text_field.dart` heredando de `ControlNode`.

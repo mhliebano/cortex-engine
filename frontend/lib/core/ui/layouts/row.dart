@@ -1,6 +1,8 @@
+import 'dart:math';
 import 'package:frontend/core/context2d.dart';
 import 'package:frontend/core/context3d.dart';
 import 'package:frontend/core/input.dart';
+import 'package:frontend/core/ui/control_node.dart';
 import 'package:frontend/core/ui/cortex_node.dart';
 import 'package:frontend/core/ui/layout_alignment.dart';
 import 'package:frontend/core/ui/scroll_controller.dart';
@@ -11,9 +13,9 @@ import 'package:frontend/core/ui/layouts/spacer.dart';
 class Row extends StructureNode {
   final MainAlign mainAlign;
   final CrossAlign crossAlign;
-  final Overflow overflow;
   final double gap;
-  final List<CortexNode> children;
+  final bool? scroll;
+  late final List<CortexNode> children;
   final ScrollController? controller;
 
   // Estado de scroll
@@ -26,15 +28,23 @@ class Row extends StructureNode {
   double _dragStartX = 0.0;
   double _dragStartOffset = 0.0;
 
+  static const int _unconstrained = 1000000;
+
+  // Restricciones inyectadas por el contenedor padre
+  int _maxWidthConstraint = _unconstrained;
+  int _maxHeightConstraint = _unconstrained;
+
   Row({
     super.key,
+    this.scroll,
     this.mainAlign = MainAlign.start,
     this.crossAlign = CrossAlign.start,
-    this.overflow = Overflow.visible,
     this.gap = 0.0,
-    this.children = const [],
+    List<CortexNode>? children,
     this.controller,
   }) {
+    this.children = children ?? build();
+
     if (controller != null) {
       scrollOffset = controller!.offset;
       controller!.addListener((newOffset) {
@@ -46,15 +56,16 @@ class Row extends StructureNode {
     _performLayout();
   }
 
+  List<CortexNode> build() => [];
+
   @override
   List<CortexNode> get childrenElements => children;
 
   @override
-  bool get isFlexHeight => children.any((c) => c.isFlexHeight);
+  bool get isFlexHeight => false;
 
   @override
-  bool get isFlexWidth =>
-      children.any((c) => (c is Spacer && c.size == null) || c.isFlexWidth);
+  bool get isFlexWidth => true;
 
   @override
   Map<String, dynamic>? exportState() {
@@ -72,54 +83,97 @@ class Row extends StructureNode {
   }
 
   void _performLayout() {
-    if (children.isEmpty) return;
+    final hasWidthConstraint = _maxWidthConstraint != _unconstrained;
+    final hasHeightConstraint = _maxHeightConstraint != _unconstrained;
 
-    // Paso 1 (Medición Rígida y Eje Transversal)
-    int sumChildWidths = 0;
+    final effectiveMaxW = hasWidthConstraint
+        ? max(0, _maxWidthConstraint)
+        : (width > 0 ? width : _unconstrained);
+    final effectiveMaxH = hasHeightConstraint
+        ? max(0, _maxHeightConstraint)
+        : (height > 0 ? height : _unconstrained);
+
+    if (children.isEmpty) {
+      width = hasWidthConstraint ? min(width, effectiveMaxW) : width;
+      height = 0;
+      _contentWidth = 0;
+      return;
+    }
+
+    final double totalGaps =
+        children.length > 1 ? gap * (children.length - 1) : 0.0;
+    final int netAvailable = hasWidthConstraint
+        ? max(0, (effectiveMaxW - totalGaps).round())
+        : _unconstrained;
+
     int flexibleSpacerCount = 0;
+    bool hasFlexChild = false;
+    int sumChildWidths = 0;
     int maxChildHeight = 0;
 
-    for (final child in children) {
-      if (child.height > maxChildHeight) {
-        maxChildHeight = child.height;
-      }
+    for (int i = 0; i < children.length; i++) {
+      final child = children[i];
+      final int gapsBefore = i > 0 ? (i * gap).round() : 0;
+      final int remainingForChild = hasWidthConstraint
+          ? max(0, effectiveMaxW - sumChildWidths - gapsBefore)
+          : _unconstrained;
 
       if (child is Spacer) {
         if (child.size != null) {
           final sz = child.size!.round();
-          sumChildWidths += sz;
-          child.width = sz;
+          child.width = hasWidthConstraint ? min(sz, remainingForChild) : sz;
+          sumChildWidths += child.width;
         } else {
           flexibleSpacerCount++;
         }
-      } else if (child.isFlexWidth) {
-        flexibleSpacerCount++;
       } else {
+        if (child.isFlexWidth) {
+          hasFlexChild = true;
+        }
+
+        final wRule = child is ControlNode ? child.currentLayout.width : null;
+        final bool isPercentage =
+            wRule != null && wRule > 0.0 && wRule <= 1.0;
+
+        final int childMaxW;
+        if (hasWidthConstraint) {
+          if (isPercentage) {
+            childMaxW = netAvailable;
+          } else {
+            childMaxW = remainingForChild;
+          }
+        } else {
+          childMaxW = isPercentage ? child.width : _unconstrained;
+        }
+
+        child.onResize(
+          childMaxW,
+          effectiveMaxH,
+        );
+
+        if (hasWidthConstraint) {
+          child.width = min(child.width, remainingForChild);
+        }
+
         sumChildWidths += child.width;
+      }
+
+      if (child.height > maxChildHeight) {
+        maxChildHeight = child.height;
       }
     }
 
-    final gapTotal =
-        children.length > 1 ? ((children.length - 1) * gap).round() : 0;
-    int rigidSum = sumChildWidths + gapTotal;
-
+    final gapTotal = totalGaps.round();
+    final rigidSum = sumChildWidths + gapTotal;
     _contentWidth = rigidSum;
 
-    // Eje Transversal (Height): shrink-wrap a la altura del hijo más alto si no se asignó previamente
-    if (height == 0) {
-      height = maxChildHeight;
-    }
+    final bool shouldExpandMain =
+        flexibleSpacerCount > 0 || hasFlexChild || mainAlign != MainAlign.start;
 
-    // Eje Principal (Width): si width no ha sido asignado por el padre, shrink-wrap a rigidSum
-    if (width == 0) {
-      width = rigidSum;
-    }
-
-    final availableHeight = height;
-
-    // Paso 2 (Los Resortes) & Paso 3 (Repartición de Espacio en Eje Principal)
-    double currentX = (x - scrollOffset).toDouble();
-    double currentGap = gap;
+    width = shouldExpandMain && hasWidthConstraint
+        ? effectiveMaxW
+        : (hasWidthConstraint ? min(rigidSum, effectiveMaxW) : rigidSum);
+    height = hasHeightConstraint ? min(maxChildHeight, effectiveMaxH) : maxChildHeight;
 
     if (flexibleSpacerCount > 0) {
       final remainingSpace = width - rigidSum;
@@ -127,25 +181,30 @@ class Row extends StructureNode {
           ? (remainingSpace / flexibleSpacerCount).floor()
           : 0;
       for (final child in children) {
-        if ((child is Spacer && child.size == null) || child.isFlexWidth) {
+        if (child is Spacer && child.size == null) {
           child.width = spacerWidth;
         }
       }
-    } else {
+    }
+
+    double currentX = x.toDouble();
+    double currentGap = gap;
+
+    if (flexibleSpacerCount == 0) {
       final freeSpace =
           (width > rigidSum) ? (width - rigidSum).toDouble() : 0.0;
       switch (mainAlign) {
         case MainAlign.start:
-          currentX = (x - scrollOffset).toDouble();
+          currentX = x.toDouble();
           break;
         case MainAlign.center:
-          currentX = (x - scrollOffset) + (freeSpace / 2);
+          currentX = x + (freeSpace / 2);
           break;
         case MainAlign.end:
-          currentX = (x - scrollOffset) + freeSpace;
+          currentX = x + freeSpace;
           break;
         case MainAlign.spaceBetween:
-          currentX = (x - scrollOffset).toDouble();
+          currentX = x.toDouble();
           if (children.length > 1) {
             currentGap = gap + (freeSpace / (children.length - 1));
           }
@@ -153,7 +212,7 @@ class Row extends StructureNode {
         case MainAlign.spaceAround:
           if (children.isNotEmpty) {
             final spacePerItem = freeSpace / children.length;
-            currentX = (x - scrollOffset) + (spacePerItem / 2);
+            currentX = x + (spacePerItem / 2);
             currentGap = gap + spacePerItem;
           }
           break;
@@ -166,26 +225,23 @@ class Row extends StructureNode {
       switch (crossAlign) {
         case CrossAlign.stretch:
           child.y = y;
-          if (availableHeight > 0) child.height = availableHeight;
+          if (child is! StructureNode) {
+            child.height = height;
+          }
           break;
         case CrossAlign.start:
           child.y = y;
           break;
         case CrossAlign.center:
-          final spaceY = availableHeight > child.height
-              ? availableHeight - child.height
-              : 0;
+          final spaceY = height > child.height ? height - child.height : 0;
           child.y = y + (spaceY ~/ 2);
           break;
         case CrossAlign.end:
-          final spaceY = availableHeight > child.height
-              ? availableHeight - child.height
-              : 0;
+          final spaceY = height > child.height ? height - child.height : 0;
           child.y = y + spaceY;
           break;
       }
 
-      child.onResize(child.width, child.height);
       currentX += child.width + currentGap;
     }
   }
@@ -193,17 +249,20 @@ class Row extends StructureNode {
   double get _maxScroll =>
       _contentWidth > width ? (_contentWidth - width).toDouble() : 0.0;
 
+  bool get _isScrollActive => scroll != false && _contentWidth > width;
+
   void _handleScroll(InputEngine input) {
-    if (overflow != Overflow.scroll && overflow != Overflow.auto) return;
+    if (!_isScrollActive) return;
     final maxScroll = _maxScroll;
     if (maxScroll <= 0 || width <= 0) return;
 
+    final effectiveOffset = controller?.offset ?? scrollOffset;
     final scrollbarWidth = ((width / _contentWidth) * width).toInt().clamp(
           20,
           width,
         );
     final scrollbarX =
-        x + ((scrollOffset / maxScroll) * (width - scrollbarWidth)).toInt();
+        x + ((effectiveOffset / maxScroll) * (width - scrollbarWidth)).toInt();
     final scrollbarHitY = y + height - 14;
     final trackSpace = (width - scrollbarWidth).toDouble();
 
@@ -214,7 +273,7 @@ class Row extends StructureNode {
           _isHoveringScrollbar) {
         _isDraggingScrollbar = true;
         _dragStartX = input.mouseX;
-        _dragStartOffset = scrollOffset;
+        _dragStartOffset = effectiveOffset;
       }
     }
 
@@ -247,12 +306,13 @@ class Row extends StructureNode {
     final maxScroll = _maxScroll;
     if (maxScroll <= 0) return;
 
+    final effectiveOffset = controller?.offset ?? scrollOffset;
     final scrollbarWidth = ((width / _contentWidth) * width).toInt().clamp(
           20,
           width,
         );
     final scrollbarX =
-        x + ((scrollOffset / maxScroll) * (width - scrollbarWidth)).toInt();
+        x + ((effectiveOffset / maxScroll) * (width - scrollbarWidth)).toInt();
     final isHighlighted = _isDraggingScrollbar || _isHoveringScrollbar;
     final barHeight = isHighlighted ? 6 : 4;
     final color = isHighlighted
@@ -283,24 +343,35 @@ class Row extends StructureNode {
     if (!isVisible) return;
     _performLayout();
 
-    final useClip = overflow == Overflow.hidden ||
-        overflow == Overflow.scroll ||
-        (overflow == Overflow.auto && _contentWidth > width);
+    final isScrollActive = _isScrollActive;
 
-    if (useClip && width > 0 && height > 0) {
+    // 1. Guillotina: Aplica clipRect limitando exactamente al tamaño físico impuesto por el padre.
+    if (isScrollActive && width > 0 && height > 0) {
       ctx2d.beginScissor(x, y, width, height);
     }
 
+    // 2. Traslación: Extrae el offset del scroll_control (interno o expuesto) y aplica translate(-offset, 0).
+    final effectiveOffset = controller?.offset ?? scrollOffset;
+    if (isScrollActive && effectiveOffset != 0.0) {
+      ctx2d.translate(-effectiveOffset, 0.0);
+    }
+
+    // 3. Contenido: Ejecuta el ciclo paint sobre los nodos hijos.
     for (final child in children) {
       if (child.isVisible) child.onRender(ctx2d, ctx3d);
     }
 
-    if (useClip && width > 0 && height > 0) {
-      if (overflow == Overflow.scroll ||
-          (overflow == Overflow.auto && _contentWidth > width)) {
-        _renderScrollbar(ctx2d);
-      }
+    // 4. Restauración: Limpia la matriz del canvas para anular el recorte y la traslación.
+    if (isScrollActive && effectiveOffset != 0.0) {
+      ctx2d.resetTransform();
+    }
+    if (isScrollActive && width > 0 && height > 0) {
       ctx2d.endScissor();
+    }
+
+    // 5. Scrollbar: Invoca la rutina de dibujado de la barra de desplazamiento estáticamente sobre el límite físico.
+    if (isScrollActive) {
+      _renderScrollbar(ctx2d);
     }
   }
 
@@ -314,8 +385,9 @@ class Row extends StructureNode {
   }
 
   @override
-  void onResize(int allocatedWidth, int allocatedHeight) {
-    super.onResize(allocatedWidth, allocatedHeight);
+  void onResize(int maxWidth, int maxHeight) {
+    _maxWidthConstraint = maxWidth;
+    _maxHeightConstraint = maxHeight;
     _performLayout();
   }
 }

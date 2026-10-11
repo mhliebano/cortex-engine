@@ -35,4 +35,14 @@ void initAppStyles() {
     'image-class',
     const Style(borderColor: ColorRGBA(0, 0, 255), borderRadius: 20),
   );
+  Style.register(
+    'container-class',
+    const Style(
+      borderColor: ColorRGBA(0, 255, 0, 255),
+      bgColor: ColorRGBA(0, 255, 255, 255),
+      borderRadius: 20,
+      padding: EdgeInsets.all(10),
+      width: 250,
+    ),
+  );
 }

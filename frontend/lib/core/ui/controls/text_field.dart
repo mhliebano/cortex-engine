@@ -8,12 +8,14 @@ import 'package:frontend/core/ui/text_editing_controller.dart';
 /// Componente interactivo de Entrada de Texto (`TextField`) bajo la arquitectura `ControlNode`.
 ///
 /// Soporta:
-/// - Edición de texto con cursor parpadeante, navegación por flechas (Home/End) y borrado (Backspace/Delete con auto-repeat).
+/// - Edición de texto monolínea y multilínea (TextArea) con auto wrap y scroll vertical.
+/// - Edición con cursor parpadeante, navegación por flechas (Home/End) y borrado (Backspace/Delete con auto-repeat).
 /// - Foco global exclusivo (`_activeFocusedTextField`).
 /// - Modo contraseña (`obscureText`), botón de limpiado rápido (`clearable`) e íconos decorativos.
-/// - Estilizado dinámico mediante clases CSS (`className` / `currentStyle`).
+/// - Estilizado dinámico mediante clases CSS (`styleClass` / `layoutClass`).
 class TextField extends ControlNode {
   final TextEditingController controller;
+  final bool isMultiline;
   String placeholder;
   bool clearable;
   bool obscureText;
@@ -26,6 +28,7 @@ class TextField extends ControlNode {
   double _cursorTimer = 0.0;
   bool _showCursor = true;
   bool _isPasswordVisible = false;
+  double _scrollOffsetY = 0.0;
 
   // Temporizadores para autorrepetición de borrado/navegación con teclado
   double _backspaceHoldTime = 0.0;
@@ -36,10 +39,12 @@ class TextField extends ControlNode {
   TextField({
     super.key,
     super.isVisible,
-    super.className,
+    super.styleClass,
+    super.layoutClass,
     super.isEnabled = true,
     String text = '',
     TextEditingController? controller,
+    this.isMultiline = false,
     this.placeholder = 'Ingresar valor...',
     bool isFocused = false,
     this.clearable = false,
@@ -48,12 +53,8 @@ class TextField extends ControlNode {
     this.suffixIcon,
     this.onChanged,
     this.onSubmitted,
-    int width = 0,
-    int height = 0,
   }) : controller = controller ?? TextEditingController(text: text) {
     _cursorIndex = this.controller.text.length;
-    this.width = width;
-    this.height = height;
     _updateDimensions();
 
     if (isFocused) {
@@ -106,18 +107,61 @@ class TextField extends ControlNode {
     }
   }
 
+  @override
+  void onResize(int maxWidth, int maxHeight) {
+    final layout = currentLayout;
+    int requestedWidth;
+    final wRule = layout.width;
+    if (wRule != null) {
+      if (wRule == double.infinity) {
+        requestedWidth = maxWidth;
+      } else if (wRule > 0.0 && wRule <= 1.0) {
+        requestedWidth = (maxWidth * wRule).round();
+      } else if (wRule.isFinite) {
+        requestedWidth = wRule.round();
+      } else {
+        requestedWidth = 220;
+      }
+    } else {
+      requestedWidth = 220;
+    }
+
+    final defaultHeight = isMultiline ? 100 : 34;
+    int requestedHeight;
+    final hRule = layout.height;
+    if (hRule != null) {
+      if (hRule == double.infinity) {
+        requestedHeight = maxHeight;
+      } else if (hRule > 0.0 && hRule <= 1.0) {
+        requestedHeight = (maxHeight * hRule).round();
+      } else if (hRule.isFinite) {
+        requestedHeight = hRule.round();
+      } else {
+        requestedHeight = defaultHeight;
+      }
+    } else {
+      requestedHeight = defaultHeight;
+    }
+
+    width = (maxWidth > 0 && requestedWidth > maxWidth) ? maxWidth : requestedWidth;
+    height = (maxHeight > 0 && requestedHeight > maxHeight) ? maxHeight : requestedHeight;
+  }
+
   void _updateDimensions() {
-    final style = currentStyle;
-    if (style.width != null) {
-      width = style.width!;
-    } else if (width <= 0) {
+    final layout = currentLayout;
+    final wRule = layout.width;
+    if (wRule != null && wRule.isFinite && wRule > 1.0) {
+      width = wRule.round();
+    } else if (!isFlexWidth && width <= 0) {
       width = 220;
     }
 
-    if (style.height != null) {
-      height = style.height!;
-    } else if (height <= 0) {
-      height = 34;
+    final defaultHeight = isMultiline ? 100 : 34;
+    final hRule = layout.height;
+    if (hRule != null && hRule.isFinite && hRule > 1.0) {
+      height = hRule.round();
+    } else if (!isFlexHeight && height <= 0) {
+      height = defaultHeight;
     }
   }
 
@@ -198,9 +242,19 @@ class TextField extends ControlNode {
       if (_cursorIndex < 0) _cursorIndex = 0;
       if (_cursorIndex > currentText.length) _cursorIndex = currentText.length;
 
-      // 3. Confirmación con Enter (Key 257)
+      // 3. Intercepción de Tecla Enter (Key 257)
       if (input.isKeyPressed(257)) {
-        onSubmitted?.call(currentText);
+        if (!isMultiline) {
+          onSubmitted?.call(currentText);
+        } else {
+          controller.text =
+              '${currentText.substring(0, _cursorIndex)}\n${currentText.substring(_cursorIndex)}';
+          _cursorIndex += 1;
+          currentText = controller.text;
+          textChanged = true;
+          _showCursor = true;
+          _cursorTimer = 0.0;
+        }
       }
 
       // 4. Navegación por Teclas de Dirección (Flecha Izq=263, Flecha Der=262, Home=268, End=269)
@@ -312,6 +366,105 @@ class TextField extends ControlNode {
     }
   }
 
+  /// Divide el texto en párrafos y corta matemáticamente las líneas si superan [maxWidth].
+  List<String> _getWrappedLines(String text, int maxWidth, double charWidth) {
+    if (text.isEmpty) return [''];
+    final rawLines = text.split('\n');
+    if (maxWidth <= 0 || charWidth <= 0) return rawLines;
+
+    final maxCharsPerLine = (maxWidth / charWidth).floor();
+    if (maxCharsPerLine <= 0) return rawLines;
+
+    final List<String> wrapped = [];
+    for (final rawLine in rawLines) {
+      if (rawLine.isEmpty) {
+        wrapped.add('');
+        continue;
+      }
+      int start = 0;
+      while (start < rawLine.length) {
+        int end = start + maxCharsPerLine;
+        if (end > rawLine.length) {
+          end = rawLine.length;
+        }
+        wrapped.add(rawLine.substring(start, end));
+        start = end;
+      }
+    }
+    return wrapped;
+  }
+
+  /// Calcula la fila y columna (caracteres) en el espacio 2D envuelto para el [cursorIndex].
+  (int row, int col) _getCursor2DPosition(
+    String text,
+    int cursorIndex,
+    int maxWidth,
+    double charWidth,
+  ) {
+    final safeCursor = cursorIndex.clamp(0, text.length);
+    final rawLines = text.split('\n');
+    final maxCharsPerLine = (maxWidth > 0 && charWidth > 0)
+        ? (maxWidth / charWidth).floor()
+        : 0;
+
+    int currentPos = 0;
+    int currentRow = 0;
+
+    for (int p = 0; p < rawLines.length; p++) {
+      final rawLine = rawLines[p];
+      final isLastParagraph = (p == rawLines.length - 1);
+
+      if (rawLine.isEmpty) {
+        if (safeCursor == currentPos) {
+          return (currentRow, 0);
+        }
+        currentPos += 1;
+        currentRow += 1;
+        continue;
+      }
+
+      if (maxCharsPerLine <= 0 || rawLine.length <= maxCharsPerLine) {
+        final lineLen = rawLine.length;
+        if (safeCursor >= currentPos && safeCursor <= currentPos + lineLen) {
+          return (currentRow, safeCursor - currentPos);
+        }
+        currentPos += lineLen;
+        if (!isLastParagraph) {
+          if (safeCursor == currentPos) {
+            return (currentRow, lineLen);
+          }
+          currentPos += 1;
+        }
+        currentRow += 1;
+      } else {
+        int start = 0;
+        while (start < rawLine.length) {
+          int end = start + maxCharsPerLine;
+          if (end > rawLine.length) {
+            end = rawLine.length;
+          }
+          final chunkLen = end - start;
+          final isLastChunkOfParagraph = (end == rawLine.length);
+
+          if (safeCursor >= currentPos && safeCursor <= currentPos + chunkLen) {
+            return (currentRow, safeCursor - currentPos);
+          }
+          currentPos += chunkLen;
+          if (isLastChunkOfParagraph && !isLastParagraph) {
+            if (safeCursor == currentPos) {
+              return (currentRow, chunkLen);
+            }
+            currentPos += 1;
+          }
+          currentRow += 1;
+          start = end;
+        }
+      }
+    }
+
+    return (currentRow > 0 ? currentRow - 1 : 0, 0);
+  }
+
   @override
   void onRender(Context2D ctx2d, Context3D ctx3d) {
     if (!isVisible) return;
@@ -329,8 +482,8 @@ class TextField extends ControlNode {
     final borderColor = isFocused
         ? (style.accentColor ?? ColorRGBA.accentBlue)
         : (isHovered
-            ? (style.borderColor ?? const ColorRGBA(90, 110, 135))
-            : (style.borderColor ?? const ColorRGBA(60, 70, 85)));
+              ? (style.borderColor ?? const ColorRGBA(90, 110, 135))
+              : (style.borderColor ?? const ColorRGBA(60, 70, 85)));
 
     // 1. Dibujar contenedor del campo
     if (borderRadius > 0) {
@@ -344,17 +497,26 @@ class TextField extends ControlNode {
         color: borderColor,
       );
     } else {
-      ctx2d.drawPanel(x, y, width, height, bgColor: fillBg, borderColor: borderColor);
+      ctx2d.drawPanel(
+        x,
+        y,
+        width,
+        height,
+        bgColor: fillBg,
+        borderColor: borderColor,
+      );
     }
 
     // 2. Calcular padding interior
     int leftPadding = 12;
+    final iconY = isMultiline ? y + 8 : y + (height ~/ 4);
+
     if (prefixIcon != null && prefixIcon!.isNotEmpty) {
       leftPadding = 34;
       ctx2d.drawText(
         prefixIcon!,
         x + 10,
-        y + (height ~/ 4),
+        iconY,
         16,
         const ColorRGBA(140, 155, 175),
       );
@@ -372,77 +534,153 @@ class TextField extends ControlNode {
         ? '•' * rawText.length
         : rawText;
 
-    final textY = y + (height ~/ 4);
+    final textY = isMultiline ? y + 8 : y + (height ~/ 4);
     final textAreaWidth = width - leftPadding - rightPadding;
+    final textAreaHeight = isMultiline ? height - 16 : height;
 
-    if (textAreaWidth > 0) {
-      ctx2d.beginScissor(x + leftPadding, y, textAreaWidth, height);
+    if (textAreaWidth > 0 && textAreaHeight > 0) {
+      ctx2d.beginScissor(
+        x + leftPadding,
+        isMultiline ? y + 8 : y,
+        textAreaWidth,
+        textAreaHeight,
+      );
 
-      final safeCursor = _cursorIndex.clamp(0, displayText.length);
-      final textBeforeCursor = displayText.substring(0, safeCursor);
-      final cursorXOffset = (textBeforeCursor.length * (fontSize * 0.55))
-          .toInt();
+      final charWidth = fontSize * 0.55;
+      final lineHeight = (fontSize * 1.5).round();
 
-      int scrollOffsetX = 0;
-      if (cursorXOffset > textAreaWidth - 14) {
-        scrollOffsetX = cursorXOffset - (textAreaWidth - 14);
-      }
-
-      final renderTextX = x + leftPadding - scrollOffsetX;
-
-      // 3. Renderizar Texto / Placeholder y Cursor Parpadeante dentro de los límites
-      if (rawText.isEmpty) {
-        ctx2d.drawText(
-          placeholder,
-          renderTextX,
-          textY,
-          fontSize,
-          const ColorRGBA(100, 115, 130),
+      if (isMultiline) {
+        final lines = _getWrappedLines(displayText, textAreaWidth, charWidth);
+        final (cursorRow, cursorCol) = _getCursor2DPosition(
+          displayText,
+          _cursorIndex,
+          textAreaWidth,
+          charWidth,
         );
 
-        if (isFocused && _showCursor) {
-          ctx2d.drawText(
-            '|',
-            renderTextX - 2,
-            textY,
-            fontSize,
-            ColorRGBA.accentBlue,
-          );
+        // Actualizar _scrollOffsetY dinámicamente si el cursor supera los límites visibles
+        final cursorRelY = cursorRow * lineHeight;
+        if (cursorRelY + lineHeight > _scrollOffsetY + textAreaHeight) {
+          _scrollOffsetY =
+              (cursorRelY + lineHeight - textAreaHeight).toDouble();
+        } else if (cursorRelY < _scrollOffsetY) {
+          _scrollOffsetY = cursorRelY.toDouble();
         }
-      } else {
+        if (_scrollOffsetY < 0.0) _scrollOffsetY = 0.0;
+
         final textColorToUse = isEnabled
             ? textColor
             : const ColorRGBA(110, 120, 135);
-        ctx2d.drawText(
-          displayText,
-          renderTextX,
-          textY,
-          fontSize,
-          textColorToUse,
-        );
 
-        if (isFocused && _showCursor) {
-          final cursorX = renderTextX + cursorXOffset;
+        if (rawText.isEmpty) {
           ctx2d.drawText(
-            '|',
-            cursorX - 2,
+            placeholder,
+            x + leftPadding,
+            textY - _scrollOffsetY.toInt(),
+            fontSize,
+            const ColorRGBA(100, 115, 130),
+          );
+
+          if (isFocused && _showCursor) {
+            ctx2d.drawText(
+              '|',
+              x + leftPadding - 2,
+              textY - _scrollOffsetY.toInt(),
+              fontSize,
+              ColorRGBA.accentBlue,
+            );
+          }
+        } else {
+          for (int i = 0; i < lines.length; i++) {
+            final lineY = textY + (i * lineHeight) - _scrollOffsetY.toInt();
+            ctx2d.drawText(
+              lines[i],
+              x + leftPadding,
+              lineY,
+              fontSize,
+              textColorToUse,
+            );
+          }
+
+          if (isFocused && _showCursor) {
+            final cursorX = x + leftPadding + (cursorCol * charWidth).toInt();
+            final cursorY =
+                textY + (cursorRow * lineHeight) - _scrollOffsetY.toInt();
+            ctx2d.drawText(
+              '|',
+              cursorX - 2,
+              cursorY,
+              fontSize,
+              ColorRGBA.accentBlue,
+            );
+          }
+        }
+      } else {
+        // Modo monolínea
+        final safeCursor = _cursorIndex.clamp(0, displayText.length);
+        final textBeforeCursor = displayText.substring(0, safeCursor);
+        final cursorXOffset = (textBeforeCursor.length * charWidth).toInt();
+
+        int scrollOffsetX = 0;
+        if (cursorXOffset > textAreaWidth - 14) {
+          scrollOffsetX = cursorXOffset - (textAreaWidth - 14);
+        }
+
+        final renderTextX = x + leftPadding - scrollOffsetX;
+
+        if (rawText.isEmpty) {
+          ctx2d.drawText(
+            placeholder,
+            renderTextX,
             textY,
             fontSize,
-            ColorRGBA.accentBlue,
+            const ColorRGBA(100, 115, 130),
           );
+
+          if (isFocused && _showCursor) {
+            ctx2d.drawText(
+              '|',
+              renderTextX - 2,
+              textY,
+              fontSize,
+              ColorRGBA.accentBlue,
+            );
+          }
+        } else {
+          final textColorToUse = isEnabled
+              ? textColor
+              : const ColorRGBA(110, 120, 135);
+          ctx2d.drawText(
+            displayText,
+            renderTextX,
+            textY,
+            fontSize,
+            textColorToUse,
+          );
+
+          if (isFocused && _showCursor) {
+            final cursorX = renderTextX + cursorXOffset;
+            ctx2d.drawText(
+              '|',
+              cursorX - 2,
+              textY,
+              fontSize,
+              ColorRGBA.accentBlue,
+            );
+          }
         }
       }
 
       ctx2d.endScissor();
     }
 
-    // 4. Renderizar ícono de acción derecho (Botón Limpiar 'X' o Alternar Contraseña Eye)
+    // 3. Renderizar ícono de acción derecho (Botón Limpiar 'X' o Alternar Contraseña Eye)
     final rightIconX = x + width - rightPadding + 4;
     if (clearable && rawText.isNotEmpty) {
       ctx2d.drawText(
         Icons.close.glyph,
         rightIconX,
-        y + (height ~/ 4),
+        iconY,
         16,
         const ColorRGBA(160, 175, 195),
       );
@@ -453,7 +691,7 @@ class TextField extends ControlNode {
       ctx2d.drawText(
         eyeIcon,
         rightIconX,
-        y + (height ~/ 4),
+        iconY,
         16,
         const ColorRGBA(160, 175, 195),
       );
@@ -461,7 +699,7 @@ class TextField extends ControlNode {
       ctx2d.drawText(
         suffixIcon!,
         rightIconX,
-        y + (height ~/ 4),
+        iconY,
         16,
         const ColorRGBA(140, 155, 175),
       );
@@ -475,6 +713,7 @@ class TextField extends ControlNode {
       'isFocused': isFocused,
       'cursorIndex': _cursorIndex,
       'isPasswordVisible': _isPasswordVisible,
+      'scrollOffsetY': _scrollOffsetY,
       'backspaceHoldTime': _backspaceHoldTime,
       'backspaceRepeatTimer': _backspaceRepeatTimer,
       'deleteHoldTime': _deleteHoldTime,
@@ -506,6 +745,9 @@ class TextField extends ControlNode {
     }
     if (state.containsKey('isPasswordVisible')) {
       _isPasswordVisible = state['isPasswordVisible'] as bool;
+    }
+    if (state.containsKey('scrollOffsetY')) {
+      _scrollOffsetY = (state['scrollOffsetY'] as num).toDouble();
     }
     if (state.containsKey('backspaceHoldTime')) {
       _backspaceHoldTime = (state['backspaceHoldTime'] as num).toDouble();
