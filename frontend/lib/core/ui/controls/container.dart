@@ -94,12 +94,28 @@ class Container extends ControlNode {
 
     if (c == null) return;
 
-    c.x = x + pad.left.round();
-    c.y = y + pad.top.round();
-    c.onResize(
-      _inner(width, pad.left, pad.right),
-      _inner(height, pad.top, pad.bottom),
-    );
+    final anchoInterno = _inner(width, pad.left, pad.right);
+    final altoInterno = _inner(height, pad.top, pad.bottom);
+
+    c.onResize(anchoInterno, altoInterno);
+
+    final (childX, childY) = _computeChildPosition(c, pad, anchoInterno, altoInterno);
+    c.x = childX;
+    c.y = childY;
+  }
+
+  (int, int) _computeChildPosition(
+    CortexNode c,
+    EdgeInsets pad,
+    int anchoInterno,
+    int altoInterno,
+  ) {
+    final align = currentLayout.align;
+    final fx = align?.fx ?? 0.0;
+    final fy = align?.fy ?? 0.0;
+    final childX = x + pad.left.round() + max<int>(0, ((anchoInterno - c.width) * fx).round());
+    final childY = y + pad.top.round() + max<int>(0, ((altoInterno - c.height) * fy).round());
+    return (childX, childY);
   }
 
   @override
@@ -119,16 +135,15 @@ class Container extends ControlNode {
     if (c == null) return;
 
     final pad = currentLayout.padding ?? const EdgeInsets.all(0.0);
-    final childX = x + pad.left.round();
-    final childY = y + pad.top.round();
+    final anchoInterno = _inner(width, pad.left, pad.right);
+    final altoInterno = _inner(height, pad.top, pad.bottom);
+
+    final (childX, childY) = _computeChildPosition(c, pad, anchoInterno, altoInterno);
 
     if (c.x != childX || c.y != childY) {
       c.x = childX;
       c.y = childY;
-      c.onResize(
-        _inner(width, pad.left, pad.right),
-        _inner(height, pad.top, pad.bottom),
-      );
+      c.onResize(anchoInterno, altoInterno);
     }
 
     if (c.isVisible) c.onUpdate(dt, input);

@@ -5,6 +5,7 @@ final dashboardLayoutRules = {
     padding: EdgeInsets.all(10),
     width: 0.25,
     height: double.infinity,
+    align: Alignment.center,
   ),
 };
 

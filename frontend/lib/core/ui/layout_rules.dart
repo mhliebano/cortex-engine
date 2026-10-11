@@ -1,4 +1,5 @@
 import 'package:frontend/core/ui/edge_insets.dart';
+import 'package:frontend/core/ui/layout_alignment.dart';
 
 /// Maneja estrictamente la matemática espacial, dimensiones y comportamiento de layout.
 class LayoutRules {
@@ -12,6 +13,7 @@ class LayoutRules {
   final EdgeInsets? margin;
   final int? spacing;
   final bool? scroll;
+  final Alignment2D? align;
 
   const LayoutRules({
     this.width,
@@ -24,6 +26,7 @@ class LayoutRules {
     this.margin,
     this.spacing,
     this.scroll,
+    this.align,
   });
 
   static final Map<String, LayoutRules> _registry = {};
@@ -55,6 +58,7 @@ class LayoutRules {
     EdgeInsets? marg;
     int? space;
     bool? scr;
+    Alignment2D? al;
 
     final names = classNames.split(' ');
     for (final rawName in names) {
@@ -72,6 +76,7 @@ class LayoutRules {
         if (l.margin != null) marg = l.margin;
         if (l.spacing != null) space = l.spacing;
         if (l.scroll != null) scr = l.scroll;
+        if (l.align != null) al = l.align;
       }
     }
 
@@ -86,6 +91,7 @@ class LayoutRules {
       margin: marg,
       spacing: space,
       scroll: scr,
+      align: al,
     );
   }
 }

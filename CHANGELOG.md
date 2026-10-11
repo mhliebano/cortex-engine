@@ -17,6 +17,12 @@
 
 ### Agregado
 
+- **Alineación Bidimensional 2D en `Container` y Regla `align` en `LayoutRules`**:
+  - Definición del enum `Alignment2D` (y su alias `Alignment`) en `layout_alignment.dart` con 9 posiciones espaciales (`topLeft`, `topCenter`, `topRight`, `centerLeft`, `center`, `centerRight`, `bottomLeft`, `bottomCenter`, `bottomRight`) y factores de interpolación normalizados `(fx, fy)`.
+  - Soporte para la propiedad declarativa `align` en `LayoutRules` (`lib/core/ui/layout_rules.dart`), integrando su propagación y combinación en `LayoutRules.merge`.
+  - Implementación del helper `_computeChildPosition` en `Container` (`lib/core/ui/controls/container.dart`), calculando `(x, y)` del hijo tras resolver su tamaño en `onResize` respetando padding y alineación 2D.
+  - Sincronización transparente en `onUpdate` para preservar `c.x` y `c.y` estables entre frames sin re-ejecutar `onResize` continuamente ni alterar el comportamiento por defecto cuando `align` es nulo.
+
 - **Expansión y Flexibilidad Automática en Nodos Estructurales (`Col` & `Row`)**:
   - `Col` y `Row` ahora consumen por defecto todo el espacio disponible asignado por el contenedor padre (`isFlexWidth` y propagación recursiva de geometría).
   - Activación automática de flexibilidad (`isFlexHeight` en `Col` e `isFlexWidth` en `Row`) para bloques vacíos de maqueta o cuando se configuran alineaciones activas (`mainAlign != MainAlign.start`), repartiendo el espacio equitativamente entre bloques de la maqueta.
