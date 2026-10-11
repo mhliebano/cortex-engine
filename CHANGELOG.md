@@ -4,6 +4,17 @@
 
 ## [UNRELEASED]
 
+### Corregido
+
+- **Abrazo en Eje Principal y Distribución Proporcional de Remanente (`Row` & `Col`)**:
+  - `Row` y `Col` abrazan estrictamente el tamaño acumulado de sus hijos y separadores (`rigidSum`) en su eje principal, evitando la expansión voraz que consumía todo el contenedor padre y empujaba a los elementos hermanos fuera de pantalla.
+  - La expansión al límite máximo recibido (`effectiveMaxW` / `effectiveMaxH`) ahora ocurre únicamente si existe un `Spacer` flexible (`size == null`), un hijo con `isFlexWidth` / `isFlexHeight`, o una alineación principal activa (`mainAlign != MainAlign.start`).
+  - Distribución del remanente en una sola pasada: cada hijo recibe en `onResize` el espacio no consumido por los hermanos precedentes (`max(0, límite - consumido - gaps)`).
+  - Distinción entre porcentaje y expansión libre (`double.infinity`): los hijos con porcentaje calculan su tamaño sobre la base total del padre (`límite - gaps`), mientras que `infinity` y dimensiones fijas consumen el remanente.
+  - Los hijos con porcentaje se limitan al remanente disponible (`child.width = min(child.width, remainingForChild)`), evitando el achicamiento en cadena y garantizando que las tarjetas mantengan anchos uniformes mientras la última se recorta si no cabe.
+  - Habilitada la alineación transversal (`CrossAlign.center` y `CrossAlign.end`) para nodos estructurales (`StructureNode`), permitiendo centrar filas/columnas anidadas dentro de sus padres.
+  - Corrección de la semántica de límite cero: se incorporó la constante interna `unconstrained = 1000000` para diferenciar "sin límite aún recibido" de "mi límite es 0", corrigiendo las comparaciones `> 0` en `ControlNode.updateDimensions`, `Container`, `Row` y `Col`.
+
 ### Agregado
 
 - **Expansión y Flexibilidad Automática en Nodos Estructurales (`Col` & `Row`)**:
