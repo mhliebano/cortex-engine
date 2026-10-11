@@ -90,7 +90,6 @@ class TestView extends FluidView {
         layout: PanelLayout.vertical,
         children: [
           Row(
-            overflow: Overflow.visible,
             children: [
               IconButton(
                 icon: Icons.save,
@@ -114,7 +113,6 @@ class TestView extends FluidView {
           ),
           Row(
             gap: 10,
-            overflow: Overflow.scroll,
             children: [
               TextField(
                 placeholder: "user",
