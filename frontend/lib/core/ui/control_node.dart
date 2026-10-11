@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:frontend/core/ui/cortex_node.dart';
 import 'package:frontend/core/ui/layout_rules.dart';
 import 'package:frontend/core/ui/style_rules.dart';
@@ -15,6 +16,8 @@ abstract class ControlNode extends CortexNode {
   ControlNode({
     super.key,
     super.isVisible,
+    super.localLayoutRules,
+    super.localStyleRules,
     this.styleClass,
     this.layoutClass,
     this.isEnabled = true,
@@ -64,6 +67,47 @@ abstract class ControlNode extends CortexNode {
     final h = currentLayout.height;
     if (h == null) return false;
     return h == double.infinity || (h > 0.0 && h <= 1.0);
+  }
+
+  static const int unconstrained = 1000000;
+
+  @override
+  void onResize(int maxWidth, int maxHeight) {
+    updateDimensions(maxWidth, maxHeight);
+  }
+
+  void updateDimensions(int maxWidth, int maxHeight) {
+    final effectiveMaxW = maxWidth == unconstrained ? unconstrained : max(0, maxWidth);
+    final effectiveMaxH = maxHeight == unconstrained ? unconstrained : max(0, maxHeight);
+
+    int requestedWidth = width;
+    int requestedHeight = height;
+
+    final layout = currentLayout;
+    final wRule = layout.width;
+    if (wRule != null) {
+      if (wRule == double.infinity) {
+        requestedWidth = effectiveMaxW;
+      } else if (wRule > 0.0 && wRule <= 1.0) {
+        requestedWidth = (effectiveMaxW * wRule).round();
+      } else if (wRule.isFinite) {
+        requestedWidth = wRule.round();
+      }
+    }
+
+    final hRule = layout.height;
+    if (hRule != null) {
+      if (hRule == double.infinity) {
+        requestedHeight = effectiveMaxH;
+      } else if (hRule > 0.0 && hRule <= 1.0) {
+        requestedHeight = (effectiveMaxH * hRule).round();
+      } else if (hRule.isFinite) {
+        requestedHeight = hRule.round();
+      }
+    }
+
+    width = (maxWidth == unconstrained) ? requestedWidth : min(requestedWidth, effectiveMaxW);
+    height = (maxHeight == unconstrained) ? requestedHeight : min(requestedHeight, effectiveMaxH);
   }
 
   void onMouseEnter() {

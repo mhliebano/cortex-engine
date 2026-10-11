@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:frontend/core/context2d.dart';
 import 'package:frontend/core/context3d.dart';
 import 'package:frontend/core/input.dart';
@@ -53,38 +54,43 @@ class Container extends ControlNode {
   }
 
   @override
-  void onResize(int allocatedWidth, int allocatedHeight) {
+  void onResize(int maxWidth, int maxHeight) {
     final layout = currentLayout;
     final pad = layout.padding ?? const EdgeInsets.all(0.0);
     final c = child;
 
+    int requestedWidth;
     final wRule = layout.width;
     if (wRule != null) {
       if (wRule == double.infinity) {
-        width = allocatedWidth;
+        requestedWidth = maxWidth;
       } else if (wRule > 0.0 && wRule <= 1.0) {
-        width = (allocatedWidth * wRule).round();
+        requestedWidth = (maxWidth * wRule).round();
       } else {
-        width = wRule.round();
+        requestedWidth = wRule.round();
       }
     } else {
-      final minW = ((c?.width ?? 0) + pad.left + pad.right).round();
-      width = allocatedWidth > 0 ? allocatedWidth : minW;
+      requestedWidth = ((c?.width ?? 0) + pad.left + pad.right).round();
     }
 
+    int requestedHeight;
     final hRule = layout.height;
     if (hRule != null) {
       if (hRule == double.infinity) {
-        height = allocatedHeight;
+        requestedHeight = maxHeight;
       } else if (hRule > 0.0 && hRule <= 1.0) {
-        height = (allocatedHeight * hRule).round();
+        requestedHeight = (maxHeight * hRule).round();
       } else {
-        height = hRule.round();
+        requestedHeight = hRule.round();
       }
     } else {
-      final minH = ((c?.height ?? 0) + pad.top + pad.bottom).round();
-      height = allocatedHeight > 0 ? allocatedHeight : minH;
+      requestedHeight = ((c?.height ?? 0) + pad.top + pad.bottom).round();
     }
+
+    final hasLimitW = maxWidth != ControlNode.unconstrained;
+    final hasLimitH = maxHeight != ControlNode.unconstrained;
+    width = (hasLimitW && requestedWidth > maxWidth) ? max(0, maxWidth) : requestedWidth;
+    height = (hasLimitH && requestedHeight > maxHeight) ? max(0, maxHeight) : requestedHeight;
 
     if (c == null) return;
 
