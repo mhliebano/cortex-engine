@@ -47,7 +47,7 @@ class Button extends ControlNode {
   }
 
   @override
-  void onResize(int allocatedWidth, int allocatedHeight) {
+  void onResize(int maxWidth, int maxHeight) {
     final layout = currentLayout;
     final style = currentStyle;
     final fontSize = style.fontSize ?? 14;
@@ -58,31 +58,40 @@ class Button extends ControlNode {
     final minW = (textWidth + padding.left + padding.right).round();
     final minH = (fontSize + padding.top + padding.bottom).round();
 
+    int requestedWidth;
     final wRule = layout.width;
     if (wRule != null) {
       if (wRule == double.infinity) {
-        width = allocatedWidth;
+        requestedWidth = maxWidth;
       } else if (wRule > 0.0 && wRule <= 1.0) {
-        width = (allocatedWidth * wRule).round();
+        requestedWidth = (maxWidth * wRule).round();
       } else if (wRule.isFinite) {
-        width = wRule.round();
+        requestedWidth = wRule.round();
+      } else {
+        requestedWidth = minW;
       }
     } else {
-      width = allocatedWidth > 0 ? allocatedWidth : minW;
+      requestedWidth = minW;
     }
 
+    int requestedHeight;
     final hRule = layout.height;
     if (hRule != null) {
       if (hRule == double.infinity) {
-        height = allocatedHeight;
+        requestedHeight = maxHeight;
       } else if (hRule > 0.0 && hRule <= 1.0) {
-        height = (allocatedHeight * hRule).round();
+        requestedHeight = (maxHeight * hRule).round();
       } else if (hRule.isFinite) {
-        height = hRule.round();
+        requestedHeight = hRule.round();
+      } else {
+        requestedHeight = minH;
       }
     } else {
-      height = allocatedHeight > 0 ? allocatedHeight : minH;
+      requestedHeight = minH;
     }
+
+    width = (maxWidth > 0 && requestedWidth > maxWidth) ? maxWidth : requestedWidth;
+    height = (maxHeight > 0 && requestedHeight > maxHeight) ? maxHeight : requestedHeight;
   }
 
   @override

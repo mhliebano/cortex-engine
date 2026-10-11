@@ -2,6 +2,8 @@ import 'package:frontend/core/context2d.dart';
 import 'package:frontend/core/context3d.dart';
 import 'package:frontend/core/input.dart';
 import 'package:frontend/core/utils.dart';
+import 'package:frontend/core/ui/layout_rules.dart';
+import 'package:frontend/core/ui/style_rules.dart';
 import 'package:frontend/core/ui/layouts/column.dart';
 import 'package:frontend/core/ui/layouts/panel.dart';
 import 'package:frontend/core/ui/layouts/row.dart';
@@ -13,6 +15,12 @@ abstract class CortexNode {
 
   /// Clave declarativa opcional para identificar el nodo entre reconstrucciones.
   final String? key;
+
+  /// Mapa opcional de reglas de layout declarativas locales al nodo.
+  final Map<String, LayoutRules>? localLayoutRules;
+
+  /// Mapa opcional de reglas de estilo declarativas locales al nodo.
+  final Map<String, StyleRules>? localStyleRules;
 
   int x;
   int y;
@@ -27,6 +35,8 @@ abstract class CortexNode {
     this.width = 0,
     this.height = 0,
     this.isVisible = true,
+    this.localLayoutRules,
+    this.localStyleRules,
   }) {
     if (isRenderingPhase) {
       throw StateError(
@@ -34,6 +44,40 @@ abstract class CortexNode {
         '👉 Los componentes UI NO deben crearse durante la fase de dibujado.\n'
         '👉 Decláralos en el método build() de la Vista o agrégalos durante init/onInit().',
       );
+    }
+  }
+
+  /// Registra los estilos y layouts locales en memoria antes de montar los hijos.
+  void onMount() {
+    if (localLayoutRules != null) {
+      for (final entry in localLayoutRules!.entries) {
+        LayoutRules.register(entry.key, entry.value);
+      }
+    }
+    if (localStyleRules != null) {
+      for (final entry in localStyleRules!.entries) {
+        StyleRules.register(entry.key, entry.value);
+      }
+    }
+    for (final child in childrenElements) {
+      child.onMount();
+    }
+  }
+
+  /// Desmonta los hijos y desregistra los estilos y layouts locales liberando memoria.
+  void onUnmount() {
+    for (final child in childrenElements) {
+      child.onUnmount();
+    }
+    if (localLayoutRules != null) {
+      for (final key in localLayoutRules!.keys) {
+        LayoutRules.unregister(key);
+      }
+    }
+    if (localStyleRules != null) {
+      for (final key in localStyleRules!.keys) {
+        StyleRules.unregister(key);
+      }
     }
   }
 
@@ -79,9 +123,9 @@ abstract class CortexNode {
     ctx2d.drawText(typeName, x + 4, y + 1, 10, borderColor);
   }
 
-  void onResize(int allocatedWidth, int allocatedHeight) {
-    width = allocatedWidth;
-    height = allocatedHeight;
+  void onResize(int maxWidth, int maxHeight) {
+    width = maxWidth;
+    height = maxHeight;
   }
 
   bool containsPoint(double px, double py) {

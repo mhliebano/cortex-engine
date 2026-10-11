@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:frontend/core/context2d.dart';
 import 'package:frontend/core/context3d.dart';
 import 'package:frontend/core/input.dart';
@@ -15,29 +16,27 @@ class Panel extends CortexNode {
   final double rawHeight;
   final EdgeInsets padding;
   final PanelLayout layout;
-  final List<StructureNode>? _explicitChildren;
   late final List<StructureNode> children;
 
   Panel({
     super.key,
+    super.localLayoutRules,
+    super.localStyleRules,
     required double width,
     required double height,
     this.padding = const EdgeInsets.all(0.0),
     this.layout = PanelLayout.stack,
     List<StructureNode>? children,
   })  : rawWidth = width,
-        rawHeight = height,
-        _explicitChildren = children {
+        rawHeight = height {
     this.width = resolveDimension(rawWidth, 0);
     this.height = resolveDimension(rawHeight, 0);
-    this.children = build();
+    this.children = children ?? build();
     _updateChildBounds();
   }
 
   /// Hook sobreescribible para declarar los nodos estructurales hijos del Panel.
-  List<StructureNode> build() {
-    return _explicitChildren ?? const [];
-  }
+  List<StructureNode> build() => [];
 
   /// Resuelve un valor dimensional numérico (`double`) al tamaño final en píxeles (`int`).
   static int resolveDimension(double spec, int parentTotal, [int? freeSpace]) {
@@ -70,30 +69,28 @@ class Panel extends CortexNode {
     final childX = x + padding.left.toInt();
     final childY = y + padding.top.toInt();
 
-    final availableWidth = width > (padding.left + padding.right)
-        ? (width - (padding.left + padding.right)).toInt()
-        : 0;
-    final availableHeight = height > (padding.top + padding.bottom)
-        ? (height - (padding.top + padding.bottom)).toInt()
-        : 0;
+    final availableWidth = max(
+      0,
+      width > (padding.left + padding.right)
+          ? (width - (padding.left + padding.right)).toInt()
+          : 0,
+    );
+    final availableHeight = max(
+      0,
+      height > (padding.top + padding.bottom)
+          ? (height - (padding.top + padding.bottom)).toInt()
+          : 0,
+    );
 
     if (layout == PanelLayout.stack) {
       for (final child in children) {
         child.x = childX;
         child.y = childY;
-
-        if (availableWidth > 0) child.width = availableWidth;
-        if (availableHeight > 0) child.height = availableHeight;
-
-        child.onResize(
-          availableWidth > 0 ? availableWidth : child.width,
-          availableHeight > 0 ? availableHeight : child.height,
-        );
+        child.onResize(availableWidth, availableHeight);
       }
     } else if (layout == PanelLayout.vertical) {
-      // Paso 1 (Lo Rígido)
       int rigidSum = 0;
-      int flexibleSpacerCount = 0;
+      int flexibleCount = 0;
       for (final child in children) {
         if (child is Spacer) {
           if (child.size != null) {
@@ -101,39 +98,43 @@ class Panel extends CortexNode {
             rigidSum += sz;
             child.height = sz;
           } else {
-            flexibleSpacerCount++;
+            flexibleCount++;
           }
         } else if (child.isFlexHeight) {
-          flexibleSpacerCount++;
+          flexibleCount++;
         } else {
           rigidSum += child.height;
         }
       }
 
-      // Paso 2 (Los Resortes) & Paso 3 (Repartición)
-      if (flexibleSpacerCount > 0) {
-        final remainingSpace = availableHeight - rigidSum;
-        final spacerHeight =
-            remainingSpace > 0 ? (remainingSpace / flexibleSpacerCount).floor() : 0;
-        for (final child in children) {
-          if ((child is Spacer && child.size == null) || child.isFlexHeight) {
-            child.height = spacerHeight;
-          }
-        }
+      if (flexibleCount == 0 && children.isNotEmpty) {
+        flexibleCount = children.length;
+        rigidSum = 0;
       }
+
+      final remainingSpace = availableHeight - rigidSum;
+      final childQuota = (flexibleCount > 0 && remainingSpace > 0)
+          ? (remainingSpace / flexibleCount).floor()
+          : 0;
 
       int currentY = childY;
       for (final child in children) {
         child.x = childX;
         child.y = currentY;
-        if (availableWidth > 0) child.width = availableWidth;
-        child.onResize(child.width, child.height);
+        if (child is Spacer) {
+          if (child.size == null) {
+            child.height = childQuota;
+          }
+          child.width = availableWidth;
+        } else {
+          final targetH = (child.isFlexHeight || rigidSum == 0) ? childQuota : child.height;
+          child.onResize(availableWidth, targetH);
+        }
         currentY += child.height;
       }
     } else if (layout == PanelLayout.horizontal) {
-      // Paso 1 (Lo Rígido)
       int rigidSum = 0;
-      int flexibleSpacerCount = 0;
+      int flexibleCount = 0;
       for (final child in children) {
         if (child is Spacer) {
           if (child.size != null) {
@@ -141,33 +142,38 @@ class Panel extends CortexNode {
             rigidSum += sz;
             child.width = sz;
           } else {
-            flexibleSpacerCount++;
+            flexibleCount++;
           }
         } else if (child.isFlexWidth) {
-          flexibleSpacerCount++;
+          flexibleCount++;
         } else {
           rigidSum += child.width;
         }
       }
 
-      // Paso 2 (Los Resortes) & Paso 3 (Repartición)
-      if (flexibleSpacerCount > 0) {
-        final remainingSpace = availableWidth - rigidSum;
-        final spacerWidth =
-            remainingSpace > 0 ? (remainingSpace / flexibleSpacerCount).floor() : 0;
-        for (final child in children) {
-          if ((child is Spacer && child.size == null) || child.isFlexWidth) {
-            child.width = spacerWidth;
-          }
-        }
+      if (flexibleCount == 0 && children.isNotEmpty) {
+        flexibleCount = children.length;
+        rigidSum = 0;
       }
+
+      final remainingSpace = availableWidth - rigidSum;
+      final childQuota = (flexibleCount > 0 && remainingSpace > 0)
+          ? (remainingSpace / flexibleCount).floor()
+          : 0;
 
       int currentX = childX;
       for (final child in children) {
         child.x = currentX;
         child.y = childY;
-        if (availableHeight > 0) child.height = availableHeight;
-        child.onResize(child.width, child.height);
+        if (child is Spacer) {
+          if (child.size == null) {
+            child.width = childQuota;
+          }
+          child.height = availableHeight;
+        } else {
+          final targetW = (child.isFlexWidth || rigidSum == 0) ? childQuota : child.width;
+          child.onResize(targetW, availableHeight);
+        }
         currentX += child.width;
       }
     }
@@ -208,9 +214,9 @@ class Panel extends CortexNode {
   }
 
   @override
-  void onResize(int allocatedWidth, int allocatedHeight) {
-    width = allocatedWidth;
-    height = allocatedHeight;
+  void onResize(int maxWidth, int maxHeight) {
+    width = maxWidth;
+    height = maxHeight;
     _updateChildBounds();
   }
 }

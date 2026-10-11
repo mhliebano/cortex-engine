@@ -95,9 +95,9 @@ class Badge extends ControlNode {
   }
 
   @override
-  void onResize(int allocatedWidth, int allocatedHeight) {
+  void onResize(int maxWidth, int maxHeight) {
     if (child != null) {
-      child!.onResize(allocatedWidth, allocatedHeight);
+      child!.onResize(maxWidth, maxHeight);
       width = child!.width;
       height = child!.height;
     } else {
@@ -124,27 +124,27 @@ class Badge extends ControlNode {
       final wRule = layout.width;
       if (wRule != null) {
         if (wRule == double.infinity) {
-          width = allocatedWidth;
+          width = maxWidth;
         } else if (wRule > 0.0 && wRule <= 1.0) {
-          width = (allocatedWidth * wRule).round();
+          width = (maxWidth * wRule).round();
         } else if (wRule.isFinite) {
           width = wRule.round();
         }
       } else {
-        width = allocatedWidth > 0 ? allocatedWidth : minW;
+        width = minW;
       }
 
       final hRule = layout.height;
       if (hRule != null) {
         if (hRule == double.infinity) {
-          height = allocatedHeight;
+          height = maxHeight;
         } else if (hRule > 0.0 && hRule <= 1.0) {
-          height = (allocatedHeight * hRule).round();
+          height = (maxHeight * hRule).round();
         } else if (hRule.isFinite) {
           height = hRule.round();
         }
       } else {
-        height = allocatedHeight > 0 ? allocatedHeight : minH;
+        height = minH;
       }
     }
   }

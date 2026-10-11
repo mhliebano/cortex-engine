@@ -23,7 +23,7 @@ class Icon extends ControlNode {
   }
 
   @override
-  void onResize(int allocatedWidth, int allocatedHeight) {
+  void onResize(int maxWidth, int maxHeight) {
     final style = currentStyle;
     final layout = currentLayout;
     final iconSize = style.fontSize ?? size;
@@ -31,27 +31,27 @@ class Icon extends ControlNode {
     final wRule = layout.width;
     if (wRule != null) {
       if (wRule == double.infinity) {
-        width = allocatedWidth;
+        width = maxWidth;
       } else if (wRule > 0.0 && wRule <= 1.0) {
-        width = (allocatedWidth * wRule).round();
+        width = (maxWidth * wRule).round();
       } else if (wRule.isFinite) {
         width = wRule.round();
       }
     } else {
-      width = allocatedWidth > 0 ? allocatedWidth : iconSize;
+      width = iconSize;
     }
 
     final hRule = layout.height;
     if (hRule != null) {
       if (hRule == double.infinity) {
-        height = allocatedHeight;
+        height = maxHeight;
       } else if (hRule > 0.0 && hRule <= 1.0) {
-        height = (allocatedHeight * hRule).round();
+        height = (maxHeight * hRule).round();
       } else if (hRule.isFinite) {
         height = hRule.round();
       }
     } else {
-      height = allocatedHeight > 0 ? allocatedHeight : iconSize;
+      height = iconSize;
     }
   }
 

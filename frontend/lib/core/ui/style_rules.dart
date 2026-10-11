@@ -31,6 +31,11 @@ class StyleRules {
     _registry[className] = style;
   }
 
+  /// Elimina una regla de estilo del registro global.
+  static void unregister(String className) {
+    _registry.remove(className);
+  }
+
   /// Obtiene una regla de estilo por su identificador.
   static StyleRules? get(String className) {
     return _registry[className];

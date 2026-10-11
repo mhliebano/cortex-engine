@@ -11,6 +11,7 @@ class LayoutRules {
   final EdgeInsets? padding;
   final EdgeInsets? margin;
   final int? spacing;
+  final bool? scroll;
 
   const LayoutRules({
     this.width,
@@ -22,6 +23,7 @@ class LayoutRules {
     this.padding,
     this.margin,
     this.spacing,
+    this.scroll,
   });
 
   static final Map<String, LayoutRules> _registry = {};
@@ -29,6 +31,11 @@ class LayoutRules {
   /// Registra una regla de layout en el registro global.
   static void register(String className, LayoutRules layout) {
     _registry[className] = layout;
+  }
+
+  /// Elimina una regla de layout del registro global.
+  static void unregister(String className) {
+    _registry.remove(className);
   }
 
   /// Obtiene una regla de layout por su identificador.
@@ -47,6 +54,7 @@ class LayoutRules {
     EdgeInsets? pad;
     EdgeInsets? marg;
     int? space;
+    bool? scr;
 
     final names = classNames.split(' ');
     for (final rawName in names) {
@@ -63,6 +71,7 @@ class LayoutRules {
         if (l.padding != null) pad = l.padding;
         if (l.margin != null) marg = l.margin;
         if (l.spacing != null) space = l.spacing;
+        if (l.scroll != null) scr = l.scroll;
       }
     }
 
@@ -76,6 +85,7 @@ class LayoutRules {
       padding: pad,
       margin: marg,
       spacing: space,
+      scroll: scr,
     );
   }
 }

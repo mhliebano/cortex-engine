@@ -20,11 +20,16 @@ abstract class _View {
   /// Panels ya posicionados y dimensionados por el Greedy (los reales).
   final List<Panel> _panels = [];
 
+  final Map<String, LayoutRules>? localLayoutRules;
+  final Map<String, StyleRules>? localStyleRules;
+
   _View({
     required this.id,
     this.isVisible = true,
     this.useScissorClipping = true,
     this.backgroundColor,
+    this.localLayoutRules,
+    this.localStyleRules,
   });
 
   int get x => 0;
@@ -252,7 +257,20 @@ abstract class _View {
 
   void init() {
     print("Inicializando la vista $id init()");
+    if (localLayoutRules != null) {
+      for (final entry in localLayoutRules!.entries) {
+        LayoutRules.register(entry.key, entry.value);
+      }
+    }
+    if (localStyleRules != null) {
+      for (final entry in localStyleRules!.entries) {
+        StyleRules.register(entry.key, entry.value);
+      }
+    }
     _ensureBuilt();
+    for (final panel in _panels) {
+      panel.onMount();
+    }
     onInit();
   }
 
@@ -327,6 +345,19 @@ abstract class _View {
   }
 
   void dispose() {
+    for (final panel in _panels) {
+      panel.onUnmount();
+    }
+    if (localLayoutRules != null) {
+      for (final key in localLayoutRules!.keys) {
+        LayoutRules.unregister(key);
+      }
+    }
+    if (localStyleRules != null) {
+      for (final key in localStyleRules!.keys) {
+        StyleRules.unregister(key);
+      }
+    }
     onDispose();
     _declared.clear();
     _panels.clear();
@@ -351,6 +382,8 @@ class FluidView extends _View {
     super.isVisible,
     super.useScissorClipping,
     super.backgroundColor,
+    super.localLayoutRules,
+    super.localStyleRules,
     List<Panel>? panels,
     List<Panel> Function()? builder,
     void Function()? onInit,

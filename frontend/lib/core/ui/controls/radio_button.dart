@@ -106,7 +106,7 @@ class RadioButton<T> extends ControlNode {
   }
 
   @override
-  void onResize(int allocatedWidth, int allocatedHeight) {
+  void onResize(int maxWidth, int maxHeight) {
     final style = currentStyle;
     final layout = currentLayout;
     final fontSize = style.fontSize ?? 14;
@@ -126,27 +126,27 @@ class RadioButton<T> extends ControlNode {
     final wRule = layout.width;
     if (wRule != null) {
       if (wRule == double.infinity) {
-        width = allocatedWidth;
+        width = maxWidth;
       } else if (wRule > 0.0 && wRule <= 1.0) {
-        width = (allocatedWidth * wRule).round();
+        width = (maxWidth * wRule).round();
       } else if (wRule.isFinite) {
         width = wRule.round();
       }
     } else {
-      width = allocatedWidth > 0 ? allocatedWidth : minW;
+      width = minW;
     }
 
     final hRule = layout.height;
     if (hRule != null) {
       if (hRule == double.infinity) {
-        height = allocatedHeight;
+        height = maxHeight;
       } else if (hRule > 0.0 && hRule <= 1.0) {
-        height = (allocatedHeight * hRule).round();
+        height = (maxHeight * hRule).round();
       } else if (hRule.isFinite) {
         height = hRule.round();
       }
     } else {
-      height = allocatedHeight > 0 ? allocatedHeight : minH;
+      height = minH;
     }
   }
 
@@ -346,8 +346,8 @@ class RadioGroup<T> extends ControlNode {
   }
 
   @override
-  void onResize(int allocatedWidth, int allocatedHeight) {
-    super.onResize(allocatedWidth, allocatedHeight);
+  void onResize(int maxWidth, int maxHeight) {
+    super.onResize(maxWidth, maxHeight);
     _bindOptions();
   }
 }
