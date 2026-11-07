@@ -14,6 +14,7 @@ class Graphics2D {
   late final G2dDrawCircleLines _drawCircleLines;
   late final G2dDrawArc _drawArc;
   late final G2dDrawArcLines _drawArcLines;
+  late final G2dDrawRing _drawRing;
   late final G2dLoadTexture _loadTexture;
   late final G2dDrawTexture _drawTexture;
   late final G2dGetTextureWidth _getTextureWidth;
@@ -67,6 +68,7 @@ class Graphics2D {
     _drawArcLines = dylib.lookupFunction<G2dDrawArcLinesC, G2dDrawArcLines>(
       'g2d_draw_arc_lines',
     );
+    _drawRing = dylib.lookupFunction<G2dDrawRingC, G2dDrawRing>('g2d_draw_ring');
     _loadTexture = dylib.lookupFunction<G2dLoadTextureC, G2dLoadTexture>(
       'g2d_load_texture',
     );
@@ -246,6 +248,34 @@ class Graphics2D {
       centerX,
       centerY,
       radius,
+      startAngle,
+      endAngle,
+      segments,
+      r,
+      g,
+      b,
+      a,
+    );
+  }
+
+  void drawRing(
+    int centerX,
+    int centerY,
+    double innerRadius,
+    double outerRadius,
+    double startAngle,
+    double endAngle,
+    int segments,
+    int r,
+    int g,
+    int b,
+    int a,
+  ) {
+    _drawRing(
+      centerX,
+      centerY,
+      innerRadius,
+      outerRadius,
       startAngle,
       endAngle,
       segments,

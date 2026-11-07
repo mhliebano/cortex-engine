@@ -1,7 +1,7 @@
 use raylib_sys::{
     Color, DrawCircle, DrawCircleLines, DrawCircleSector, DrawCircleSectorLines, DrawPoly,
     DrawPolyLinesEx, DrawRectangle, DrawRectangleLines, DrawRectangleRounded,
-    DrawRectangleRoundedLinesEx, DrawText, DrawTextEx, DrawTexturePro, DrawTriangle,
+    DrawRectangleRoundedLinesEx, DrawRing, DrawText, DrawTextEx, DrawTexturePro, DrawTriangle,
     DrawTriangleLines, Font, LoadFontEx, LoadTexture, MeasureText, MeasureTextEx, Rectangle,
     SetTextureFilter, Texture2D, UnloadFont, UnloadTexture, Vector2,
 };
@@ -297,6 +297,36 @@ pub extern "C" fn g2d_draw_arc(
         segments,
         Color { r, g, b, a },
     );
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn g2d_draw_ring(
+    center_x: c_int,
+    center_y: c_int,
+    inner_radius: c_float,
+    outer_radius: c_float,
+    start_angle: c_float,
+    end_angle: c_float,
+    segments: c_int,
+    r: c_uchar,
+    g: c_uchar,
+    b: c_uchar,
+    a: c_uchar,
+) {
+    unsafe {
+        DrawRing(
+            Vector2 {
+                x: center_x as f32,
+                y: center_y as f32,
+            },
+            inner_radius,
+            outer_radius,
+            start_angle,
+            end_angle,
+            segments,
+            Color { r, g, b, a },
+        );
+    }
 }
 
 #[unsafe(no_mangle)]

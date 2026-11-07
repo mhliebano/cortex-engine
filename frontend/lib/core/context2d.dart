@@ -294,6 +294,31 @@ class Context2D {
     );
   }
 
+  void drawRing(
+    int centerX,
+    int centerY,
+    double innerRadius,
+    double outerRadius,
+    double startAngle,
+    double endAngle, {
+    int segments = 36,
+    ColorRGBA color = ColorRGBA.white,
+  }) {
+    _g2d.drawRing(
+      _tx(centerX),
+      _ty(centerY),
+      _tr(innerRadius),
+      _tr(outerRadius),
+      startAngle,
+      endAngle,
+      segments,
+      color.r,
+      color.g,
+      color.b,
+      color.a,
+    );
+  }
+
   void drawArcLines(
     int centerX,
     int centerY,

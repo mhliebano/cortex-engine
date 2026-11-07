@@ -123,6 +123,36 @@ typedef G2dDrawArc =
       int a,
     );
 
+// Ring (Donut Sector)
+typedef G2dDrawRingC =
+    ffi.Void Function(
+      ffi.Int32 centerX,
+      ffi.Int32 centerY,
+      ffi.Float innerRadius,
+      ffi.Float outerRadius,
+      ffi.Float startAngle,
+      ffi.Float endAngle,
+      ffi.Int32 segments,
+      ffi.Uint8 r,
+      ffi.Uint8 g,
+      ffi.Uint8 b,
+      ffi.Uint8 a,
+    );
+typedef G2dDrawRing =
+    void Function(
+      int centerX,
+      int centerY,
+      double innerRadius,
+      double outerRadius,
+      double startAngle,
+      double endAngle,
+      int segments,
+      int r,
+      int g,
+      int b,
+      int a,
+    );
+
 // Arc Lines (Circle Sector Lines)
 typedef G2dDrawArcLinesC =
     ffi.Void Function(
