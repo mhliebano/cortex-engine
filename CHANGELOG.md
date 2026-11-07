@@ -17,6 +17,67 @@
 
 ### Agregado
 
+- **Modernización de `Viewport3D` a `ControlNode` y Soporte de Picking 3D**:
+  - Migración completa de `Viewport3D` a [viewport_3d.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/3d/viewport_3d.dart) heredando de `ControlNode` con soporte nativo de resolución de geometría Flex.
+  - Soporte integrado para cámara orbital interactiva (`enableControls` con `CameraMode.orbital`), rejilla de referencia en el suelo (`showGrid`) y ejes cartesianos (`showAxes`).
+  - Doble pase de renderizado optimizado: aceleración GPU 3D (`onRender3D`) y HUD 2D vectorial superpuesto (`onRender2D`).
+  - Detección precisa de cursor dentro del viewport para trazado de rayos (*Picking 3D*) y selección de piezas/mallas en tiempo real.
+
+- **Modo de Reposo Absoluto (*Idle Stop* a 0% CPU) en el Bucle Principal**:
+  - Implementación de aceleración y desaceleración energética multi-etapa en [application.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/application.dart).
+  - Detección exhaustiva de inactividad: mouse delta tracking (`mouseX`, `mouseY`), pulsaciones de botones de ratón, scroll wheel, pulsaciones de teclas (`getCharPressed`), foco en `TextField` y eventos de redimensión.
+  - Escalonamiento dinámico: 60 FPS activos ➔ 15 FPS tras 120 frames sin input ➔ Reposo profundo pasivo con cesión completa de CPU al sistema operativo (`Future.delayed(66ms)`) tras 240 frames (~5 s) de inactividad, alcanzando **0.0% de uso de CPU**.
+  - Reactivación instantánea a 60 FPS en el mismo cuadro ante cualquier interacción del usuario.
+
+- **Migración Integral del Catálogo Completo de Controles a `ControlNode` y Eliminación de `lib/core/ui/interaction/`**:
+  - `SegmentedButton`: Migrado en [segmented_button.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/controls/segmented_button.dart) con soporte de selección simple y múltiple, redondeo de esquinas de extremos, divisores internos y resolución cosmética vía `StyleRules`.
+  - `SplitButton`: Migrado en [split_button.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/controls/split_button.dart) combinando acción principal y menú desplegable flotante proyectado en `onRenderOverlay`.
+  - `Fab`: Migrado en [fab.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/controls/fab.dart) soportando formato estándar e interactivo extendido (`Fab.extended`) con sombra de elevación y estilos reactivos.
+  - `ListTile`: Migrado en [list_tile.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/controls/list_tile.dart) con soporte polimórfico de nodos hijos `CortexNode` en `leading` y `trailing`, títulos, subtítulos y selección.
+  - `Carousel`: Migrado en [carousel.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/controls/carousel.dart) con interpolación de deslizamiento animada suave, controles prev/next flotantes, píldoras indicadoras y autoPlay.
+  - Eliminada definitivamente la carpeta legacy `lib/core/ui/interaction/`. El 100% del catálogo de controles de Cortex queda unificado bajo `ControlNode` y `StructureNode`.
+
+- **Nuevos Componentes Clave de Productividad y CAD (`TabBar`/`TabView`, `TreeView`, `DataGrid`)**:
+  - `TabBar` y `TabView`: Implementados en [tab_view.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/desktop/tab_view.dart) bajo `ControlNode` y `StructureNode`. Gestión integral de documentos y vistas de trabajo por pestañas, pestaña activa resaltada con acento visual, botón de cierre individual `x`, indicador de documento modificado (`isModified`), botón `+` para nueva pestaña, desplazamiento horizontal con rueda de ratón y acoplamiento directo de vistas hijas.
+  - `TreeView`: Implementado en [tree_view.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/controls/tree_view.dart) bajo `ControlNode`. Árbol jerárquico virtualizado para proyectos CAD y ensambles de muebles (`TreeNode<T>`), colapso/expansión de ramas con chevrons, líneas guía de jerarquía visual (`showGuides`), conmutador de visibilidad 3D por pieza/capa con icono de ojo (`showVisibilityToggles`), scroll vertical integrado y eventos de selección, doble clic y menú contextual.
+  - `DataGrid`: Implementado en [data_grid.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/controls/data_grid.dart) bajo `ControlNode`. Tabla interactiva de datos optimizada para listas de corte, despiece (BOM) e inventario. Cabecera ordenable por columnas con indicador de dirección (`▲`/`▼`), redimensionamiento dinámico de columnas por arrastre de bordes, coloreado cebra alterno (*zebra striping*), detección de selección y doble clic de filas, recorte estricto de celdas por tijera y desplazamiento bidireccional suave (vertical y horizontal).
+  - `DesktopLayout`: Migrado en [desktop_layout.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/desktop/desktop_layout.dart) heredando de `StructureNode`. Organiza y ancla de forma reactiva y fluida las regiones de escritorio: `MenuBar` superior, `ToolBar` subsecuente, `SideBar` lateral izquierda, `StatusBar` inferior y área de trabajo central (`body` / `RouterView` / `Viewport3D`).
+  - `MenuBar`: Migrado en [menu_bar.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/desktop/menu_bar.dart) heredando de `ControlNode`. Soporta menús jerárquicos multinivel desplegables, atajos de teclado visuales (*accelerators*), estados hover/active, y proyección fluida sobre capa flotante (`onRenderOverlay`).
+  - `ToolBar`: Migrado en [tool_bar.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/desktop/tool_bar.dart) heredando de `ControlNode`. Barra de herramientas con soporte para botones de acción rápida, iconos, separadores y distribución horizontal elástica o rígida.
+  - `SideBar`: Migrado en [side_bar.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/desktop/side_bar.dart) heredando de `ControlNode`. Panel lateral colapsable para navegación o herramientas de diseño/CAD con soporte para items expandibles, iconos y selección reactiva.
+  - `StatusBar`: Migrado en [status_bar.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/desktop/status_bar.dart) heredando de `ControlNode`. Barra inferior informativa con paneles de métricas (FPS, coordenadas, estado del cursor, zoom) y soporte de alineación flexible.
+
+- **Componente Estructural Divisor Redimensionable (`Splitter` / `SplitPanel`)**:
+  - Implementación de `Splitter` en `lib/core/ui/layouts/splitter.dart` heredando de `StructureNode` con soporte de orientación horizontal y vertical (`SplitterAxis`).
+  - Proporción de división interactiva (`split`), límites mínimos rígidos o porcentuales (`minFirst`, `minSecond`) y grosor configurable (`dividerSize`).
+  - Detección de arrastre y hover interactivo con cambio visual de color y tirador centralizado de agarre (*grip dots*).
+  - Preservación y restauración transparente de estado entre reconstrucciones (`exportState` / `importState`).
+
+- **Migración Integral de Modales y Notificaciones a `ControlNode` (`Dialog`, `Toast`, `SnackBar`)**:
+  - Migración completa de `Dialog` a `lib/core/ui/controls/dialog.dart` heredando de `ControlNode` con soporte para hijos anidados polimórficos (`CortexNode`), botones de acción integrados (`_confirmBtn`, `_cancelBtn`), telón de fondo oscurecido (`backdrop`) y resolución cosmética vía `StyleRules`.
+  - Migración completa de `Toast` a `lib/core/ui/controls/toast.dart` heredando de `ControlNode` con temporizador de autodestrucción, tipado visual semántico (`info`, `success`, `warning`, `error`), proyección en capa flotante (`onRenderOverlay`) y dimensionamiento adaptable.
+  - Migración completa de `SnackBar` a `lib/core/ui/controls/snack_bar.dart` heredando de `ControlNode` con soporte de botón de acción interactivo, botón de cierre y estilización desacoplada.
+  - Eliminadas las versiones legacy correspondientes en `lib/core/ui/interaction/`.
+
+- **Migración de Indicadores Visuales a `ControlNode` (`ProgressBar` & `LoadingIndicator`)**:
+  - Migración de `ProgressBar` a `lib/core/ui/controls/progress_bar.dart` con modos determinado e indeterminado (onda senoidal pulsante), cabecera con porcentaje/etiqueta y resolución dinámica con `StyleRules` / `LayoutRules`.
+  - Migración de `LoadingIndicator` a `lib/core/ui/controls/loading_indicator.dart` con soporte de 4 variantes de animación (`circular`, `spinner`, `dots`, `pulse`) y control reactivo de geometría.
+  - Eliminadas las versiones legacy en `lib/core/ui/interaction/`.
+
+- **Soporte de Selección de Texto, Portapapeles Nativo y Posicionamiento de Cursor en `TextField`**:
+  - Exposición de enlaces nativos C-ABI en Rust (`input_set_clipboard_text`, `input_get_clipboard_text`) conectando con las funciones internas de Raylib/GLFW (`SetClipboardText`, `GetClipboardText`).
+  - Métodos `setClipboardText(String text)` y `getClipboardText()` integrados en `InputEngine` con liberación automática de memoria UTF-8 (`calloc.free`).
+  - Definición centralizada de códigos de teclas en `Keys` (`Keys.a`, `c`, `v`, `x`, `enter`, `backspace`, etc.) y accesores de modificadores `isControlDown`, `isShiftDown` e `isAltDown`.
+  - Soporte completo para atajos de edición en `TextField`:
+    - `Ctrl + A`: Seleccionar todo el texto.
+    - `Ctrl + C`: Copiar rango seleccionado al portapapeles.
+    - `Ctrl + X`: Cortar rango seleccionado y transferirlo al portapapeles.
+    - `Ctrl + V`: Pegar texto del portapapeles sustituyendo la selección o insertando en el cursor.
+  - Posicionamiento preciso del cursor mediante clic del ratón en cualquier coordenada horizontal/vertical del texto (tanto en modo monolínea como multilínea con auto wrap).
+  - Selección de rango mediante arrastre del ratón (`mouse drag`) y navegación con teclado con tecla modificadora `Shift` (`Shift + Left/Right/Home/End`).
+  - Reemplazo y borrado atómico de la selección activa ante pulsaciones de teclas imprimibles o teclas de borrado (`Backspace` / `Delete`).
+  - Renderizado visual del sombreado de selección con rectángulo semitransparente respetando recorte de tijera (`Scissor`) en modos monolínea y multilínea.
+
 - **Alineación Bidimensional 2D en `Container` y Regla `align` en `LayoutRules`**:
   - Definición del enum `Alignment2D` (y su alias `Alignment`) en `layout_alignment.dart` con 9 posiciones espaciales (`topLeft`, `topCenter`, `topRight`, `centerLeft`, `center`, `centerRight`, `bottomLeft`, `bottomCenter`, `bottomRight`) y factores de interpolación normalizados `(fx, fy)`.
   - Soporte para la propiedad declarativa `align` en `LayoutRules` (`lib/core/ui/layout_rules.dart`), integrando su propagación y combinación en `LayoutRules.merge`.
