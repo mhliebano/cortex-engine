@@ -1,9 +1,8 @@
 import 'package:frontend/core/context2d.dart';
 import 'package:frontend/core/context3d.dart';
 import 'package:frontend/core/input.dart';
-import 'package:frontend/core/ui/element.dart';
+import 'package:frontend/core/ui/control_node.dart';
 import 'package:frontend/core/ui/icons.dart';
-import 'package:frontend/core/ui/style.dart';
 
 /// Opción de menú para un `SplitButton`.
 class SplitMenuItem {
@@ -14,17 +13,15 @@ class SplitMenuItem {
   const SplitMenuItem({required this.label, this.icon, this.onTap});
 }
 
-/// Componente de Botón Dividido (`SplitButton`).
+/// Componente de Botón Dividido (`SplitButton`) bajo la arquitectura `ControlNode`.
 ///
 /// Combina una acción principal izquierda con una flecha desplegable derecha que
 /// despliega un menú flotante en `onRenderOverlay()`.
-class SplitButton extends Element {
+class SplitButton extends ControlNode {
   final String label;
   final IconData? icon;
   final List<SplitMenuItem> options;
   final void Function()? onMainPressed;
-  late ColorRGBA bgColor;
-  late ColorRGBA fgColor;
 
   bool _isMainHovered = false;
   bool _isArrowHovered = false;
@@ -32,29 +29,60 @@ class SplitButton extends Element {
   int _hoveredOptionIndex = -1;
 
   SplitButton({
-    String? className,
+    super.key,
+    super.isVisible,
+    super.styleClass,
+    super.layoutClass,
+    super.isEnabled = true,
     required this.label,
     required this.options,
     this.icon,
     this.onMainPressed,
-    int width = 0,
-    int height = 0,
-  }) : super(
-         width: width != 0 ? width : 160,
-         height: height != 0 ? height : 40,
-       ) {
-    final style = className != null ? Style.merge(className) : null;
-    if (style?.width != null) this.width = style!.width!;
-    if (style?.height != null) this.height = style!.height!;
-    bgColor = style?.bgColor ?? const ColorRGBA(41, 128, 185);
-    fgColor = style?.textColor ?? ColorRGBA.white;
+    int? defaultWidth,
+    int? defaultHeight,
+  }) {
+    _updateDimensions(defaultWidth ?? 160, defaultHeight ?? 38);
+  }
+
+  void _updateDimensions([int defW = 160, int defH = 38]) {
+    final layout = currentLayout;
+    final wRule = layout.width;
+    if (wRule != null && wRule.isFinite && wRule > 1.0) {
+      width = wRule.round();
+    } else if (width <= 0) {
+      width = defW;
+    }
+
+    final hRule = layout.height;
+    if (hRule != null && hRule.isFinite && hRule > 1.0) {
+      height = hRule.round();
+    } else if (height <= 0) {
+      height = defH;
+    }
+  }
+
+  @override
+  void onResize(int maxWidth, int maxHeight) {
+    final layout = currentLayout;
+    final wRule = layout.width;
+    if (wRule != null && wRule.isFinite && wRule > 1.0) {
+      width = wRule.round();
+    } else if (isFlexWidth) {
+      width = maxWidth;
+    }
+
+    final hRule = layout.height;
+    if (hRule != null && hRule.isFinite && hRule > 1.0) {
+      height = hRule.round();
+    }
   }
 
   @override
   void onUpdate(double dt, InputEngine input) {
-    if (!isVisible) return;
+    super.onUpdate(dt, input);
+    if (!isVisible || !isEnabled) return;
 
-    final int arrowW = 32;
+    const int arrowW = 32;
     final int mainW = width - arrowW;
 
     _isMainHovered = input.isHovering(x, y, mainW, height);
@@ -90,8 +118,7 @@ class SplitButton extends Element {
             break;
           }
         }
-      } else if (input.isMouseButtonPressed(MouseButtons.left) &&
-          !_isArrowHovered) {
+      } else if (input.isMouseButtonPressed(MouseButtons.left) && !_isArrowHovered) {
         _isDropdownOpen = false;
       }
     }
@@ -101,11 +128,15 @@ class SplitButton extends Element {
   void onRender(Context2D ctx2d, Context3D ctx3d) {
     if (!isVisible) return;
 
-    final int arrowW = 32;
+    final style = currentStyle;
+    final ColorRGBA bg = style.bgColor ?? const ColorRGBA(41, 128, 185, 255);
+    final ColorRGBA fg = style.textColor ?? ColorRGBA.white;
+
+    const int arrowW = 32;
     final int mainW = width - arrowW;
 
     // 1. Fondo contenedor
-    ctx2d.drawRoundRect(x, y, width, height, 0.4, color: bgColor);
+    ctx2d.drawRoundRect(x, y, width, height, 0.4, color: bg);
 
     // Resaltado de la zona principal al pasar el cursor
     if (_isMainHovered) {
@@ -142,21 +173,21 @@ class SplitButton extends Element {
 
     // 2. Renderizar Acción Principal (Izquierda)
     final int iconW = icon != null ? 18 : 0;
-    final int textW = label.length * 7;
+    final int textW = label.length * 8;
     final int totalW = iconW + (icon != null ? 6 : 0) + textW;
 
     int cx = x + (mainW - totalW) ~/ 2;
     final int cy = y + (height - 14) ~/ 2;
 
     if (icon != null) {
-      ctx2d.drawText(icon!.glyph, cx, cy - 1, 16, fgColor);
+      ctx2d.drawIcon(icon!, cx, cy - 1, 16, fg);
       cx += iconW + 6;
     }
-    ctx2d.drawText(label, cx, cy, 13, fgColor);
+    ctx2d.drawText(label, cx, cy, 13, fg);
 
     // 3. Renderizar Flecha Desplegable (Derecha)
     final int arrowX = x + mainW + (arrowW - 16) ~/ 2;
-    ctx2d.drawText(Icons.arrow_drop_down.glyph, arrowX, cy - 2, 18, fgColor);
+    ctx2d.drawIcon(Icons.arrow_drop_down, arrowX, cy - 2, 18, fg);
   }
 
   @override
@@ -175,7 +206,7 @@ class SplitButton extends Element {
       menuWidth,
       menuHeight,
       0.2,
-      color: const ColorRGBA(32, 38, 48),
+      color: const ColorRGBA(32, 38, 48, 255),
     );
     ctx2d.drawRoundRectLines(
       menuX,
@@ -184,7 +215,7 @@ class SplitButton extends Element {
       menuHeight,
       0.2,
       lineThick: 1.0,
-      color: const ColorRGBA(75, 85, 100),
+      color: const ColorRGBA(75, 85, 100, 255),
     );
 
     for (int i = 0; i < options.length; i++) {
@@ -198,13 +229,13 @@ class SplitButton extends Element {
           itemY,
           menuWidth - 8,
           34,
-          const ColorRGBA(41, 128, 185),
+          const ColorRGBA(41, 128, 185, 255),
         );
       }
 
       int ix = menuX + 12;
       if (item.icon != null) {
-        ctx2d.drawText(item.icon!.glyph, ix, itemY + 8, 16, ColorRGBA.white);
+        ctx2d.drawIcon(item.icon!, ix, itemY + 8, 16, ColorRGBA.white);
         ix += 24;
       }
 
@@ -212,3 +243,4 @@ class SplitButton extends Element {
     }
   }
 }
+

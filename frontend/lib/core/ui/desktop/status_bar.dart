@@ -1,41 +1,68 @@
 import 'package:frontend/core/context2d.dart';
 import 'package:frontend/core/context3d.dart';
-import 'package:frontend/core/ui/element.dart';
-import 'package:frontend/core/ui/style.dart';
+import 'package:frontend/core/ui/control_node.dart';
+import 'package:frontend/core/ui/cortex_node.dart';
 
 /// Barra de Estado Inferior (`StatusBar`) para métricas, coordenadas e información del motor.
-/// Soporta cadenas de texto, íconos y separadores explícitos (`Divider`).
-class StatusBar extends Element {
+/// Soporta cadenas de texto, íconos, componentes hijos y separadores explícitos (`Divider`).
+class StatusBar extends ControlNode {
   final List<dynamic> items;
-  late ColorRGBA bgColor;
-  late ColorRGBA textColor;
-  late int fontSize;
 
   StatusBar({
-    String? className,
-    int height = 0,
+    super.key,
+    super.isVisible,
+    super.styleClass,
+    super.layoutClass,
+    super.isEnabled = true,
     required this.items,
-    super.expand = Expand.width,
-    super.marginRight,
-    super.marginBottom,
   }) {
-    final style = className != null ? Style.merge(className) : null;
-    this.height = height != 0 ? height : (style?.height ?? 24);
+    _updateDimensions();
+  }
 
-    bgColor = style?.bgColor ?? const ColorRGBA(16, 18, 24);
-    textColor = style?.textColor ?? ColorRGBA.lightGray;
-    fontSize = style?.fontSize ?? 12;
+  void _updateDimensions() {
+    final layout = currentLayout;
+    final hRule = layout.height;
+    if (hRule != null && hRule.isFinite && hRule > 1.0) {
+      height = hRule.round();
+    } else if (!isFlexHeight && height <= 0) {
+      height = 24;
+    }
+  }
+
+  @override
+  bool get isFlexWidth => true;
+
+  @override
+  List<CortexNode> get childrenElements =>
+      items.whereType<CortexNode>().toList();
+
+  @override
+  void onResize(int maxWidth, int maxHeight) {
+    width = maxWidth;
+    final hRule = currentLayout.height;
+    if (hRule != null && hRule.isFinite && hRule > 1.0) {
+      height = hRule.round();
+    } else {
+      height = 24;
+    }
   }
 
   @override
   void onRender(Context2D ctx2d, Context3D ctx3d) {
     if (!isVisible) return;
+    _updateDimensions();
+
+    final style = currentStyle;
+    final bgColor = style.bgColor ?? const ColorRGBA(16, 18, 24);
+    final textColor = style.textColor ?? ColorRGBA.lightGray;
+    final fontSize = style.fontSize ?? 12;
 
     // 1. Dibujar barra de fondo
     ctx2d.drawRect(x, y, width, height, bgColor);
 
     // 2. Línea separadora superior
-    ctx2d.drawRect(x, y, width, 1, const ColorRGBA(36, 40, 52));
+    final borderColor = style.borderColor ?? const ColorRGBA(36, 40, 52);
+    ctx2d.drawRect(x, y, width, 1, borderColor);
 
     // 3. Renderizado de ítems de estado
     int currentX = x + 12;
@@ -44,8 +71,7 @@ class StatusBar extends Element {
     for (int i = 0; i < items.length; i++) {
       final item = items[i];
 
-      if (item is Element) {
-        // Dibujar elemento o Divider explícito
+      if (item is CortexNode) {
         item.x = currentX;
         item.y = y + 2;
         item.height = height - 4;

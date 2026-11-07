@@ -1,17 +1,17 @@
 import 'package:frontend/core/context2d.dart';
 import 'package:frontend/core/context3d.dart';
 import 'package:frontend/core/input.dart';
-import 'package:frontend/core/ui/element.dart';
+import 'package:frontend/core/ui/control_node.dart';
 import 'package:frontend/core/ui/icons.dart';
 
 /// Tipo / Estado del mensaje Toast (`ToastType`).
 enum ToastType { info, success, warning, error }
 
-/// Componente de Notificación Flotante Tipo Toast (`Toast`).
+/// Componente de Notificación Flotante Tipo Toast (`Toast`) bajo la arquitectura `ControlNode`.
 ///
 /// Muestra un mensaje emergente temporal en la capa superior (`onRenderOverlay`)
 /// con un temporizador de autodestrucción y estética visual distintiva por tipo.
-class Toast extends Element {
+class Toast extends ControlNode {
   static final List<Toast> _activeToasts = [];
 
   final String message;
@@ -23,11 +23,21 @@ class Toast extends Element {
   bool _dismissed = false;
 
   Toast({
+    super.key,
+    super.isVisible,
+    super.styleClass,
+    super.layoutClass,
+    super.isEnabled = true,
     required this.message,
     this.type = ToastType.info,
     this.durationSec = 3.5,
     this.icon,
-  }) : super(width: 320, height: 42);
+  }) {
+    width = 40 + (message.length * 8) + 24;
+    if (width < 260) width = 260;
+    if (width > 500) width = 500;
+    height = 42;
+  }
 
   /// Método estático conveniente para mostrar un Toast en pantalla desde cualquier handler.
   static void show(
@@ -35,14 +45,23 @@ class Toast extends Element {
     ToastType type = ToastType.info,
     double durationSec = 3.5,
     IconData? icon,
+    String? styleClass,
+    String? layoutClass,
   }) {
     final toast = Toast(
       message: message,
       type: type,
       durationSec: durationSec,
       icon: icon,
+      styleClass: styleClass,
+      layoutClass: layoutClass,
     );
     _activeToasts.add(toast);
+  }
+
+  /// Limpia todos los Toasts activos.
+  static void clearAll() {
+    _activeToasts.clear();
   }
 
   /// Actualiza la lógica de los Toast activos.
@@ -119,7 +138,14 @@ class Toast extends Element {
     }
 
     final activeIcon = icon ?? defaultIcon;
-    final bgCol = const ColorRGBA(24, 30, 42, 245);
+    final style = currentStyle;
+    final bgCol = style.bgColor ?? const ColorRGBA(24, 30, 42, 245);
+    final borderCol = style.borderColor ?? accentColor;
+    final textCol = style.textColor ?? ColorRGBA.white;
+    final fontSize = style.fontSize ?? 13;
+    final roundness = style.borderRadius != null && style.borderRadius! > 0
+        ? (style.borderRadius! > 1.0 ? 0.5 : style.borderRadius!)
+        : 0.5;
 
     // 1. Contenedor de cápsula flotante con sombra
     ctx2d.drawRoundRect(
@@ -127,18 +153,19 @@ class Toast extends Element {
       y + 2,
       width,
       height,
-      0.5,
+      roundness,
       color: const ColorRGBA(0, 0, 0, 120),
     );
-    ctx2d.drawRoundRect(x, y, width, height, 0.5, color: bgCol);
-    ctx2d.drawRoundRectLines(x, y, width, height, 0.5, color: accentColor);
+    ctx2d.drawRoundRect(x, y, width, height, roundness, color: bgCol);
+    ctx2d.drawRoundRectLines(x, y, width, height, roundness, color: borderCol);
 
     // 2. Ícono de estado
     final iconY = y + (height ~/ 2) - 9;
     ctx2d.drawText(activeIcon.glyph, x + 14, iconY, 18, accentColor);
 
     // 3. Texto del mensaje
-    final textY = y + (height ~/ 2) - 7;
-    ctx2d.drawText(message, x + 40, textY, 13, ColorRGBA.white);
+    final textY = y + (height ~/ 2) - (fontSize ~/ 2);
+    ctx2d.drawText(message, x + 40, textY, fontSize, textCol);
   }
 }
+

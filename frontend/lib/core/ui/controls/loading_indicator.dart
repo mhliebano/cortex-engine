@@ -2,8 +2,7 @@ import 'dart:math' as math;
 import 'package:frontend/core/context2d.dart';
 import 'package:frontend/core/context3d.dart';
 import 'package:frontend/core/input.dart';
-import 'package:frontend/core/ui/element.dart';
-import 'package:frontend/core/ui/style.dart';
+import 'package:frontend/core/ui/control_node.dart';
 
 /// Variante de estilo del indicador de carga (`LoadingVariant`).
 enum LoadingVariant {
@@ -20,50 +19,109 @@ enum LoadingVariant {
   pulse,
 }
 
-/// Componente Indicador de Carga Animado de Alta Fidelidad (`LoadingIndicator`).
-class LoadingIndicator extends Element {
+/// Componente Indicador de Carga Animado (`LoadingIndicator`) bajo la arquitectura `ControlNode`.
+///
+/// Ofrece 4 variantes visuales animadas (`circular`, `spinner`, `dots`, `pulse`) con velocidad configurable,
+/// grosor de trazo, etiqueta de texto opcional y soporte completo para estilos dinámicos (`StyleRules`).
+class LoadingIndicator extends ControlNode {
   final LoadingVariant variant;
   final int size;
   final double speed;
   final double strokeWidth;
   final String? label;
-  late int labelFontSize;
-  late ColorRGBA color;
-  late ColorRGBA labelColor;
 
   double _animTime = 0.0;
 
   LoadingIndicator({
     super.key,
-    String? className,
+    super.isVisible,
+    super.styleClass,
+    super.layoutClass,
+    super.isEnabled = true,
     this.variant = LoadingVariant.circular,
     this.size = 32,
     this.speed = 1.0,
     double? strokeWidth,
     this.label,
-    int width = 0,
-    int height = 0,
-    super.expand,
-    super.fillWidth,
-    super.fillHeight,
-    super.marginRight,
-    super.marginBottom,
   }) : strokeWidth = strokeWidth ?? (size / 8.0).clamp(2.5, 6.0) {
-    final style = className != null ? Style.merge(className) : null;
-    color = style?.accentColor ?? style?.borderColor ?? ColorRGBA.accentBlue;
-    labelColor = style?.textColor ?? ColorRGBA.white;
-    labelFontSize = style?.fontSize ?? 13;
+    _updateDimensions();
+  }
 
-    final labelW = label != null ? (label!.length * 8 + 14) : 0;
+  void _updateDimensions() {
+    final layout = currentLayout;
+    final style = currentStyle;
+    final labelFontSize = style.fontSize ?? 13;
+    final labelW = label != null ? (label!.length * (labelFontSize * 0.6).round() + 14) : 0;
     final baseW = variant == LoadingVariant.dots ? (size * 2) : size;
-    this.width = width != 0 ? width : (baseW + labelW);
-    this.height = height != 0
-        ? height
-        : (size > labelFontSize ? size : labelFontSize + 6);
+
+    final defaultW = baseW + labelW;
+    final defaultH = size > labelFontSize ? size : (labelFontSize + 6);
+
+    final wRule = layout.width;
+    if (wRule != null && wRule.isFinite && wRule > 1.0) {
+      width = wRule.round();
+    } else if (!isFlexWidth && width <= 0) {
+      width = defaultW;
+    }
+
+    final hRule = layout.height;
+    if (hRule != null && hRule.isFinite && hRule > 1.0) {
+      height = hRule.round();
+    } else if (!isFlexHeight && height <= 0) {
+      height = defaultH;
+    }
+  }
+
+  @override
+  void onResize(int maxWidth, int maxHeight) {
+    final layout = currentLayout;
+    final style = currentStyle;
+    final labelFontSize = style.fontSize ?? 13;
+    final labelW = label != null ? (label!.length * (labelFontSize * 0.6).round() + 14) : 0;
+    final baseW = variant == LoadingVariant.dots ? (size * 2) : size;
+
+    final defaultW = baseW + labelW;
+    final defaultH = size > labelFontSize ? size : (labelFontSize + 6);
+
+    int requestedWidth;
+    final wRule = layout.width;
+    if (wRule != null) {
+      if (wRule == double.infinity) {
+        requestedWidth = maxWidth;
+      } else if (wRule > 0.0 && wRule <= 1.0) {
+        requestedWidth = (maxWidth * wRule).round();
+      } else if (wRule.isFinite) {
+        requestedWidth = wRule.round();
+      } else {
+        requestedWidth = defaultW;
+      }
+    } else {
+      requestedWidth = defaultW;
+    }
+
+    int requestedHeight;
+    final hRule = layout.height;
+    if (hRule != null) {
+      if (hRule == double.infinity) {
+        requestedHeight = maxHeight;
+      } else if (hRule > 0.0 && hRule <= 1.0) {
+        requestedHeight = (maxHeight * hRule).round();
+      } else if (hRule.isFinite) {
+        requestedHeight = hRule.round();
+      } else {
+        requestedHeight = defaultH;
+      }
+    } else {
+      requestedHeight = defaultH;
+    }
+
+    width = (maxWidth > 0 && requestedWidth > maxWidth) ? maxWidth : requestedWidth;
+    height = (maxHeight > 0 && requestedHeight > maxHeight) ? maxHeight : requestedHeight;
   }
 
   @override
   void onUpdate(double dt, InputEngine input) {
+    super.onUpdate(dt, input);
     if (!isVisible) return;
     _animTime += dt * speed;
   }
@@ -71,21 +129,27 @@ class LoadingIndicator extends Element {
   @override
   void onRender(Context2D ctx2d, Context3D ctx3d) {
     if (!isVisible) return;
+    _updateDimensions();
+
+    final style = currentStyle;
+    final color = style.activeColor ?? style.accentColor ?? ColorRGBA.accentBlue;
+    final labelColor = style.textColor ?? ColorRGBA.white;
+    final labelFontSize = style.fontSize ?? 13;
 
     final centerY = y + (height ~/ 2);
 
     switch (variant) {
       case LoadingVariant.circular:
-        _renderCircular(ctx2d, centerY);
+        _renderCircular(ctx2d, centerY, color);
         break;
       case LoadingVariant.spinner:
-        _renderSpinner(ctx2d, centerY);
+        _renderSpinner(ctx2d, centerY, color);
         break;
       case LoadingVariant.dots:
-        _renderDots(ctx2d, centerY);
+        _renderDots(ctx2d, centerY, color);
         break;
       case LoadingVariant.pulse:
-        _renderPulse(ctx2d, centerY);
+        _renderPulse(ctx2d, centerY, color);
         break;
     }
 
@@ -99,7 +163,7 @@ class LoadingIndicator extends Element {
   }
 
   /// Renderizado de anillo rotatorio fluido con estela y cabezal brillante
-  void _renderCircular(Context2D ctx2d, int centerY) {
+  void _renderCircular(Context2D ctx2d, int centerY, ColorRGBA color) {
     final radius = (size / 2.0 - strokeWidth).clamp(4.0, 80.0);
     final centerX = x + (size ~/ 2);
 
@@ -164,7 +228,7 @@ class LoadingIndicator extends Element {
   }
 
   /// Renderizado de indicador radial de 12 barras (macOS / iOS activity indicator)
-  void _renderSpinner(Context2D ctx2d, int centerY) {
+  void _renderSpinner(Context2D ctx2d, int centerY, ColorRGBA color) {
     final centerX = x + (size ~/ 2);
     final innerR = size * 0.22;
     final outerR = size * 0.42;
@@ -194,7 +258,7 @@ class LoadingIndicator extends Element {
   }
 
   /// Renderizado de 3 puntos flotantes pulsantes
-  void _renderDots(Context2D ctx2d, int centerY) {
+  void _renderDots(Context2D ctx2d, int centerY, ColorRGBA color) {
     final dotRadius = (size / 5.5).clamp(3.0, 12.0);
     final spacing = (dotRadius * 2.8).toInt();
     final startX = x + dotRadius.toInt() + 4;
@@ -232,7 +296,7 @@ class LoadingIndicator extends Element {
   }
 
   /// Renderizado de onda de pulso concéntrica
-  void _renderPulse(Context2D ctx2d, int centerY) {
+  void _renderPulse(Context2D ctx2d, int centerY, ColorRGBA color) {
     final centerX = x + (size ~/ 2);
     final maxR = size / 2.0;
 

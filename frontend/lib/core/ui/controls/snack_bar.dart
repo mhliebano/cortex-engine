@@ -1,19 +1,19 @@
 import 'package:frontend/core/context2d.dart';
 import 'package:frontend/core/context3d.dart';
 import 'package:frontend/core/input.dart';
-import 'package:frontend/core/ui/element.dart';
+import 'package:frontend/core/ui/control_node.dart';
 import 'package:frontend/core/ui/icons.dart';
 
-/// Componente Banner de Notificación con Acción (`SnackBar`).
+/// Componente Banner de Notificación con Acción (`SnackBar`) bajo la arquitectura `ControlNode`.
 ///
 /// Muestra un banner flotante en la parte inferior de la pantalla (`onRenderOverlay`),
 /// con soporte para mensaje principal, botón de acción interactivo ("DESHACER", "REINTENTAR") y temporizador.
-class SnackBar extends Element {
+class SnackBar extends ControlNode {
   static SnackBar? _currentSnackBar;
 
   final String message;
   final String? actionLabel;
-  final void Function()? onAction;
+  final VoidCallback? onAction;
   final double durationSec;
 
   double _timer = 0.0;
@@ -22,24 +22,36 @@ class SnackBar extends Element {
   bool _isCloseHovered = false;
 
   SnackBar({
+    super.key,
+    super.isVisible,
+    super.styleClass,
+    super.layoutClass,
+    super.isEnabled = true,
     required this.message,
     this.actionLabel,
     this.onAction,
     this.durationSec = 4.0,
-  }) : super(width: 480, height: 46);
+  }) {
+    width = 480;
+    height = 46;
+  }
 
   /// Muestra un SnackBar globalmente en pantalla.
   static void show(
     String message, {
     String? actionLabel,
-    void Function()? onAction,
+    VoidCallback? onAction,
     double durationSec = 4.0,
+    String? styleClass,
+    String? layoutClass,
   }) {
     _currentSnackBar = SnackBar(
       message: message,
       actionLabel: actionLabel,
       onAction: onAction,
       durationSec: durationSec,
+      styleClass: styleClass,
+      layoutClass: layoutClass,
     );
   }
 
@@ -93,7 +105,7 @@ class SnackBar extends Element {
 
       if (_isActionHovered && input.isMouseButtonPressed(MouseButtons.left)) {
         _dismissed = true;
-        if (onAction != null) onAction!();
+        onAction?.call();
         return;
       }
     }
@@ -116,8 +128,14 @@ class SnackBar extends Element {
   void onRenderOverlay(Context2D ctx2d, Context3D ctx3d) {
     if (_dismissed) return;
 
-    final bgCol = const ColorRGBA(24, 28, 38, 250);
-    final borderCol = const ColorRGBA(60, 72, 92);
+    final style = currentStyle;
+    final bgCol = style.bgColor ?? const ColorRGBA(24, 28, 38, 250);
+    final borderCol = style.borderColor ?? const ColorRGBA(60, 72, 92);
+    final roundness = style.borderRadius != null && style.borderRadius! > 0
+        ? (style.borderRadius! > 1.0 ? 0.15 : style.borderRadius!)
+        : 0.15;
+    final textCol = style.textColor ?? ColorRGBA.white;
+    final fontSize = style.fontSize ?? 13;
 
     // 1. Fondo de la barra de mensajes con sombra
     ctx2d.drawRoundRect(
@@ -125,15 +143,15 @@ class SnackBar extends Element {
       y + 3,
       width,
       height,
-      0.15,
+      roundness,
       color: const ColorRGBA(0, 0, 0, 140),
     );
-    ctx2d.drawRoundRect(x, y, width, height, 0.15, color: bgCol);
-    ctx2d.drawRoundRectLines(x, y, width, height, 0.15, color: borderCol);
+    ctx2d.drawRoundRect(x, y, width, height, roundness, color: bgCol);
+    ctx2d.drawRoundRectLines(x, y, width, height, roundness, color: borderCol);
 
     // 2. Texto del mensaje
-    final textY = y + (height ~/ 2) - 7;
-    ctx2d.drawText(message, x + 16, textY, 13, ColorRGBA.white);
+    final textY = y + (height ~/ 2) - (fontSize ~/ 2);
+    ctx2d.drawText(message, x + 16, textY, fontSize, textCol);
 
     // 3. Botón de Acción ("DESHACER", "REINTENTAR")
     if (actionLabel != null) {
@@ -146,7 +164,7 @@ class SnackBar extends Element {
           ? const ColorRGBA(52, 152, 219, 60)
           : ColorRGBA.transparent;
       ctx2d.drawRoundRect(actX, actY, actW, actH, 0.2, color: btnBg);
-      ctx2d.drawText(actionLabel!, actX + 8, textY, 13, ColorRGBA.hoverBlue);
+      ctx2d.drawText(actionLabel!, actX + 8, textY, fontSize, ColorRGBA.hoverBlue);
     }
 
     // 4. Ícono de cierre (X)
@@ -157,3 +175,4 @@ class SnackBar extends Element {
     ctx2d.drawText(Icons.close.glyph, closeX, y + 14, 16, closeCol);
   }
 }
+

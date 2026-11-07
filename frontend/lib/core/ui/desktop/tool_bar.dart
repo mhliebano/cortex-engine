@@ -1,9 +1,8 @@
 import 'package:frontend/core/context2d.dart';
 import 'package:frontend/core/context3d.dart';
 import 'package:frontend/core/input.dart';
-import 'package:frontend/core/ui/element.dart';
+import 'package:frontend/core/ui/control_node.dart';
 import 'package:frontend/core/ui/icons.dart';
-import 'package:frontend/core/ui/style.dart';
 
 /// Definición de una herramienta para `ToolBar`.
 class ToolItem {
@@ -30,45 +29,57 @@ class ToolItem {
   String get tooltipText => tooltip ?? label;
 }
 
-/// Barra de Herramientas Rápidas (`ToolBar`) para acciones de edición y herramientas CAD.
-/// Soporta botones cuadrados solo con íconos, divisores y globos de ayuda flotantes (`tooltip`).
-class ToolBar extends Element {
+/// Barra de Herramientas Rápidas (`ToolBar`) bajo la arquitectura `ControlNode`.
+/// Soporta botones cuadrados con íconos, divisores y globos de ayuda flotantes (`tooltip`).
+class ToolBar extends ControlNode {
   final List<ToolItem> tools;
   String? selectedToolId;
   final void Function(String toolId)? onToolSelected;
 
-  late ColorRGBA bgColor;
-  late ColorRGBA activeColor;
-  late ColorRGBA hoverColor;
-  late ColorRGBA textColor;
-  late int iconSize;
-
   int? _hoveredIndex;
 
   ToolBar({
-    String? className,
-    int height = 0,
+    super.key,
+    super.isVisible,
+    super.styleClass,
+    super.layoutClass,
+    super.isEnabled = true,
     required this.tools,
     this.selectedToolId,
     this.onToolSelected,
-    super.expand = Expand.width,
-    super.marginRight,
-    super.marginBottom,
   }) {
-    final style = className != null ? Style.merge(className) : null;
-    this.height = height != 0 ? height : (style?.height ?? 36);
+    _updateDimensions();
+  }
 
-    bgColor = style?.bgColor ?? const ColorRGBA(24, 28, 36);
-    activeColor = style?.accentColor ?? ColorRGBA.accentBlue;
-    hoverColor = const ColorRGBA(45, 52, 68);
-    textColor = style?.textColor ?? ColorRGBA.white;
-    iconSize = style?.fontSize ?? 18;
+  void _updateDimensions() {
+    final layout = currentLayout;
+    final hRule = layout.height;
+    if (hRule != null && hRule.isFinite && hRule > 1.0) {
+      height = hRule.round();
+    } else if (!isFlexHeight && height <= 0) {
+      height = 36;
+    }
   }
 
   int get _buttonSize => height - 8;
 
   @override
+  bool get isFlexWidth => true;
+
+  @override
+  void onResize(int maxWidth, int maxHeight) {
+    width = maxWidth;
+    final hRule = currentLayout.height;
+    if (hRule != null && hRule.isFinite && hRule > 1.0) {
+      height = hRule.round();
+    } else {
+      height = 36;
+    }
+  }
+
+  @override
   void onUpdate(double dt, InputEngine input) {
+    super.onUpdate(dt, input);
     if (!isVisible) return;
 
     _hoveredIndex = null;
@@ -100,6 +111,15 @@ class ToolBar extends Element {
   @override
   void onRender(Context2D ctx2d, Context3D ctx3d) {
     if (!isVisible) return;
+    _updateDimensions();
+
+    final style = currentStyle;
+    final bgColor = style.bgColor ?? const ColorRGBA(24, 28, 36);
+    final activeColor = style.activeColor ?? style.accentColor ?? ColorRGBA.accentBlue;
+    final hoverColor = style.hoverColor ?? const ColorRGBA(45, 52, 68);
+    final textColor = style.textColor ?? ColorRGBA.white;
+    final iconSize = style.fontSize ?? 18;
+    final borderColor = style.borderColor ?? const ColorRGBA(40, 44, 56);
 
     // 1. Fondo de la barra de herramientas
     ctx2d.drawRect(x, y, width, height, bgColor);
@@ -134,7 +154,7 @@ class ToolBar extends Element {
       ctx2d.drawRect(currentX, y + 4, btnSize, btnSize, btnBg);
 
       // Borde del botón (resaltado si está seleccionado o en hover)
-      final borderColor = isSelected
+      final btnBorderColor = isSelected
           ? const ColorRGBA(255, 255, 255, 180)
           : (isHovered
                 ? const ColorRGBA(90, 100, 125)
@@ -145,7 +165,7 @@ class ToolBar extends Element {
         btnSize,
         btnSize,
         bgColor: ColorRGBA.transparent,
-        borderColor: borderColor,
+        borderColor: btnBorderColor,
       );
 
       // Renderizar el ícono centrado en el botón cuadrado
@@ -159,7 +179,7 @@ class ToolBar extends Element {
     }
 
     // 3. Separador inferior
-    ctx2d.drawRect(x, y + height - 1, width, 1, const ColorRGBA(40, 44, 56));
+    ctx2d.drawRect(x, y + height - 1, width, 1, borderColor);
   }
 
   @override
@@ -199,6 +219,18 @@ class ToolBar extends Element {
 
       // Dibujar texto del tooltip
       ctx2d.drawText(text, tooltipX + 8, tooltipY + 4, 12, ColorRGBA.white);
+    }
+  }
+
+  @override
+  Map<String, dynamic>? exportState() {
+    return {'selectedToolId': selectedToolId};
+  }
+
+  @override
+  void importState(Map<String, dynamic> state) {
+    if (state.containsKey('selectedToolId')) {
+      selectedToolId = state['selectedToolId'] as String?;
     }
   }
 }

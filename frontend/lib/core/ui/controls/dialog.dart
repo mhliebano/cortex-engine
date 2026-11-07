@@ -1,31 +1,31 @@
 import 'package:frontend/core/context2d.dart';
 import 'package:frontend/core/context3d.dart';
 import 'package:frontend/core/input.dart';
-import 'package:frontend/core/ui/element.dart';
+import 'package:frontend/core/ui/control_node.dart';
+import 'package:frontend/core/ui/cortex_node.dart';
 import 'package:frontend/core/ui/icons.dart';
 import 'package:frontend/core/ui/controls/button.dart';
 
-/// Componente de Ventana Modal Emergente (`Dialog` / `AlertDialog`).
+/// Componente de Ventana Modal Emergente (`Dialog` / `AlertDialog`) bajo la arquitectura `ControlNode`.
 ///
 /// Presenta una caja de diálogo centrada con telón de fondo oscurecido (`backdrop`),
 /// encabezado estructurado (`icon`, `title`), cuerpo informativo o contenedor personalizado (`child`)
 /// y botones de acción principal y secundaria (`onConfirm`, `onCancel`).
-class Dialog extends Element {
+class Dialog extends ControlNode {
   static Dialog? _activeDialog;
 
   final String title;
   final String? message;
-  final Element? child;
+  final CortexNode? child;
   final IconData? icon;
   final String confirmLabel;
   final String? cancelLabel;
-  //final ButtonVariant confirmVariant;
-  final void Function()? onConfirm;
-  final void Function()? onCancel;
+  final VoidCallback? onConfirm;
+  final VoidCallback? onCancel;
   final bool dismissibleOutsideClick;
 
-  late Button _confirmBtn;
-  late Button? _cancelBtn;
+  late final Button _confirmBtn;
+  late final Button? _cancelBtn;
 
   bool _dismissed = false;
   bool _wasJustOpened = true;
@@ -33,13 +33,17 @@ class Dialog extends Element {
   final int _dialogHeight;
 
   Dialog({
+    super.key,
+    super.isVisible,
+    super.styleClass,
+    super.layoutClass,
+    super.isEnabled = true,
     required this.title,
     this.message,
     this.child,
     this.icon,
     this.confirmLabel = "Aceptar",
     this.cancelLabel = "Cancelar",
-    //this.confirmVariant = ButtonVariant.filled,
     this.onConfirm,
     this.onCancel,
     this.dismissibleOutsideClick = true,
@@ -48,51 +52,59 @@ class Dialog extends Element {
   }) : _dialogWidth = width,
        _dialogHeight = height != 0
            ? height
-           : (child != null ? 160 + child.height : 210),
-       super(
-         width: width,
-         height: height != 0
-             ? height
-             : (child != null ? 160 + child.height : 210),
-       ) {
-    // _confirmBtn = Button(
-    //   label: confirmLabel,
-    //   variant: confirmVariant,
-    //   onPressed: () {
-    //     _dismissed = true;
-    //     _activeDialog = null;
-    //     if (onConfirm != null) onConfirm!();
-    //   },
-    // );
+           : (child != null ? 160 + child.height : 210) {
+    this.width = _dialogWidth;
+    this.height = _dialogHeight;
 
-    // if (cancelLabel != null) {
-    //   _cancelBtn = Button(
-    //     label: cancelLabel!,
-    //     variant: ButtonVariant.outlined,
-    //     onPressed: () {
-    //       _dismissed = true;
-    //       _activeDialog = null;
-    //       if (onCancel != null) onCancel!();
-    //     },
-    //   );
-    // } else {
-    //   _cancelBtn = null;
-    // }
+    _confirmBtn = Button(
+      text: confirmLabel,
+      onClick: () {
+        _dismissed = true;
+        _activeDialog = null;
+        onConfirm?.call();
+      },
+    );
+
+    if (cancelLabel != null) {
+      _cancelBtn = Button(
+        text: cancelLabel!,
+        onClick: () {
+          _dismissed = true;
+          _activeDialog = null;
+          onCancel?.call();
+        },
+      );
+    } else {
+      _cancelBtn = null;
+    }
+  }
+
+  @override
+  List<CortexNode> get childrenElements {
+    final c = child;
+    final cancel = _cancelBtn;
+    return [
+      ?c,
+      _confirmBtn,
+      ?cancel,
+    ];
   }
 
   /// Muestra un Diálogo Modal en pantalla.
   static void show(
     String title, {
     String? message,
-    Element? child,
+    CortexNode? child,
     IconData? icon,
     String confirmLabel = "Aceptar",
     String? cancelLabel = "Cancelar",
-    //  ButtonVariant confirmVariant = ButtonVariant.filled,
-    void Function()? onConfirm,
-    void Function()? onCancel,
+    VoidCallback? onConfirm,
+    VoidCallback? onCancel,
     bool dismissibleOutsideClick = true,
     int width = 440,
+    int height = 0,
+    String? styleClass,
+    String? layoutClass,
   }) {
     _activeDialog = Dialog(
       title: title,
@@ -101,11 +113,13 @@ class Dialog extends Element {
       icon: icon,
       confirmLabel: confirmLabel,
       cancelLabel: cancelLabel,
-      //  confirmVariant: confirmVariant,
       onConfirm: onConfirm,
       onCancel: onCancel,
       dismissibleOutsideClick: dismissibleOutsideClick,
       width: width,
+      height: height,
+      styleClass: styleClass,
+      layoutClass: layoutClass,
     );
   }
 
@@ -147,7 +161,7 @@ class Dialog extends Element {
       final isInside = input.isHovering(dlg.x, dlg.y, dlg.width, dlg.height);
       if (!isInside) {
         dismiss();
-        if (dlg.onCancel != null) dlg.onCancel!();
+        dlg.onCancel?.call();
         return;
       }
     }
@@ -183,10 +197,11 @@ class Dialog extends Element {
     _confirmBtn.onUpdate(dt, input);
     btnX -= _confirmBtn.width + 12;
 
-    if (_cancelBtn != null) {
-      _cancelBtn!.x = btnX - _cancelBtn!.width;
-      _cancelBtn!.y = btnY;
-      _cancelBtn!.onUpdate(dt, input);
+    final cancel = _cancelBtn;
+    if (cancel != null) {
+      cancel.x = btnX - cancel.width;
+      cancel.y = btnY;
+      cancel.onUpdate(dt, input);
     }
 
     if (child != null && child!.isVisible) {
@@ -205,8 +220,12 @@ class Dialog extends Element {
   void onRenderOverlay(Context2D ctx2d, Context3D ctx3d) {
     if (_dismissed) return;
 
-    final bgCol = const ColorRGBA(30, 36, 48, 255);
-    final borderCol = const ColorRGBA(65, 78, 98);
+    final style = currentStyle;
+    final bgCol = style.bgColor ?? const ColorRGBA(30, 36, 48, 255);
+    final borderCol = style.borderColor ?? const ColorRGBA(65, 78, 98);
+    final borderRadius = style.borderRadius ?? 0.1;
+    final titleFontSize = style.fontSize ?? 16;
+    final titleColor = style.textColor ?? ColorRGBA.white;
 
     // 1. Sombra suave y Panel modal
     ctx2d.drawRoundRect(
@@ -214,11 +233,25 @@ class Dialog extends Element {
       y + 6,
       width,
       height,
-      0.1,
+      borderRadius > 1.0 ? 0.1 : borderRadius,
       color: const ColorRGBA(0, 0, 0, 180),
     );
-    ctx2d.drawRoundRect(x, y, width, height, 0.1, color: bgCol);
-    ctx2d.drawRoundRectLines(x, y, width, height, 0.1, color: borderCol);
+    ctx2d.drawRoundRect(
+      x,
+      y,
+      width,
+      height,
+      borderRadius > 1.0 ? 0.1 : borderRadius,
+      color: bgCol,
+    );
+    ctx2d.drawRoundRectLines(
+      x,
+      y,
+      width,
+      height,
+      borderRadius > 1.0 ? 0.1 : borderRadius,
+      color: borderCol,
+    );
 
     int currentY = y + 20;
 
@@ -229,7 +262,7 @@ class Dialog extends Element {
       titleX += 28;
     }
 
-    ctx2d.drawText(title, titleX, currentY, 16, ColorRGBA.white);
+    ctx2d.drawText(title, titleX, currentY, titleFontSize, titleColor);
     currentY += 28;
 
     // Línea divisora de encabezado
@@ -268,10 +301,11 @@ class Dialog extends Element {
     _confirmBtn.onRender(ctx2d, ctx3d);
     btnX -= _confirmBtn.width + 12;
 
-    if (_cancelBtn != null) {
-      _cancelBtn!.x = btnX - _cancelBtn!.width;
-      _cancelBtn!.y = btnY;
-      _cancelBtn!.onRender(ctx2d, ctx3d);
+    final cancel = _cancelBtn;
+    if (cancel != null) {
+      cancel.x = btnX - cancel.width;
+      cancel.y = btnY;
+      cancel.onRender(ctx2d, ctx3d);
     }
   }
 }

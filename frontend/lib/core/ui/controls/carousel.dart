@@ -1,21 +1,20 @@
 import 'package:frontend/core/context2d.dart';
 import 'package:frontend/core/context3d.dart';
 import 'package:frontend/core/input.dart';
-import 'package:frontend/core/ui/element.dart';
-import 'package:frontend/core/ui/icons.dart';
+import 'package:frontend/core/ui/control_node.dart';
 import 'package:frontend/core/ui/controls/icon_button.dart';
+import 'package:frontend/core/ui/cortex_node.dart';
+import 'package:frontend/core/ui/icons.dart';
 
-import 'package:frontend/core/ui/style.dart';
-
-/// Componente de Carrusel Paginado y Animado (`Carousel`).
+/// Componente de Carrusel Paginado y Animado (`Carousel`) bajo la arquitectura `ControlNode`.
 ///
 /// Ofrece una experiencia visual fluida e interactiva:
 /// - Transición animada suave entre diapositivas (*Slide interpolation*).
 /// - Botones flotantes de navegación rápida prev/next.
 /// - Píldora indicadora animada de página activa (`• ━━ •`).
 /// - Soporte para reproducción automática pasiva (`autoPlay`).
-class Carousel extends Element {
-  final List<Element> children;
+class Carousel extends ControlNode {
+  final List<CortexNode> children;
   int currentIndex;
   final bool showIndicators;
   final bool showControls;
@@ -23,8 +22,8 @@ class Carousel extends Element {
   final double autoPlayIntervalSec;
   final void Function(int index)? onPageChanged;
 
-  late IconButton _prevBtn;
-  late IconButton _nextBtn;
+  late final IconButton _prevBtn;
+  late final IconButton _nextBtn;
 
   double _animOffset = 0.0;
   int _targetIndex = 0;
@@ -32,7 +31,11 @@ class Carousel extends Element {
   bool _isHovered = false;
 
   Carousel({
-    String? className,
+    super.key,
+    super.isVisible,
+    super.styleClass,
+    super.layoutClass,
+    super.isEnabled = true,
     required this.children,
     this.currentIndex = 0,
     this.showIndicators = true,
@@ -40,17 +43,9 @@ class Carousel extends Element {
     this.autoPlay = false,
     this.autoPlayIntervalSec = 4.0,
     this.onPageChanged,
-    int width = 0,
-    int height = 0,
-    super.expand,
-    super.fillWidth,
-    super.fillHeight,
-    super.marginRight,
-    super.marginBottom,
+    int? defaultWidth,
+    int? defaultHeight,
   }) {
-    final style = className != null ? Style.merge(className) : null;
-    this.width = width != 0 ? width : (style?.width ?? 500);
-    this.height = height != 0 ? height : (style?.height ?? 240);
     _targetIndex = currentIndex;
     _animOffset = currentIndex.toDouble();
 
@@ -64,15 +59,43 @@ class Carousel extends Element {
       onClick: nextPage,
     );
 
+    _updateDimensions(defaultWidth ?? 500, defaultHeight ?? 240);
+  }
+
+  void _updateDimensions(int defW, int defH) {
+    final layout = currentLayout;
+    final wRule = layout.width;
+    if (wRule != null && wRule.isFinite && wRule > 1.0) {
+      width = wRule.round();
+    } else if (width <= 0) {
+      width = defW;
+    }
+
+    final hRule = layout.height;
+    if (hRule != null && hRule.isFinite && hRule > 1.0) {
+      height = hRule.round();
+    } else if (height <= 0) {
+      height = defH;
+    }
     _updateLayout();
   }
+
+  @override
+  bool get isFlexWidth => true;
+
+  @override
+  List<CortexNode> get childrenElements => [
+        ...children,
+        _prevBtn,
+        _nextBtn,
+      ];
 
   void previousPage() {
     if (children.isEmpty) return;
     _targetIndex = (currentIndex - 1 + children.length) % children.length;
     currentIndex = _targetIndex;
     _autoPlayTimer = 0.0;
-    if (onPageChanged != null) onPageChanged!(currentIndex);
+    onPageChanged?.call(currentIndex);
   }
 
   void nextPage() {
@@ -80,7 +103,7 @@ class Carousel extends Element {
     _targetIndex = (currentIndex + 1) % children.length;
     currentIndex = _targetIndex;
     _autoPlayTimer = 0.0;
-    if (onPageChanged != null) onPageChanged!(currentIndex);
+    onPageChanged?.call(currentIndex);
   }
 
   void _updateLayout() {
@@ -103,8 +126,19 @@ class Carousel extends Element {
   }
 
   @override
+  void onResize(int maxWidth, int maxHeight) {
+    width = maxWidth;
+    final hRule = currentLayout.height;
+    if (hRule != null && hRule.isFinite && hRule > 1.0) {
+      height = hRule.round();
+    }
+    _updateLayout();
+  }
+
+  @override
   void onUpdate(double dt, InputEngine input) {
-    if (!isVisible || children.isEmpty) return;
+    super.onUpdate(dt, input);
+    if (!isVisible || !isEnabled || children.isEmpty) return;
 
     _isHovered = input.isHovering(x, y, width, height);
 
@@ -141,14 +175,14 @@ class Carousel extends Element {
 
     _updateLayout();
 
-    // 1. Fondo de contenedor carrusel
-    final bgCol = const ColorRGBA(26, 32, 44);
+    final style = currentStyle;
+    final bgCol = style.bgColor ?? const ColorRGBA(26, 32, 44, 255);
     final borderCol = _isHovered
-        ? const ColorRGBA(41, 128, 185)
-        : const ColorRGBA(55, 65, 82);
+        ? (style.accentColor ?? const ColorRGBA(41, 128, 185, 255))
+        : (style.borderColor ?? const ColorRGBA(55, 65, 82, 255));
 
     ctx2d.drawRoundRect(x, y, width, height, 0.1, color: bgCol);
-    ctx2d.drawRoundRectLines(x, y, width, height, 0.1, color: borderCol);
+    ctx2d.drawRoundRectLines(x, y, width, height, 0.1, lineThick: 1.0, color: borderCol);
 
     // 2. Renderizar diapositivas dentro del área Scissor recortada
     final slideW = width - 110;
@@ -159,7 +193,6 @@ class Carousel extends Element {
     ctx2d.beginScissor(clipX, clipY, slideW, slideH);
 
     for (int i = 0; i < children.length; i++) {
-      // Calcular posición desplazada X de cada diapositiva según la animación
       final offsetMultiplier = i.toDouble() - _animOffset;
       if (offsetMultiplier.abs() < 1.5) {
         final child = children[i];
@@ -186,8 +219,8 @@ class Carousel extends Element {
       for (int i = 0; i < children.length; i++) {
         final isActive = i == currentIndex;
         final dotColor = isActive
-            ? const ColorRGBA(41, 128, 185)
-            : const ColorRGBA(80, 92, 112);
+            ? (style.accentColor ?? const ColorRGBA(41, 128, 185, 255))
+            : const ColorRGBA(80, 92, 112, 255);
 
         if (isActive) {
           ctx2d.drawRoundRect(dotX, dotsY, 22, 6, 0.5, color: dotColor);
@@ -210,10 +243,5 @@ class Carousel extends Element {
     final activeChild = children[currentIndex];
     activeChild.onRenderOverlay(ctx2d, ctx3d);
   }
-
-  @override
-  void onResize(int allocatedWidth, int allocatedHeight) {
-    super.onResize(allocatedWidth, allocatedHeight);
-    _updateLayout();
-  }
 }
+

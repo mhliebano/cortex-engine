@@ -1,9 +1,8 @@
 import 'package:frontend/core/context2d.dart';
 import 'package:frontend/core/context3d.dart';
 import 'package:frontend/core/input.dart';
-import 'package:frontend/core/ui/element.dart';
+import 'package:frontend/core/ui/control_node.dart';
 import 'package:frontend/core/ui/icons.dart';
-import 'package:frontend/core/ui/style.dart';
 
 /// Elemento de menú individual para `MenuBar` y sus submenús desplegables.
 class MenuItem {
@@ -30,38 +29,37 @@ class MenuItem {
   bool get hasSubItems => subItems != null && subItems!.isNotEmpty;
 }
 
-/// Barra de Menú Horizontal Superior (`MenuBar`) para aplicaciones de escritorio.
+/// Barra de Menú Horizontal Superior (`MenuBar`) bajo la arquitectura `ControlNode`.
 /// Soporta íconos tipados (`IconData`), atajos de teclado, divisores y menús desplegables (`subItems`).
-class MenuBar extends Element {
+class MenuBar extends ControlNode {
   final List<MenuItem> items;
-
-  late ColorRGBA bgColor;
-  late ColorRGBA hoverColor;
-  late ColorRGBA textColor;
-  late int fontSize;
 
   int? _hoveredIndex;
   int? _openMenuIndex;
   int? _hoveredSubIndex;
 
   MenuBar({
-    String? className,
-    int height = 0,
+    super.key,
+    super.isVisible,
+    super.styleClass,
+    super.layoutClass,
+    super.isEnabled = true,
     required this.items,
-    super.expand = Expand.width,
-    super.marginRight,
-    super.marginBottom,
   }) {
-    final style = className != null ? Style.merge(className) : null;
-    this.height = height != 0 ? height : (style?.height ?? 28);
-
-    bgColor = style?.bgColor ?? const ColorRGBA(18, 20, 26);
-    hoverColor = style?.accentColor ?? const ColorRGBA(45, 50, 65);
-    textColor = style?.textColor ?? ColorRGBA.white;
-    fontSize = style?.fontSize ?? 13;
+    _updateDimensions();
   }
 
-  int _getItemWidth(MenuItem item) {
+  void _updateDimensions() {
+    final layout = currentLayout;
+    final hRule = layout.height;
+    if (hRule != null && hRule.isFinite && hRule > 1.0) {
+      height = hRule.round();
+    } else if (!isFlexHeight && height <= 0) {
+      height = 28;
+    }
+  }
+
+  int _getItemWidth(MenuItem item, int fontSize) {
     if (item.isDivider) return 10;
     final iconWidth = item.icon != null ? (fontSize + 6) : 0;
     final textWidth = item.label.length * (fontSize ~/ 2);
@@ -69,9 +67,25 @@ class MenuBar extends Element {
   }
 
   @override
+  bool get isFlexWidth => true;
+
+  @override
+  void onResize(int maxWidth, int maxHeight) {
+    width = maxWidth;
+    final hRule = currentLayout.height;
+    if (hRule != null && hRule.isFinite && hRule > 1.0) {
+      height = hRule.round();
+    } else {
+      height = 28;
+    }
+  }
+
+  @override
   void onUpdate(double dt, InputEngine input) {
+    super.onUpdate(dt, input);
     if (!isVisible) return;
 
+    final fontSize = currentStyle.fontSize ?? 13;
     _hoveredIndex = null;
     _hoveredSubIndex = null;
     int currentX = x + 10;
@@ -79,7 +93,7 @@ class MenuBar extends Element {
     // 1. Detección de cernido y clic en menú principal superior
     for (int i = 0; i < items.length; i++) {
       final item = items[i];
-      final itemWidth = _getItemWidth(item);
+      final itemWidth = _getItemWidth(item, fontSize);
 
       if (item.isDivider) {
         currentX += itemWidth + 4;
@@ -113,7 +127,7 @@ class MenuBar extends Element {
       if (openItem.hasSubItems) {
         int openX = x + 10;
         for (int i = 0; i < _openMenuIndex!; i++) {
-          openX += _getItemWidth(items[i]) + 4;
+          openX += _getItemWidth(items[i], fontSize) + 4;
         }
 
         final subItems = openItem.subItems!;
@@ -162,6 +176,14 @@ class MenuBar extends Element {
   @override
   void onRender(Context2D ctx2d, Context3D ctx3d) {
     if (!isVisible) return;
+    _updateDimensions();
+
+    final style = currentStyle;
+    final bgColor = style.bgColor ?? const ColorRGBA(18, 20, 26);
+    final hoverColor = style.hoverColor ?? const ColorRGBA(45, 50, 65);
+    final textColor = style.textColor ?? ColorRGBA.white;
+    final fontSize = style.fontSize ?? 13;
+    final borderColor = style.borderColor ?? const ColorRGBA(40, 44, 56);
 
     // 1. Dibujar barra de fondo principal
     ctx2d.drawRect(x, y, width, height, bgColor);
@@ -171,7 +193,7 @@ class MenuBar extends Element {
     // 2. Dibujar ítems de menú principal
     for (int i = 0; i < items.length; i++) {
       final item = items[i];
-      final itemWidth = _getItemWidth(item);
+      final itemWidth = _getItemWidth(item, fontSize);
 
       if (item.isDivider) {
         ctx2d.drawRect(
@@ -206,12 +228,17 @@ class MenuBar extends Element {
     }
 
     // 3. Línea delgada separadora inferior
-    ctx2d.drawRect(x, y + height - 1, width, 1, const ColorRGBA(40, 44, 56));
+    ctx2d.drawRect(x, y + height - 1, width, 1, borderColor);
   }
 
   @override
   void onRenderOverlay(Context2D ctx2d, Context3D ctx3d) {
     if (!isVisible) return;
+
+    final style = currentStyle;
+    final hoverColor = style.hoverColor ?? const ColorRGBA(45, 50, 65);
+    final textColor = style.textColor ?? ColorRGBA.white;
+    final fontSize = style.fontSize ?? 13;
 
     // Renderizar submenú desplegable flotante por encima de toda la interfaz
     if (_openMenuIndex != null && _openMenuIndex! < items.length) {
@@ -219,7 +246,7 @@ class MenuBar extends Element {
       if (openItem.hasSubItems) {
         int openX = x + 10;
         for (int i = 0; i < _openMenuIndex!; i++) {
-          openX += _getItemWidth(items[i]) + 4;
+          openX += _getItemWidth(items[i], fontSize) + 4;
         }
 
         final subItems = openItem.subItems!;
