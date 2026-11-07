@@ -15,9 +15,9 @@ import 'element.dart';
 import 'layout_rules.dart';
 import 'style_rules.dart';
 import 'layouts/panel.dart';
-import 'interaction/toast.dart';
-import 'interaction/snack_bar.dart';
-import 'interaction/dialog.dart';
+import 'controls/toast.dart';
+import 'controls/snack_bar.dart';
+import 'controls/dialog.dart';
 
 export 'package:frontend/core/context2d.dart';
 export 'package:frontend/core/context3d.dart';
@@ -39,6 +39,7 @@ export 'layouts/column.dart';
 export 'layouts/row.dart';
 export 'layouts/panel.dart';
 export 'layouts/spacer.dart';
+export 'layouts/splitter.dart';
 
 // Componentes de Escritorio / CAD
 export 'desktop/desktop_layout.dart';
@@ -46,33 +47,36 @@ export 'desktop/menu_bar.dart';
 export 'desktop/tool_bar.dart';
 export 'desktop/side_bar.dart';
 export 'desktop/status_bar.dart';
+export 'desktop/tab_view.dart';
+export 'controls/tree_view.dart';
+export 'controls/data_grid.dart';
 
 // Componentes de Interacción y Entradas
 export 'controls/badge.dart';
 export 'controls/button.dart';
 // export 'interaction/card.dart';
-export 'interaction/carousel.dart';
+export 'controls/carousel.dart';
 export 'controls/checkbox.dart';
 export 'controls/chip.dart';
 export 'controls/icon_button.dart';
 export 'controls/radio_button.dart';
-export 'interaction/segmented_button.dart';
+export 'controls/segmented_button.dart';
 export 'controls/slider.dart';
 export 'controls/switch.dart';
-export 'interaction/fab.dart';
-export 'interaction/split_button.dart';
+export 'controls/fab.dart';
+export 'controls/split_button.dart';
 export 'controls/icon.dart';
 export 'controls/label.dart';
 export 'controls/text_field.dart';
 export 'controls/dropdown.dart';
-export 'interaction/list_tile.dart';
+export 'controls/list_tile.dart';
 export 'controls/divider.dart';
-export 'interaction/loading_indicator.dart';
-export 'interaction/progress_bar.dart';
+export 'controls/loading_indicator.dart';
+export 'controls/progress_bar.dart';
 export 'controls/image.dart';
-export 'interaction/toast.dart';
-export 'interaction/snack_bar.dart';
-export 'interaction/dialog.dart';
+export 'controls/toast.dart';
+export 'controls/snack_bar.dart';
+export 'controls/dialog.dart';
 
 // Componentes 3D / Viewport
 export '3d/viewport_3d.dart';
