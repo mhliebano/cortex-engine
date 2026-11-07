@@ -38,26 +38,24 @@ class SplitButton extends ControlNode {
     required this.options,
     this.icon,
     this.onMainPressed,
-    int? defaultWidth,
-    int? defaultHeight,
   }) {
-    _updateDimensions(defaultWidth ?? 160, defaultHeight ?? 38);
+    _updateDimensions();
   }
 
-  void _updateDimensions([int defW = 160, int defH = 38]) {
+  void _updateDimensions() {
     final layout = currentLayout;
     final wRule = layout.width;
     if (wRule != null && wRule.isFinite && wRule > 1.0) {
       width = wRule.round();
     } else if (width <= 0) {
-      width = defW;
+      width = 160;
     }
 
     final hRule = layout.height;
     if (hRule != null && hRule.isFinite && hRule > 1.0) {
       height = hRule.round();
     } else if (height <= 0) {
-      height = defH;
+      height = 38;
     }
   }
 

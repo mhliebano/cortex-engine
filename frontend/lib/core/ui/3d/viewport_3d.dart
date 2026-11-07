@@ -39,28 +39,22 @@ class Viewport3D extends ControlNode {
     Render2DCallback? onRender2D,
     Update3DCallback? onUpdate3D,
     this.onPick,
-    int? defaultWidth,
-    int? defaultHeight,
   })  : _onRender3DCallback = onRender3D,
         _onRender2DCallback = onRender2D,
         _onUpdate3DCallback = onUpdate3D {
-    _updateDimensions(defaultWidth ?? 0, defaultHeight ?? 0);
+    _updateDimensions();
   }
 
-  void _updateDimensions(int defW, int defH) {
+  void _updateDimensions() {
     final layout = currentLayout;
     final wRule = layout.width;
     if (wRule != null && wRule.isFinite && wRule > 1.0) {
       width = wRule.round();
-    } else if (width <= 0) {
-      width = defW;
     }
 
     final hRule = layout.height;
     if (hRule != null && hRule.isFinite && hRule > 1.0) {
       height = hRule.round();
-    } else if (height <= 0) {
-      height = defH;
     }
   }
 

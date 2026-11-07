@@ -43,8 +43,6 @@ class Carousel extends ControlNode {
     this.autoPlay = false,
     this.autoPlayIntervalSec = 4.0,
     this.onPageChanged,
-    int? defaultWidth,
-    int? defaultHeight,
   }) {
     _targetIndex = currentIndex;
     _animOffset = currentIndex.toDouble();
@@ -59,23 +57,23 @@ class Carousel extends ControlNode {
       onClick: nextPage,
     );
 
-    _updateDimensions(defaultWidth ?? 500, defaultHeight ?? 240);
+    _updateDimensions();
   }
 
-  void _updateDimensions(int defW, int defH) {
+  void _updateDimensions() {
     final layout = currentLayout;
     final wRule = layout.width;
     if (wRule != null && wRule.isFinite && wRule > 1.0) {
       width = wRule.round();
     } else if (width <= 0) {
-      width = defW;
+      width = 500;
     }
 
     final hRule = layout.height;
     if (hRule != null && hRule.isFinite && hRule > 1.0) {
       height = hRule.round();
     } else if (height <= 0) {
-      height = defH;
+      height = 240;
     }
     _updateLayout();
   }

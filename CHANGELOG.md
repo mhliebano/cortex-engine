@@ -14,6 +14,10 @@
   - Incorporadas guardas de dimensión mínima (`height < 20`, `width < 20`, `visibleMenuHeight >= 20`) en [column.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/layouts/column.dart#L257), [row.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/layouts/row.dart#L257) y [dropdown.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/controls/dropdown.dart#L549).
   - Previene la excepción en tiempo de ejecución `ArgumentError: Invalid argument(s): 20` originada por `int.clamp(lower, upper)` cuando la dimensión del contenedor es menor al tamaño base del pulgar del scrollbar (20 px).
 
+- **Purga de Parámetros Espaciales Residuales (`Carousel`, `SplitButton`, `Viewport3D`)**:
+  - Eliminados los parámetros `defaultWidth` y `defaultHeight` de los constructores en [carousel.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/controls/carousel.dart#L33-L48), [split_button.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/controls/split_button.dart#L31-L45) y [viewport_3d.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/3d/viewport_3d.dart#L30-L48).
+  - Restablecida la estricta pureza arquitectónica de Cortex ("cero parámetros espaciales en constructor"), delegando cualquier dimensionamiento a `layoutClass` / `LayoutRules` y al cálculo de layout de un solo pase.
+
 - **Abrazo en Eje Principal y Distribución Proporcional de Remanente (`Row` & `Col`)**:
   - `Row` y `Col` abrazan estrictamente el tamaño acumulado de sus hijos y separadores (`rigidSum`) en su eje principal, evitando la expansión voraz que consumía todo el contenedor padre y empujaba a los elementos hermanos fuera de pantalla.
   - La expansión al límite máximo recibido (`effectiveMaxW` / `effectiveMaxH`) ahora ocurre únicamente si existe un `Spacer` flexible (`size == null`), un hijo con `isFlexWidth` / `isFlexHeight`, o una alineación principal activa (`mainAlign != MainAlign.start`).
