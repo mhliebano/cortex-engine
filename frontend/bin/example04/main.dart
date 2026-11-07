@@ -3,9 +3,9 @@ import 'package:frontend/cortex_engine.dart';
 import './views/dashboard.dart';
 
 void main() async {
-  Debugger.showLayout = true;
+  Debugger.showLayout = false;
   final app = Application(
-    title: "Prueba",
+    title: "Mi Dashboard",
     width: 800,
     height: 600,
     flags: WindowFlags.windowMaximized,

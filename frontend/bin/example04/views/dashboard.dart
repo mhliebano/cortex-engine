@@ -1,3 +1,5 @@
+import 'dart:math';
+import 'package:frontend/core/ui/controls/container.dart';
 import 'package:frontend/cortex_engine.dart';
 import '../styles/styles.dart';
 
@@ -7,6 +9,7 @@ class DashboardView extends FluidView {
         id: "dashboard_view",
         localLayoutRules: dashboardLayoutRules,
         localStyleRules: dashboardStyleRules,
+        backgroundColor: const ColorRGBA(233, 238, 242, 255),
       );
 
   @override
@@ -14,130 +17,47 @@ class DashboardView extends FluidView {
     return [
       Panel(
         width: double.infinity,
-        height: double.infinity,
-        padding: EdgeInsets.all(16),
+        height: 0.25,
+        padding: EdgeInsets.all(10),
+        layout: PanelLayout.vertical,
+
+        children: [CardsRow()],
+      ),
+      Panel(
+        height: 0.3,
+        width: double.infinity,
+        padding: EdgeInsets.all(10),
         layout: PanelLayout.vertical,
         children: [
-          // 1. Barra superior de encabezado
           Row(
-            crossAlign: CrossAlign.center,
-            children: [
-              Col(
-                children: [
-                  Label(
-                    text: "Cortex Metrics Dashboard",
-                    styleClass: "dashboard_title",
-                  ),
-                  Label(
-                    text:
-                        "Motor de escritorio nativo (Rust / Raylib OpenGL + Pure Dart)",
-                    styleClass: "dashboard_subtitle",
-                  ),
-                ],
-              ),
-              Spacer(),
-              Row(
-                crossAlign: CrossAlign.center,
-                gap: 8,
-                children: [
-                  LoadingIndicator(variant: LoadingVariant.pulse, size: 18),
-                  Label(
-                    text: "En Vivo • 60 FPS",
-                    styleClass: "dashboard_subtitle",
-                  ),
-                ],
-              ),
-            ],
-          ),
-          Spacer(16),
-
-          // 2. Fila de 4 tarjetas de métricas responsivas
-          CardsRow(),
-          Spacer(16),
-
-          // 3. Panel de interacción en vivo
-          Row(
+            gap: 25,
             children: [
               Container(
-                layoutClass: "panel_section",
-                styleClass: "panel_section",
-                child: Col(
-                  gap: 12,
-                  children: [
-                    Row(
-                      crossAlign: CrossAlign.center,
-                      children: [
-                        Icon(Icons.dashboard, styleClass: "icon_accent_blue"),
-                        Spacer(8),
-                        Label(
-                          text:
-                              "Consola de Pruebas Interactivas (TextField + Selección + Portapapeles)",
-                          styleClass: "section_heading",
-                        ),
-                      ],
-                    ),
-                    Label(
-                      text:
-                          "Haz clic en el texto para posicionar el cursor, arrastra para seleccionar, o usa Ctrl+A, Ctrl+C, Ctrl+V y Ctrl+X:",
-                      styleClass: "section_subheading",
-                    ),
-                    Row(
-                      crossAlign: CrossAlign.center,
-                      gap: 16,
-                      children: [
-                        TextField(
-                          text:
-                              "¡Cortex Engine soporta selección y atajos de portapapeles!",
-                          layoutClass: "half_width",
-                          clearable: true,
-                        ),
-                        Switch(value: true, label: "GPU VSync"),
-                        Slider(
-                          value: 60,
-                          min: 15,
-                          max: 144,
-                          label: "Límite FPS",
-                        ),
-                        Button(
-                          text: "Mostrar Diálogo",
-                          onClick: () {
-                            Dialog.show(
-                              "Confirmación de Motor",
-                              message:
-                                  "¿Deseas reiniciar los contadores de telemetría de Cortex Engine?",
-                              icon: Icons.info,
-                              onConfirm: () {
-                                Toast.show(
-                                  "Telemetría restablecida con éxito",
-                                  type: ToastType.success,
-                                );
-                              },
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                styleClass: "container_graphics",
+                layoutClass: "container_graphics",
+                child: Graphics1(),
+              ),
+              Container(
+                styleClass: "container_graphics container_graphics_v1",
+                layoutClass: "container_graphics",
+              ),
+              Container(
+                styleClass: "container_graphics container_graphics_v2",
+                layoutClass: "container_graphics container_graphics_v1",
               ),
             ],
           ),
-          Spacer(16),
-
-          // 4. Barra de pie / estado del motor
+        ],
+      ),
+      Panel(
+        height: 0.4,
+        width: double.infinity,
+        padding: EdgeInsets.all(10),
+        layout: PanelLayout.vertical,
+        children: [
           Row(
-            crossAlign: CrossAlign.center,
-            gap: 10,
             children: [
-              Icon(Icons.checkCircle, styleClass: "icon_accent_green"),
-              Label(
-                text:
-                    "Motor Cortex v1.0.1 • Backend nativo sin WebViews ni Electron",
-                styleClass: "dashboard_subtitle",
-              ),
-              Spacer(),
-              LoadingIndicator(variant: LoadingVariant.circular, size: 16),
-              Label(text: "Sincronizado", styleClass: "dashboard_subtitle"),
+              Container(layoutClass: "panel-foot", styleClass: "panel-foot"),
             ],
           ),
         ],
@@ -147,114 +67,169 @@ class DashboardView extends FluidView {
 }
 
 class CardsRow extends Row {
-  CardsRow() : super(gap: 16, scroll: false);
+  CardsRow() : super(gap: 20, scroll: false) {}
 
   @override
   List<CortexNode> build() {
     return [
-      // Tarjeta 1: Mensajes
-      Container(
-        layoutClass: "container_cards",
-        styleClass: "container_cards",
-        child: Col(
-          mainAlign: MainAlign.center,
-          gap: 6.0,
-          children: [
-            Row(
-              crossAlign: CrossAlign.center,
-              children: [
-                Icon(Icons.send, styleClass: "icon_accent_blue"),
-                Spacer(),
-                Badge(label: "+14.2%", styleClass: "badge_up"),
-              ],
-            ),
-            Label(text: "628.3k", styleClass: "card_value"),
-            Label(text: "Mensajes enviados", styleClass: "card_title"),
-            ProgressBar(value: 0.78, minHeight: 4, styleClass: "progress_blue"),
-          ],
-        ),
+      Card(
+        icon: Icons.message,
+        value: "6283",
+        title: "Mensajes enviados ultima hora",
       ),
-
-      // Tarjeta 2: Usuarios Activos
-      Container(
-        layoutClass: "container_cards",
-        styleClass: "container_cards",
-        child: Col(
-          mainAlign: MainAlign.center,
-          gap: 6.0,
-          children: [
-            Row(
-              crossAlign: CrossAlign.center,
-              children: [
-                Icon(Icons.person, styleClass: "icon_accent_green"),
-                Spacer(),
-                Badge(label: "En vivo", styleClass: "badge_live"),
-              ],
-            ),
-            Label(text: "1,420", styleClass: "card_value"),
-            Label(text: "Usuarios concurrentes", styleClass: "card_title"),
-            ProgressBar(
-              value: 0.62,
-              minHeight: 4,
-              styleClass: "progress_green",
-            ),
-          ],
-        ),
-      ),
-
-      // Tarjeta 3: Carga GPU / Rendimiento
-      Container(
-        layoutClass: "container_cards",
-        styleClass: "container_cards",
-        child: Col(
-          mainAlign: MainAlign.center,
-          gap: 6.0,
-          children: [
-            Row(
-              crossAlign: CrossAlign.center,
-              children: [
-                Icon(Icons.speed, styleClass: "icon_accent_orange"),
-                Spacer(),
-                Badge(label: "2.4ms", styleClass: "badge_neutral"),
-              ],
-            ),
-            Label(text: "18.4%", styleClass: "card_value"),
-            Label(text: "Carga de GPU / Frame", styleClass: "card_title"),
-            ProgressBar(
-              value: 0.18,
-              minHeight: 4,
-              styleClass: "progress_orange",
-            ),
-          ],
-        ),
-      ),
-
-      // Tarjeta 4: Almacenamiento
-      Container(
-        layoutClass: "container_cards",
-        styleClass: "container_cards",
-        child: Col(
-          mainAlign: MainAlign.center,
-          gap: 6.0,
-          children: [
-            Row(
-              crossAlign: CrossAlign.center,
-              children: [
-                Icon(Icons.settings, styleClass: "icon_accent_purple"),
-                Spacer(),
-                Badge(label: "24/24", styleClass: "badge_live"),
-              ],
-            ),
-            Label(text: "42.8 GB", styleClass: "card_value"),
-            Label(text: "Almacenamiento NVMe", styleClass: "card_title"),
-            ProgressBar(
-              value: 0.45,
-              minHeight: 4,
-              styleClass: "progress_purple",
-            ),
-          ],
-        ),
-      ),
+      Card(icon: Icons.people, value: "104.295", title: "Contactos activos"),
+      Card(icon: Icons.restorePage, value: "18.295", title: "Casos cerrados"),
+      Card(icon: Icons.attach_file, value: "75", title: "Reportes generados"),
     ];
+  }
+}
+
+class Card extends Container {
+  final IconData icon;
+  final String value;
+  final String title;
+  Card({required this.icon, required this.value, required this.title})
+    : super(layoutClass: "container_cards", styleClass: "container_cards");
+
+  @override
+  CortexNode build() {
+    return Col(
+      mainAlign: MainAlign.center,
+      crossAlign: CrossAlign.center,
+      gap: 10.0,
+      children: [
+        Icon(icon, styleClass: "container_labels"),
+        Label(text: value, styleClass: "container_labels"),
+        Label(text: title, styleClass: "container_labels_title"),
+      ],
+    );
+  }
+}
+
+class Graphics1 extends Container {
+  Graphics1({super.layoutClass, super.styleClass});
+
+  @override
+  void onResize(int maxWidth, int maxHeight) {
+    super.onResize(maxWidth, maxHeight);
+    if (width <= 0) width = maxWidth;
+    if (height <= 0) height = maxHeight;
+  }
+
+  @override
+  void onRender(Context2D ctx2d, Context3D ctx3d) {
+    super.onRender(ctx2d, ctx3d);
+
+    if (width <= 0 || height <= 0) return;
+
+    // 4 Parámetros demo (etiqueta, valor, porcentaje y color)
+    final params = [
+      (
+        label: "B1",
+        value: 40.0,
+        percent: "40%",
+        color: const ColorRGBA(41, 128, 185),
+      ), // Azul
+      (
+        label: "F4",
+        value: 25.0,
+        percent: "25%",
+        color: const ColorRGBA(39, 174, 96),
+      ), // Verde
+      (
+        label: "D3",
+        value: 20.0,
+        percent: "20%",
+        color: const ColorRGBA(230, 126, 34),
+      ), // Naranja
+      (
+        label: "J6",
+        value: 15.0,
+        percent: "15%",
+        color: const ColorRGBA(142, 68, 173),
+      ), // Púrpura
+    ];
+
+    final total = params.fold<double>(0.0, (sum, p) => sum + p.value);
+    if (total <= 0) return;
+
+    final isWide = width >= 240;
+    final double outerRadius;
+    final int centerX;
+    final int centerY;
+
+    if (isWide) {
+      outerRadius = min((height / 2) - 14, width * 0.26);
+      if (outerRadius <= 5) return;
+      centerX = x + (outerRadius + 16).toInt();
+      centerY = y + height ~/ 2;
+    } else {
+      outerRadius = min((width / 2) - 14, height * 0.26);
+      if (outerRadius <= 5) return;
+      centerX = x + width ~/ 2;
+      centerY = y + (outerRadius + 14).toInt();
+    }
+
+    final innerRadius = outerRadius * 0.58;
+
+    // 1. Dibuja los sectores de la dona con centro 100% transparente
+    double currentAngle = 0.0;
+    for (final p in params) {
+      final sweep = (p.value / total) * 360.0;
+      ctx2d.drawRing(
+        centerX,
+        centerY,
+        innerRadius,
+        outerRadius,
+        currentAngle,
+        currentAngle + sweep,
+        segments: 40,
+        color: p.color,
+      );
+      currentAngle += sweep;
+    }
+
+    // 2. Dibuja las leyendas al lado o debajo según el espacio
+    final textColor = currentStyle.textColor ?? const ColorRGBA(30, 35, 45);
+
+    if (isWide) {
+      final legendX = centerX + outerRadius.toInt() + 16;
+      final startY = centerY - (params.length * 20) ~/ 2;
+      for (int i = 0; i < params.length; i++) {
+        final p = params[i];
+        final itemY = startY + (i * 20);
+
+        // Indicador de color
+        ctx2d.drawRoundRect(legendX, itemY + 3, 9, 9, 2.0, color: p.color);
+
+        // Texto de leyenda
+        ctx2d.drawText(
+          "${p.label} ${p.percent}",
+          legendX + 14,
+          itemY,
+          12,
+          textColor,
+        );
+      }
+    } else {
+      final startY = centerY + outerRadius.toInt() + 8;
+      final halfW = (width - 16) ~/ 2;
+      for (int i = 0; i < params.length; i++) {
+        final p = params[i];
+        final col = i % 2;
+        final row = i ~/ 2;
+        final itemX = x + 8 + (col * halfW);
+        final itemY = startY + (row * 18);
+
+        ctx2d.drawRoundRect(itemX, itemY + 3, 8, 8, 2.0, color: p.color);
+        ctx2d.drawText(
+          "${p.label} ${p.percent}",
+          itemX + 12,
+          itemY,
+          11,
+          textColor,
+        );
+      }
+    }
   }
 }
