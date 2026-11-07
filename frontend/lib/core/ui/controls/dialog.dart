@@ -84,9 +84,9 @@ class Dialog extends ControlNode {
     final c = child;
     final cancel = _cancelBtn;
     return [
-      ?c,
+      if (c != null) c,
       _confirmBtn,
-      ?cancel,
+      if (cancel != null) cancel,
     ];
   }
 

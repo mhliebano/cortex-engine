@@ -40,6 +40,7 @@ export 'layouts/row.dart';
 export 'layouts/panel.dart';
 export 'layouts/spacer.dart';
 export 'layouts/splitter.dart';
+export 'controls/container.dart';
 
 // Componentes de Escritorio / CAD
 export 'desktop/desktop_layout.dart';

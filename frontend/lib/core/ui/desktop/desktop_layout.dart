@@ -117,11 +117,11 @@ class DesktopLayout extends StructureNode {
 
   @override
   List<CortexNode> get childrenElements => [
-    ?menuBar,
-    ?toolBar,
-    ?sideBar,
-    ?_body,
-    ?statusBar,
+    if (menuBar != null) menuBar!,
+    if (toolBar != null) toolBar!,
+    if (sideBar != null) sideBar!,
+    if (_body != null) _body!,
+    if (statusBar != null) statusBar!,
   ];
 
   @override

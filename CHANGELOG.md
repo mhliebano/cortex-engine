@@ -17,6 +17,17 @@
 
 ### Agregado
 
+- **Herramienta CLI Oficial de Cortex (`cortex`) y Experiencia de SDK "Estilo Flutter" (Zero-Setup)**:
+  - Implementación del CLI nativo unificado en [cortex.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/bin/cortex.dart):
+    - `cortex doctor`: Diagnóstico integral del SDK, motor nativo de Rust (`libbackend.so`), Dart SDK embebido/sistema y herramientas de empaquetado.
+    - `cortex create <nombre>`: Generación instantánea de proyectos con estructura limpia, `pubspec.yaml` canónico referenciando `package:cortex`, plantilla moderna con arquitectura `ControlNode` y resolución automática de dependencias vía `dart pub get`.
+    - `cortex run`: Ejecución interactiva en desarrollo configurando automáticamente rutas dinámicas (`LD_LIBRARY_PATH` y `CORTEX_HOME`).
+    - `cortex build`: Compilación AOT nativa standalone (`dart compile exe`), empaquetado automático de `libbackend.so`/`backend.dll`, fuentes y recursos en `dist/<app>/`, generación de script lanzador `run.sh` y compresión en tarball portable (`.tar.gz`) de ~6 MB listo para el usuario final sin requerir Dart ni Rust instalados.
+  - Generador oficial de distribución del SDK en [build_release_sdk.dart](file:///home/miguel/Proyectos/hibridos/cortex/scripts/build_release_sdk.dart):
+    - Reemplazo de hacks antiguos por un empaquetador limpio y autocontenido.
+    - Transformación canónica de imports internos a `package:cortex/`.
+    - Integración de Dart SDK embebido en `bin/cache/dart-sdk` para experiencia 100% Zero-Setup: el desarrollador solo descarga el SDK, agrega `bin` a su `PATH` y comienza a producir inmediatamente.
+
 - **Modernización de `Viewport3D` a `ControlNode` y Soporte de Picking 3D**:
   - Migración completa de `Viewport3D` a [viewport_3d.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/3d/viewport_3d.dart) heredando de `ControlNode` con soporte nativo de resolución de geometría Flex.
   - Soporte integrado para cámara orbital interactiva (`enableControls` con `CameraMode.orbital`), rejilla de referencia en el suelo (`showGrid`) y ejes cartesianos (`showAxes`).

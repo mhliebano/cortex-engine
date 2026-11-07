@@ -59,8 +59,8 @@ class ListTile extends ControlNode {
 
   @override
   List<CortexNode> get childrenElements => [
-        ?leading,
-        ?trailing,
+        if (leading != null) leading!,
+        if (trailing != null) trailing!,
       ];
 
   @override

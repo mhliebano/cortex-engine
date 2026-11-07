@@ -39,7 +39,19 @@ class NativeLibrary {
       candidatePaths.add(path.join(defaultSdk, libName));
     }
 
-    // 3. Rutas relativas del proyecto actual / script ejecutable
+    // 3. Rutas relativas del ejecutable nativo compilado (AOT)
+    try {
+      final exeDir = path.dirname(Platform.resolvedExecutable);
+      candidatePaths.addAll([
+        path.join(exeDir, libName),
+        path.join(exeDir, 'lib', libName),
+        path.join(exeDir, 'assets', 'native', libName),
+        path.join(exeDir, '..', 'lib', libName),
+        path.join(exeDir, '..', 'assets', 'native', libName),
+      ]);
+    } catch (_) {}
+
+    // 4. Rutas relativas del proyecto actual / script en desarrollo
     try {
       final scriptDir = path.dirname(Platform.script.toFilePath());
       candidatePaths.addAll([
@@ -52,6 +64,8 @@ class NativeLibrary {
         path.join(currentDir, libName),
         path.join(currentDir, '../backend/target/release', libName),
         path.join(currentDir, '../backend/target/debug', libName),
+        path.join(currentDir, 'backend/target/release', libName),
+        path.join(currentDir, 'backend/target/debug', libName),
       ]);
     } catch (_) {}
 

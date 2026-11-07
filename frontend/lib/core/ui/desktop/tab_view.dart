@@ -341,7 +341,7 @@ class TabView extends StructureNode {
   @override
   List<CortexNode> get childrenElements => [
         tabBar,
-        ?activeContent,
+        if (activeContent != null) activeContent!,
       ];
 
   TabItem? get activeTab =>
