@@ -302,7 +302,7 @@ class Dropdown<T> extends ControlNode {
         }
 
         if (_isDraggingScrollbar) {
-          if (input.isMouseButtonDown(MouseButtons.left)) {
+          if (input.isMouseButtonDown(MouseButtons.left) && visibleMenuHeight >= 20) {
             final deltaY = my - _dragStartY;
             final scrollbarHeight =
                 ((visibleMenuHeight / totalContentHeight) * visibleMenuHeight)
@@ -546,7 +546,7 @@ class Dropdown<T> extends ControlNode {
     }
 
     // 4. Dibujar barra de scroll si las opciones exceden la altura máxima
-    if (maxScroll > 0) {
+    if (maxScroll > 0 && visibleMenuHeight >= 20) {
       final scrollbarHeight =
           ((visibleMenuHeight / totalContentHeight) * visibleMenuHeight)
               .toInt()

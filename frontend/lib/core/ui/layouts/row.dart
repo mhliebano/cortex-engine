@@ -254,7 +254,7 @@ class Row extends StructureNode {
   void _handleScroll(InputEngine input) {
     if (!_isScrollActive) return;
     final maxScroll = _maxScroll;
-    if (maxScroll <= 0 || width <= 0) return;
+    if (maxScroll <= 0 || width < 20) return;
 
     final effectiveOffset = controller?.offset ?? scrollOffset;
     final scrollbarWidth = ((width / _contentWidth) * width).toInt().clamp(
@@ -304,7 +304,7 @@ class Row extends StructureNode {
 
   void _renderScrollbar(Context2D ctx2d) {
     final maxScroll = _maxScroll;
-    if (maxScroll <= 0) return;
+    if (maxScroll <= 0 || width < 20) return;
 
     final effectiveOffset = controller?.offset ?? scrollOffset;
     final scrollbarWidth = ((width / _contentWidth) * width).toInt().clamp(
