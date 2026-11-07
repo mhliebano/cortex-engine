@@ -90,7 +90,8 @@ class Panel extends CortexNode {
       }
     } else if (layout == PanelLayout.vertical) {
       int rigidSum = 0;
-      int flexibleCount = 0;
+      final flexibleChildren = <StructureNode>[];
+
       for (final child in children) {
         if (child is Spacer) {
           if (child.size != null) {
@@ -98,43 +99,42 @@ class Panel extends CortexNode {
             rigidSum += sz;
             child.height = sz;
           } else {
-            flexibleCount++;
+            flexibleChildren.add(child);
           }
-        } else if (child.isFlexHeight) {
-          flexibleCount++;
         } else {
-          rigidSum += child.height;
+          child.onResize(availableWidth, availableHeight);
+          if (child.height < availableHeight) {
+            rigidSum += child.height;
+          } else {
+            flexibleChildren.add(child);
+          }
         }
       }
 
-      if (flexibleCount == 0 && children.isNotEmpty) {
-        flexibleCount = children.length;
-        rigidSum = 0;
-      }
-
-      final remainingSpace = availableHeight - rigidSum;
-      final childQuota = (flexibleCount > 0 && remainingSpace > 0)
-          ? (remainingSpace / flexibleCount).floor()
+      final remainingSpace = max(0, availableHeight - rigidSum);
+      final childQuota = flexibleChildren.isNotEmpty
+          ? (remainingSpace / flexibleChildren.length).floor()
           : 0;
+
+      for (final child in flexibleChildren) {
+        if (child is Spacer) {
+          child.height = childQuota;
+          child.width = availableWidth;
+        } else {
+          child.onResize(availableWidth, childQuota);
+        }
+      }
 
       int currentY = childY;
       for (final child in children) {
         child.x = childX;
         child.y = currentY;
-        if (child is Spacer) {
-          if (child.size == null) {
-            child.height = childQuota;
-          }
-          child.width = availableWidth;
-        } else {
-          final targetH = (child.isFlexHeight || rigidSum == 0) ? childQuota : child.height;
-          child.onResize(availableWidth, targetH);
-        }
         currentY += child.height;
       }
     } else if (layout == PanelLayout.horizontal) {
       int rigidSum = 0;
-      int flexibleCount = 0;
+      final flexibleChildren = <StructureNode>[];
+
       for (final child in children) {
         if (child is Spacer) {
           if (child.size != null) {
@@ -142,38 +142,36 @@ class Panel extends CortexNode {
             rigidSum += sz;
             child.width = sz;
           } else {
-            flexibleCount++;
+            flexibleChildren.add(child);
           }
-        } else if (child.isFlexWidth) {
-          flexibleCount++;
         } else {
-          rigidSum += child.width;
+          child.onResize(availableWidth, availableHeight);
+          if (child.width < availableWidth) {
+            rigidSum += child.width;
+          } else {
+            flexibleChildren.add(child);
+          }
         }
       }
 
-      if (flexibleCount == 0 && children.isNotEmpty) {
-        flexibleCount = children.length;
-        rigidSum = 0;
-      }
-
-      final remainingSpace = availableWidth - rigidSum;
-      final childQuota = (flexibleCount > 0 && remainingSpace > 0)
-          ? (remainingSpace / flexibleCount).floor()
+      final remainingSpace = max(0, availableWidth - rigidSum);
+      final childQuota = flexibleChildren.isNotEmpty
+          ? (remainingSpace / flexibleChildren.length).floor()
           : 0;
+
+      for (final child in flexibleChildren) {
+        if (child is Spacer) {
+          child.width = childQuota;
+          child.height = availableHeight;
+        } else {
+          child.onResize(childQuota, availableHeight);
+        }
+      }
 
       int currentX = childX;
       for (final child in children) {
         child.x = currentX;
         child.y = childY;
-        if (child is Spacer) {
-          if (child.size == null) {
-            child.width = childQuota;
-          }
-          child.height = availableHeight;
-        } else {
-          final targetW = (child.isFlexWidth || rigidSum == 0) ? childQuota : child.width;
-          child.onResize(targetW, availableHeight);
-        }
         currentX += child.width;
       }
     }
