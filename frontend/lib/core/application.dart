@@ -175,15 +175,18 @@ class Application {
 
     onInit();
 
-    // --- FPS Adaptativo ---
-    // Arranca en modo activo (60 FPS). Tras [idleThreshold] frames consecutivos
-    // sin ningún input ni redimensión, baja a 15 FPS para ahorrar CPU/batería.
-    // Cualquier actividad lo restaura a 60 FPS de inmediato.
+    // --- FPS Adaptativo y Modo Reposo Absoluto (Idle Stop 0% CPU) ---
+    // Arranca en modo activo (60 FPS). Tras [idleThreshold] cuadros sin input, baja a 15 FPS.
+    // Tras [deepIdleThreshold] cuadros de inactividad total, entra en reposo pasivo (~0% CPU).
+    // Cualquier interacción (ratón, teclas, redimensión) restaura los 60 FPS de inmediato.
     const int activeFps = 60;
     const int idleFps = 15;
     const int idleThreshold = 120; // ~2 s a 60 FPS
+    const int deepIdleThreshold = 240; // ~5 s de inactividad total
     int idleFrames = 0;
     bool isIdle = false;
+    double lastMouseX = -1.0;
+    double lastMouseY = -1.0;
     _window.setTargetFps(activeFps);
 
     while (!_window.shouldClose) {
@@ -193,16 +196,26 @@ class Application {
       // Actualizar streaming de música del motor de audio
       AudioEngine.updateMusic();
 
-      // Detectar actividad: cualquier movimiento de ratón, tecla, scroll o resize
+      // Detectar actividad: movimiento de ratón, clic, scroll, teclas o redimensión
+      final currentMouseX = input.mouseX;
+      final currentMouseY = input.mouseY;
+      final bool mouseMoved = (currentMouseX - lastMouseX).abs() > 0.5 ||
+          (currentMouseY - lastMouseY).abs() > 0.5;
+      lastMouseX = currentMouseX;
+      lastMouseY = currentMouseY;
+
       final bool resized =
           _window.isResized ||
           _window.width != _viewManager.lastWidth ||
           _window.height != _viewManager.lastHeight;
+
       final bool hasInput =
+          mouseMoved ||
           input.isMouseButtonDown(0) ||
           input.isMouseButtonDown(1) ||
           input.isMouseButtonDown(2) ||
           input.mouseWheelMove != 0.0 ||
+          input.getCharPressed() != 0 ||
           TextField.activeFocusedTextField != null ||
           resized;
 
@@ -241,8 +254,12 @@ class Application {
       // Resetear el arena de texto: offset → 0 tras EndDrawing (Raylib ya copió todos los strings)
       _ctx2d.resetTextArena();
 
-      // Ceder el control al Event Loop de Dart para procesar Futures, Timers y callbacks async
-      await Future.delayed(Duration.zero);
+      // Ceder el control al Event Loop de Dart: reposo pasivo de 0% CPU si la app está en reposo profundo
+      if (idleFrames >= deepIdleThreshold) {
+        await Future.delayed(const Duration(milliseconds: 66));
+      } else {
+        await Future.delayed(Duration.zero);
+      }
     }
 
     _viewManager.clear();
