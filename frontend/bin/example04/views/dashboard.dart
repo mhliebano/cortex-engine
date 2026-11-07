@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:math' as math;
 import 'package:frontend/core/ui/controls/container.dart';
 import 'package:frontend/cortex_engine.dart';
 import '../styles/styles.dart';
@@ -40,10 +41,18 @@ class DashboardView extends FluidView {
               Container(
                 styleClass: "container_graphics container_graphics_v1",
                 layoutClass: "container_graphics",
+                child: Graphics2(),
               ),
               Container(
                 styleClass: "container_graphics container_graphics_v2",
                 layoutClass: "container_graphics container_graphics_v1",
+                child: Carousel(
+                  children: [
+                    Label(text: "TExt 1"),
+                    Label(text: "TExt 2"),
+                    Label(text: "TExt 3"),
+                  ],
+                ),
               ),
             ],
           ),
@@ -53,11 +62,74 @@ class DashboardView extends FluidView {
         height: 0.4,
         width: double.infinity,
         padding: EdgeInsets.all(10),
-        layout: PanelLayout.vertical,
+        layout: PanelLayout.horizontal,
         children: [
           Row(
             children: [
-              Container(layoutClass: "panel-foot", styleClass: "panel-foot"),
+              Container(
+                layoutClass: "panel-foot",
+                styleClass: "panel-foot",
+                child: TreeView(
+                  roots: [
+                    TreeNode(
+                      id: "A1",
+                      label: "Sector A",
+                      children: List.generate(4, (index) {
+                        return TreeNode(
+                          id: "A${index}",
+                          label: "SubSector A${index}",
+                        );
+                      }),
+                    ),
+                    TreeNode(
+                      id: "B1",
+                      label: "Sector B",
+                      children: List.generate(8, (index) {
+                        return TreeNode(
+                          id: "B${index}",
+                          label: "SubSector B${index}",
+                          children: List.generate(16, (index) {
+                            return TreeNode(
+                              id: "B${index}A",
+                              label: "SubSector B${index}A",
+                            );
+                          }),
+                        );
+                      }),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          Col(
+            children: [
+              DataGrid<Map<String, String>>(
+                columns: [
+                  DataGridColumn(
+                    id: "A",
+                    title: "A",
+                    cellValue: (data) => data["caso"]!,
+                  ),
+                  DataGridColumn(
+                    id: "B",
+                    title: "B",
+                    cellValue: (data) => data["avance"]!,
+                  ),
+                  DataGridColumn(
+                    id: "C",
+                    title: "C",
+                    cellValue: (data) => data["fecha"]!,
+                  ),
+                ],
+                rows: List.generate(10, (index) {
+                  return {
+                    "caso": "#${math.Random().nextInt(10000)}",
+                    "avance": "${math.Random().nextInt(100)}%",
+                    "fecha": "${DateTime.now().toIso8601String()}",
+                  };
+                }),
+              ),
             ],
           ),
         ],
@@ -230,6 +302,91 @@ class Graphics1 extends Container {
           textColor,
         );
       }
+    }
+  }
+}
+
+class Graphics2 extends Container {
+  Graphics2({super.layoutClass, super.styleClass});
+
+  @override
+  void onResize(int maxWidth, int maxHeight) {
+    super.onResize(maxWidth, maxHeight);
+    if (width <= 0) width = maxWidth;
+    if (height <= 0) height = maxHeight;
+  }
+
+  @override
+  void onRender(Context2D ctx2d, Context3D ctx3d) {
+    super.onRender(ctx2d, ctx3d);
+
+    if (width <= 0 || height <= 0) return;
+
+    // Datos de barras (ej. actividad semanal)
+    final data = [
+      (label: "Lun", value: 35.0),
+      (label: "Mar", value: 72.0),
+      (label: "Mié", value: 54.0),
+      (label: "Jue", value: 92.0),
+      (label: "Vie", value: 80.0),
+      (label: "Sáb", value: 45.0),
+      (label: "Dom", value: 30.0),
+    ];
+
+    const padLeft = 14;
+    const padRight = 14;
+    const padTop = 30;
+    const padBottom = 22;
+
+    final chartW = width - padLeft - padRight;
+    final chartH = height - padTop - padBottom;
+    if (chartW <= 0 || chartH <= 0) return;
+
+    final textColor = currentStyle.textColor ?? const ColorRGBA(30, 35, 45);
+    final textMuted = const ColorRGBA(120, 130, 145);
+    final gridColor = const ColorRGBA(180, 195, 215, 75);
+    final barColor = const ColorRGBA(41, 128, 185, 210);
+
+    // 1. Encabezado con título
+    ctx2d.drawText("Rendimiento Semanal", x + padLeft, y + 8, 11, textColor);
+
+    // 2. Líneas horizontales de referencia (Grid)
+    for (int i = 0; i <= 3; i++) {
+      final lineY = y + padTop + (chartH * (i / 3)).toInt();
+      ctx2d.drawLine(
+        x + padLeft,
+        lineY,
+        x + width - padRight,
+        lineY,
+        gridColor,
+      );
+    }
+
+    // 3. Dibujo de barras
+    const maxVal = 100.0;
+    final barCount = data.length;
+    final slotW = chartW / barCount;
+    final barW = math.max(6.0, slotW * 0.50);
+
+    for (int i = 0; i < barCount; i++) {
+      final item = data[i];
+      final barH = (item.value / maxVal) * chartH;
+      final barX = (x + padLeft + (i * slotW) + (slotW - barW) / 2).round();
+      final barY = (y + padTop + chartH - barH).round();
+
+      // Barra con esquinas redondeadas
+      ctx2d.drawRoundRect(
+        barX,
+        barY,
+        barW.round(),
+        barH.round(),
+        3.0,
+        color: barColor,
+      );
+
+      // Etiqueta del día al pie
+      final labelX = barX + (barW.round() - (item.label.length * 5)) ~/ 2;
+      ctx2d.drawText(item.label, labelX, y + height - 16, 10, textMuted);
     }
   }
 }

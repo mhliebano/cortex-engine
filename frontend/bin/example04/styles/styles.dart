@@ -16,7 +16,7 @@ final dashboardLayoutRules = {
   "container_graphics_v1": LayoutRules(width: 0.55),
   "panel-foot": LayoutRules(
     padding: EdgeInsets.all(10),
-    width: double.infinity,
+    width: 0.25,
     height: double.infinity,
     align: Alignment.bottomCenter,
   ),

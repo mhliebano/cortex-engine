@@ -6,6 +6,17 @@
 
 ### Corregido
 
+- **Distribución Determinista de Dos Pasos en `Panel` (`PanelLayout.horizontal` y `PanelLayout.vertical`)**:
+  - `Panel` ahora mide y reserva primero el espacio de los hijos con proporciones acotadas o tamaño definido por abrazo al hijo (`child.width < availableWidth`), y reparte equitativamente el remanente entre los hijos elásticos/expansivos (`flexibleChildren`).
+  - Corrige el problema donde un elemento con regla proporcional (ej. TreeView con 25%) y un contenedor expansivo hermano (ej. DataGrid con 75%) se dividían arbitrariamente 50/50 o 100/0, garantizando una partición fluida y exacta (ej. 25% / 75%).
+
+- **Diferenciación de Hijos Proporcionales vs Expansivos en `Row` y `Col` ("Abrazo al Hijo")**:
+  - Un hijo con dimensión porcentual (`0.0 < width/height <= 1.0`) ya no activa falsamente `hasFlexChild` en `Row` y `Col`.
+  - El contenedor principal abraza estrictamente el tamaño proporcional acumulado de sus hijos (`rigidSum`) sin expandirse vorazmente a la restricción máxima infinita a menos que contenga un `Spacer` flexible o un hijo con `double.infinity`.
+
+- **Control de Altura y Desborde en `Carousel`**:
+  - Declarado `isFlexHeight => true` y resolución dinámica de `height` contra `maxHeight` en [carousel.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/controls/carousel.dart#L84), previniendo que el carrusel se dibuje fuera de su contenedor padre cuando la regla de layout es infinita o nula.
+
 - **Consumo Prematuro de Cola de Caracteres Raylib en Bucle Idle (`Application.run`)**:
   - Eliminada la llamada destructiva `input.getCharPressed() != 0` en la detección de inactividad de [application.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/application.dart#L215-L222), la cual extraía y descartaba prematuramente el carácter de la cola de Raylib impidiendo que `TextField.onUpdate` recibiera las teclas escritas.
   - `TextField` vuelve a recibir y reflejar caracteres en tiempo real al tipear, manteniéndose activo a 60 FPS mediante `TextField.activeFocusedTextField != null`.
