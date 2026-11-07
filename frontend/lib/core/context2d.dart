@@ -176,6 +176,34 @@ class Context2D {
     _g2d.drawRect(_tx(x), _ty(y), _tw(w), _th(h), color.r, color.g, color.b, color.a);
   }
 
+  /// Alias de conveniencia para [drawRect].
+  void drawRectangle(int x, int y, int w, int h, ColorRGBA color) {
+    drawRect(x, y, w, h, color);
+  }
+
+  /// Dibuja una línea entre dos coordenadas en 2D.
+  void drawLine(int x1, int y1, int x2, int y2, ColorRGBA color) {
+    if (x1 == x2) {
+      final minY = y1 < y2 ? y1 : y2;
+      final h = (y2 - y1).abs() + 1;
+      drawRect(x1, minY, 1, h, color);
+    } else if (y1 == y2) {
+      final minX = x1 < x2 ? x1 : x2;
+      final w = (x2 - x1).abs() + 1;
+      drawRect(minX, y1, w, 1, color);
+    } else {
+      final minX = x1 < x2 ? x1 : x2;
+      final minY = y1 < y2 ? y1 : y2;
+      drawRect(minX, minY, (x2 - x1).abs() + 1, (y2 - y1).abs() + 1, color);
+    }
+  }
+
+  /// Dibuja un ícono tipográfico de forma segura.
+  void drawIcon(dynamic icon, int x, int y, int size, [ColorRGBA color = ColorRGBA.white]) {
+    final glyph = icon is String ? icon : (icon?.glyph ?? icon.toString());
+    drawText(glyph, x, y, size, color);
+  }
+
   bool drawButton(
     int x,
     int y,

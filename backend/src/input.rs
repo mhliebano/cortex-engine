@@ -1,8 +1,9 @@
 use raylib_sys::{
-    GetCharPressed, GetFrameTime, GetMousePosition, GetMouseWheelMove, GetTime, IsKeyDown,
-    IsKeyPressed, IsMouseButtonDown, IsMouseButtonPressed, IsMouseButtonReleased, Vector2,
+    GetCharPressed, GetClipboardText, GetFrameTime, GetMousePosition, GetMouseWheelMove, GetTime,
+    IsKeyDown, IsKeyPressed, IsMouseButtonDown, IsMouseButtonPressed, IsMouseButtonReleased,
+    SetClipboardText,
 };
-use std::os::raw::c_int;
+use std::os::raw::{c_char, c_int};
 
 #[unsafe(no_mangle)]
 pub extern "C" fn input_get_mouse_x() -> f32 {
@@ -77,4 +78,16 @@ pub extern "C" fn input_get_frame_time() -> f32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn input_get_time() -> f64 {
     unsafe { GetTime() }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn input_set_clipboard_text(text: *const c_char) {
+    if !text.is_null() {
+        unsafe { SetClipboardText(text) };
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn input_get_clipboard_text() -> *const c_char {
+    unsafe { GetClipboardText() }
 }

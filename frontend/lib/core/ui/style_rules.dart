@@ -12,6 +12,9 @@ class StyleRules {
   final double? borderRadius;
   final int? fontSize;
 
+  /// Alias de conveniencia para [bgColor].
+  ColorRGBA? get backgroundColor => bgColor;
+
   const StyleRules({
     this.bgColor,
     this.hoverColor,
