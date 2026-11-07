@@ -127,13 +127,13 @@ class Row extends StructureNode {
           flexibleSpacerCount++;
         }
       } else {
-        if (child.isFlexWidth) {
-          hasFlexChild = true;
-        }
-
         final wRule = child is ControlNode ? child.currentLayout.width : null;
         final bool isPercentage =
             wRule != null && wRule > 0.0 && wRule <= 1.0;
+
+        if (child.isFlexWidth && !isPercentage) {
+          hasFlexChild = true;
+        }
 
         final int childMaxW;
         if (hasWidthConstraint) {

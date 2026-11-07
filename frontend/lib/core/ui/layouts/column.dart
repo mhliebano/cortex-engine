@@ -127,13 +127,13 @@ class Col extends StructureNode {
           flexibleSpacerCount++;
         }
       } else {
-        if (child.isFlexHeight) {
-          hasFlexChild = true;
-        }
-
         final hRule = child is ControlNode ? child.currentLayout.height : null;
         final bool isPercentage =
             hRule != null && hRule > 0.0 && hRule <= 1.0;
+
+        if (child.isFlexHeight && !isPercentage) {
+          hasFlexChild = true;
+        }
 
         final int childMaxH;
         if (hasHeightConstraint) {
