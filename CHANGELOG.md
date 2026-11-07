@@ -6,6 +6,14 @@
 
 ### Corregido
 
+- **Consumo Prematuro de Cola de Caracteres Raylib en Bucle Idle (`Application.run`)**:
+  - Eliminada la llamada destructiva `input.getCharPressed() != 0` en la detección de inactividad de [application.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/application.dart#L215-L222), la cual extraía y descartaba prematuramente el carácter de la cola de Raylib impidiendo que `TextField.onUpdate` recibiera las teclas escritas.
+  - `TextField` vuelve a recibir y reflejar caracteres en tiempo real al tipear, manteniéndose activo a 60 FPS mediante `TextField.activeFocusedTextField != null`.
+
+- **Crash de `clamp(20, height)` en Barras de Desplazamiento (`Col`, `Row`, `Dropdown`)**:
+  - Incorporadas guardas de dimensión mínima (`height < 20`, `width < 20`, `visibleMenuHeight >= 20`) en [column.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/layouts/column.dart#L257), [row.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/layouts/row.dart#L257) y [dropdown.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/controls/dropdown.dart#L549).
+  - Previene la excepción en tiempo de ejecución `ArgumentError: Invalid argument(s): 20` originada por `int.clamp(lower, upper)` cuando la dimensión del contenedor es menor al tamaño base del pulgar del scrollbar (20 px).
+
 - **Abrazo en Eje Principal y Distribución Proporcional de Remanente (`Row` & `Col`)**:
   - `Row` y `Col` abrazan estrictamente el tamaño acumulado de sus hijos y separadores (`rigidSum`) en su eje principal, evitando la expansión voraz que consumía todo el contenedor padre y empujaba a los elementos hermanos fuera de pantalla.
   - La expansión al límite máximo recibido (`effectiveMaxW` / `effectiveMaxH`) ahora ocurre únicamente si existe un `Spacer` flexible (`size == null`), un hijo con `isFlexWidth` / `isFlexHeight`, o una alineación principal activa (`mainAlign != MainAlign.start`).
@@ -16,6 +24,15 @@
   - Corrección de la semántica de límite cero: se incorporó la constante interna `unconstrained = 1000000` para diferenciar "sin límite aún recibido" de "mi límite es 0", corrigiendo las comparaciones `> 0` en `ControlNode.updateDimensions`, `Container`, `Row` y `Col`.
 
 ### Agregado
+
+- **Soporte de Sobreescritura del Método `build()` en `Container`**:
+  - `Container` ahora admite la definición reactiva de sus hijos mediante `CortexNode? build() => null;` en [container.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/ui/controls/container.dart#L12-L29), inicializado transparentemente vía `this.child = child ?? build();`.
+  - Habilita la creación de componentes personalizados encapsulados mediante herencia de `Container` (análogo a `Row.build()` y `Col.build()`), gobernando dimensiones por `layoutClass` y estilo cosmético por `styleClass`.
+
+- **Soporte de Dibujo Vectorial Nativo de Donas y Anillos Transparentes (`DrawRing`)**:
+  - Implementación de `g2d_draw_ring` en el backend nativo Rust en [graphics2d.rs](file:///home/miguel/Proyectos/hibridos/cortex/backend/src/graphics2d.rs) delegando directamente a `DrawRing` de Raylib.
+  - Exposición de bindings FFI en [graphics2d_bindings.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/ffi/graphics2d_bindings.dart) y [graphics2d.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/wrappers/graphics2d.dart).
+  - Nuevo método en `Context2D`: `drawRing(centerX, centerY, innerRadius, outerRadius, startAngle, endAngle)` en [context2d.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/lib/core/context2d.dart#L299), permitiendo renderizar gráficos circulares de dona (*donut charts*) con centro 100% transparente sin ocluir los fondos del contenedor.
 
 - **Herramienta CLI Oficial de Cortex (`cortex`) y Experiencia de SDK "Estilo Flutter" (Zero-Setup)**:
   - Implementación del CLI nativo unificado en [cortex.dart](file:///home/miguel/Proyectos/hibridos/cortex/frontend/bin/cortex.dart):
