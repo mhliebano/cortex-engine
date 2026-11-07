@@ -10,7 +10,7 @@ import 'package:frontend/core/ui/edge_insets.dart';
 /// Cero parámetros espaciales en constructor. La geometría se gobierna por [layoutClass]
 /// y la pintura cosmética por [styleClass].
 class Container extends ControlNode {
-  final CortexNode? child;
+  CortexNode? child;
 
   Container({
     super.key,
@@ -18,10 +18,14 @@ class Container extends ControlNode {
     super.styleClass,
     super.layoutClass,
     super.isEnabled,
-    this.child,
+    CortexNode? child,
   }) {
+    this.child = child ?? build();
     _updateDimensions();
   }
+
+  /// Método sobreescribible para componer el hijo internamente, análogo a `Row.build()` y `Col.build()`.
+  CortexNode? build() => null;
 
   @override
   List<CortexNode> get childrenElements => child == null ? const [] : [child!];
